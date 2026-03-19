@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Leads</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .timer-urgent { color: #ef4444; }
+    .timer-warn   { color: #f59e0b; }
+    select.status-select { appearance: none; -webkit-appearance: none; outline: none; }
+    .modal-backdrop { backdrop-filter: blur(4px); }
+    .tab-active { background: #111827; color: #fff; }
+    .tab-inactive { background: #f3f4f6; color: #374151; }
+    .tab-inactive:hover { background: #e5e7eb; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+
+  <!-- ═══════════════════════════════════ LOGIN SCREEN ═══════════════════════════════════ -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+      <div class="text-center mb-8">
+        <div class="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <h1 class="text-xl font-semibold text-gray-900">Admin Panel</h1>
+        <p class="text-sm text-gray-500 mt-1">Auction House — Leads</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-medium text-gray-700 block mb-1.5">Пароль</label>
+          <input id="admin-pass" type="password" placeholder="••••••••"
+            class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent" />
+        </div>
+        <p id="login-error" class="text-sm text-red-500 hidden"></p>
+        <button id="login-btn"
+          class="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg py-2.5 text-sm transition-colors">
+          Войти
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ MAIN UI ═══════════════════════════════════ -->
+  <div id="admin-ui" style="display:none">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div class="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-7 h-7 bg-gray-900 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <span class="font-semibold text-gray-900">Leads</span>
+          <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">Admin</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="refresh-btn" title="Обновить"
+            class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
+          <button id="logout-btn"
+            class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Выйти
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-screen-2xl mx-auto px-6 py-6">
+
+      <!-- Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Всего</p>
+          <p id="stats-total" class="text-2xl font-semibold text-gray-900">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <p class="text-xs font-medium text-blue-500 uppercase tracking-wide mb-1">В работе</p>
+          <p id="stats-active" class="text-2xl font-semibold text-blue-600">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <p class="text-xs font-medium text-emerald-500 uppercase tracking-wide mb-1">Выиграли</p>
+          <p id="stats-won" class="text-2xl font-semibold text-emerald-600">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <p class="text-xs font-medium text-green-500 uppercase tracking-wide mb-1">Оплатили</p>
+          <p id="stats-paid" class="text-2xl font-semibold text-green-600">—</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="bg-white rounded-xl border border-gray-200 mb-1">
+        <div class="px-4 pt-4 pb-3 flex flex-wrap items-center gap-3 border-b border-gray-100">
+          <!-- Status filter tabs -->
+          <div class="flex flex-wrap gap-1.5" id="filter-tabs">
+            <button data-filter-status="all"    class="tab-active  text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Все</button>
+            <button data-filter-status="active"  class="tab-inactive text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">В работе</button>
+            <button data-filter-status="pending" class="tab-inactive text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Ожидает</button>
+            <button data-filter-status="won"     class="tab-inactive text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Выиграл</button>
+            <button data-filter-status="paid"    class="tab-inactive text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Оплатил</button>
+            <button data-filter-status="na"      class="tab-inactive text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Н/Д</button>
+            <button data-filter-status="lost"    class="tab-inactive text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Отказ</button>
+          </div>
+          <!-- Search -->
+          <div class="ml-auto relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input id="search-input" type="text" placeholder="Поиск по имени, email, телефону..."
+              class="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-64" />
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div id="leads-table-wrapper" style="display:none">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                  <th class="px-4 py-3 font-medium">Лот / Таймер</th>
+                  <th class="px-4 py-3 font-medium">Клиент</th>
+                  <th class="px-4 py-3 font-medium">Телефон</th>
+                  <th class="px-4 py-3 font-medium">Гео</th>
+                  <th class="px-4 py-3 font-medium">Ставка</th>
+                  <th class="px-4 py-3 font-medium">Статус</th>
+                  <th class="px-4 py-3 font-medium">Действия</th>
+                </tr>
+              </thead>
+              <tbody id="leads-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="leads-loading" class="flex flex-col items-center justify-center py-16 gap-3">
+          <svg class="w-6 h-6 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span class="text-sm text-gray-400">Загрузка данных...</span>
+        </div>
+
+        <!-- Error -->
+        <div id="leads-error" style="display:none" class="flex flex-col items-center justify-center py-16 gap-2 text-center px-6">
+          <svg class="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <p id="leads-error-text" class="text-sm text-red-600 font-medium"></p>
+          <p class="text-xs text-gray-400 max-w-sm">Проверь настройки Supabase в <code class="bg-gray-100 px-1 rounded">admin.js</code> и соответствие схемы таблиц коду админки.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ MODAL: BANK DETAILS ═══════════════════════════════════ -->
+  <div id="modal-bank" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop bg-black/40">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 id="modal-bank-title" class="text-base font-semibold text-gray-900">Отправить инвойс</h2>
+        <button id="close-bank-modal" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="px-6 py-5 space-y-4">
+        <!-- Client info (read-only) -->
+        <div class="bg-gray-50 rounded-lg px-3.5 py-2.5 text-sm">
+          <span class="text-gray-500 text-xs uppercase tracking-wide font-medium block mb-0.5">Клиент</span>
+          <span id="modal-client-info" class="text-gray-900 font-medium"></span>
+        </div>
+
+        <!-- Lot info (read-only) -->
+        <div class="bg-gray-50 rounded-lg px-3.5 py-2.5 text-sm">
+          <span class="text-gray-500 text-xs uppercase tracking-wide font-medium block mb-0.5">Лот</span>
+          <span id="modal-lot-title" class="text-gray-900"></span>
+        </div>
+
+        <!-- Payment type -->
+        <div>
+          <label class="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-2">Способ оплаты</label>
+          <div class="flex gap-2">
+            <button data-payment-type="revolut"
+              class="flex-1 tab-active text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4 0-.85-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg>
+              Revolut
+            </button>
+            <button data-payment-type="iban"
+              class="flex-1 tab-inactive text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              IBAN
+            </button>
+          </div>
+          <p id="payment-method-note" class="mt-2 text-xs text-gray-500">Способ оплаты зафиксирован по выбору клиента.</p>
+        </div>
+
+        <!-- Revolut fields -->
+        <div id="revolut-fields" class="space-y-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Revolut тег</label>
+            <input id="rev-tag" type="text" placeholder="@username или +телефон"
+              class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Полное имя получателя</label>
+            <input id="rev-name" type="text" placeholder="Имя Фамилия"
+              class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+        </div>
+
+        <!-- IBAN fields -->
+        <div id="iban-fields" style="display:none" class="space-y-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Получатель</label>
+            <input id="iban-name" type="text" placeholder="Beneficiary name"
+              class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">IBAN</label>
+            <input id="iban-number" type="text" placeholder="DE89 3704 0044 0532 0130 00"
+              class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-gray-600 block mb-1">BIC / SWIFT</label>
+              <input id="iban-bic" type="text" placeholder="DEUTDEDB"
+                class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-600 block mb-1">Банк</label>
+              <input id="iban-bank" type="text" placeholder="Deutsche Bank"
+                class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Amount + Reference -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Сумма (€)</label>
+            <input id="bank-amount" type="number" placeholder="0"
+              class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Референс / Инвойс №</label>
+            <input id="bank-reference" type="text" placeholder="INV-2026-0000"
+              class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal footer -->
+      <div class="px-6 pb-5 flex gap-3">
+        <button id="close-bank-modal-2"
+          class="flex-1 border border-gray-200 text-gray-700 font-medium rounded-lg py-2.5 text-sm hover:bg-gray-50 transition-colors">
+          Отмена
+        </button>
+        <button id="send-email-btn"
+          class="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg py-2.5 text-sm transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          <span id="send-email-btn-text">Отправить письмо</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ MODAL: WIN NOTIFICATION ═══════════════════════════════════ -->
+  <div id="modal-win" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop bg-black/40">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 class="text-base font-semibold text-gray-900">Уведомление о победе</h2>
+        <button id="close-win-modal" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <div class="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+          <svg class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+          </svg>
+          <div>
+            <p class="text-sm font-medium text-amber-800">Только уведомление о победе</p>
+            <p class="text-xs text-amber-600 mt-0.5">Письмо без реквизитов оплаты — клиент узнаёт что выиграл лот.</p>
+          </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg px-3.5 py-2.5 text-sm space-y-1">
+          <div><span class="text-gray-500 text-xs">Клиент:</span> <span id="win-client-name" class="font-medium text-gray-900"></span></div>
+          <div><span class="text-gray-500 text-xs">Лот:</span> <span id="win-lot-title" class="text-gray-900"></span></div>
+          <div><span class="text-gray-500 text-xs">Ставка:</span> <span id="win-bid-amount" class="text-gray-900 font-medium"></span></div>
+        </div>
+      </div>
+      <div class="px-6 pb-5 flex gap-3">
+        <button id="close-win-modal-2"
+          class="flex-1 border border-gray-200 text-gray-700 font-medium rounded-lg py-2.5 text-sm hover:bg-gray-50 transition-colors">
+          Отмена
+        </button>
+        <button id="send-win-btn"
+          class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg py-2.5 text-sm transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          <span id="send-win-btn-text">Отправить уведомление</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="display:none"
+    class="fixed bottom-6 right-6 px-4 py-3 rounded-xl text-sm font-medium shadow-xl z-[100] transition-all duration-300 max-w-xs"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

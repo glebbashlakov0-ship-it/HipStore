@@ -101,6 +101,8 @@
   }
 
   function getStatus(item) {
+    var s = String(item.status || "").toLowerCase();
+    if (s === "ended" || s === "closed" || s === "sold") return "closed";
     var diff = new Date(item.endTime).getTime() - Date.now();
     if (!Number.isFinite(diff) || diff <= 0) return "closed";
     if (diff <= 48 * 60 * 60 * 1000) return "ending-soon";
@@ -389,6 +391,26 @@
     });
   }
 
+  function fetchRemoteClosedLotIds() {
+    // Fetch IDs of lots that exist in Supabase but are closed/sold or expired
+    // Used to exclude those from the local JSON catalog
+    return requestRemoteSupabase(
+      "/rest/v1/lots?select=id,status,end_time&limit=1000"
+    ).then(function (lots) {
+      if (!Array.isArray(lots)) return new Set();
+      var now = Date.now();
+      var closedIds = new Set();
+      lots.forEach(function (lot) {
+        var s = String(lot.status || "").toLowerCase();
+        var expired = lot.end_time && new Date(lot.end_time).getTime() <= now;
+        if (s === "closed" || s === "sold" || expired) {
+          closedIds.add(lot.id);
+        }
+      });
+      return closedIds;
+    }).catch(function () { return new Set(); });
+  }
+
   function fetchRemoteActiveWhiskeyItems() {
     var whiskeyCategoryIds = [
       "bb1502a0-4c07-4cd8-9a18-9ae024ffe94c",
@@ -410,6 +432,7 @@
         ")" +
         "&end_time=gt." +
         encodeURIComponent(now) +
+        "&status=not.in.(closed,sold)" +
         "&order=end_time.asc&limit=12"
     ).then(function (lots) {
       if (!Array.isArray(lots) || !lots.length) return [];
@@ -470,6 +493,7 @@
         ")" +
         "&end_time=gt." +
         encodeURIComponent(now) +
+        "&status=not.in.(closed,sold)" +
         "&order=end_time.asc&limit=60"
     ).then(function (lots) {
       var filteredLots = (Array.isArray(lots) ? lots : []).filter(function (lot) {
@@ -616,7 +640,7 @@
     var state = {
       category: "all",
       status: "active",
-      sortBy: "newly-listed",
+      sortBy: "featured",
       page: 1,
       perPage: 24,
     };
@@ -637,12 +661,15 @@
         });
       }
 
-      filtered.sort(function (a, b) {
-        if (state.sortBy === "ending-soon") return new Date(a.endTime) - new Date(b.endTime);
-        if (state.sortBy === "price-low") return a.currentBid - b.currentBid;
-        if (state.sortBy === "price-high") return b.currentBid - a.currentBid;
-        return new Date(b.endTime) - new Date(a.endTime);
-      });
+      if (state.sortBy !== "featured") {
+        filtered.sort(function (a, b) {
+          if (state.sortBy === "ending-soon") return new Date(a.endTime) - new Date(b.endTime);
+          if (state.sortBy === "price-low") return a.currentBid - b.currentBid;
+          if (state.sortBy === "price-high") return b.currentBid - a.currentBid;
+          if (state.sortBy === "newly-listed") return new Date(b.endTime) - new Date(a.endTime);
+          return 0;
+        });
+      }
 
       return filtered;
     }
@@ -683,8 +710,9 @@
         "</select>" +
         '<label class="sr-only" for="shop-sort">Sort</label>' +
         '<select id="shop-sort" class="border-input bg-background ring-offset-background flex h-10 items-center justify-between rounded-md border px-3 py-2 text-sm w-[180px]">' +
+        '<option value="featured">Featured</option>' +
         '<option value="ending-soon">Ending Soon</option>' +
-        '<option value="newly-listed">Newest Snapshot</option>' +
+        '<option value="newly-listed">Ending Latest</option>' +
         '<option value="price-low">Price: Low to High</option>' +
         '<option value="price-high">Price: High to Low</option>' +
         "</select>" +
@@ -777,9 +805,6 @@
     }
 
     render();
-    setInterval(function () {
-      updateCountdowns(resultsSection);
-    }, 1000);
   }
 
   Promise.all([
@@ -832,6 +857,9 @@
       renderLandingCategorySections(results[1], remoteSources);
       renderCollectionLandingSections(results[1], remoteSources);
       renderShopAll(results[1], results[2], results[3]);
+      setInterval(function () {
+        updateCountdowns(document);
+      }, 1000);
     })
     .catch(function (error) {
       console.error("Catalog render failed:", error);

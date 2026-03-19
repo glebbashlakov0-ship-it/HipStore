@@ -114,6 +114,17 @@
     ]);
   }
 
+  function isMissingBidColumn(error, columnName) {
+    if (!error) return false;
+    var message = String(error.message || error.details || error.hint || '');
+    return message.indexOf("Could not find the '" + columnName + "' column of 'bids'") !== -1 ||
+      message.indexOf('column bids.' + columnName + ' does not exist') !== -1;
+  }
+
+  function normalizePaymentMethod(value) {
+    return value === 'revolut' ? 'revolut' : 'iban';
+  }
+
   // ─── Profile ────────────────────────────────────────────────────────────────
 
   async function getProfile() {
@@ -221,6 +232,31 @@
 
   async function getWatchlist() {
     var uid = await getUserId(); if (!uid) return [];
+    var sb = getClient();
+    if (sb) {
+      try {
+        var res = await withTimeout(
+          sb.from('watchlist').select('*').eq('user_id', uid).order('added_at', { ascending: false }),
+          2500,
+          { data: null, error: new Error('timeout') }
+        );
+        if (!res.error && Array.isArray(res.data)) {
+          var items = res.data.map(function (row) {
+            return {
+              id: row.id || ('watch-' + row.lot_id),
+              lotId: row.lot_id,
+              lotSlug: row.lot_slug || '',
+              lotTitle: row.lot_title || 'Lot',
+              lotImage: row.lot_image || '',
+              currentBid: Number(row.current_bid || 0),
+              addedAt: row.added_at || new Date().toISOString(),
+            };
+          });
+          writeStoredWatchlist(uid, items);
+          return items;
+        }
+      } catch (_e) {}
+    }
     return readStoredWatchlist(uid)
       .slice()
       .sort(function (a, b) {
@@ -248,7 +284,7 @@
       return true;
     }
 
-    items.unshift({
+    var newItem = {
       id: 'watch-' + lotId,
       lotId: lotId,
       lotSlug: payload.lotSlug || '',
@@ -256,8 +292,23 @@
       lotImage: payload.lotImage || '',
       currentBid: Number(payload.currentBid || 0),
       addedAt: new Date().toISOString(),
-    });
+    };
+    items.unshift(newItem);
     writeStoredWatchlist(uid, items);
+
+    var sb = getClient();
+    if (sb) {
+      sb.from('watchlist').upsert({
+        id: newItem.id,
+        user_id: uid,
+        lot_id: lotId,
+        lot_slug: newItem.lotSlug,
+        lot_title: newItem.lotTitle,
+        lot_image: newItem.lotImage,
+        current_bid: newItem.currentBid,
+        added_at: newItem.addedAt,
+      }, { onConflict: 'user_id,lot_id' }).then(function () {}).catch(function () {});
+    }
     return true;
   }
 
@@ -267,6 +318,12 @@
       return !item || String(item.lotId) !== String(lotId);
     });
     writeStoredWatchlist(uid, items);
+
+    var sb = getClient();
+    if (sb) {
+      sb.from('watchlist').delete().eq('user_id', uid).eq('lot_id', String(lotId))
+        .then(function () {}).catch(function () {});
+    }
   }
 
   async function toggleWatchlist(lotData) {
@@ -280,6 +337,31 @@
 
   async function getViewingHistory() {
     var uid = await getUserId(); if (!uid) return [];
+    var sb = getClient();
+    if (sb) {
+      try {
+        var res = await withTimeout(
+          sb.from('viewing_history').select('*').eq('user_id', uid).order('viewed_at', { ascending: false }).limit(50),
+          2500,
+          { data: null, error: new Error('timeout') }
+        );
+        if (!res.error && Array.isArray(res.data)) {
+          var items = res.data.map(function (row) {
+            return {
+              id: row.id || ('history-' + row.lot_id),
+              lotId: row.lot_id,
+              lotSlug: row.lot_slug || '',
+              lotTitle: row.lot_title || 'Lot',
+              lotImage: row.lot_image || '',
+              currentBid: Number(row.current_bid || 0),
+              viewedAt: row.viewed_at || new Date().toISOString(),
+            };
+          });
+          writeStoredHistory(uid, items);
+          return items;
+        }
+      } catch (_e) {}
+    }
     return readStoredHistory(uid)
       .slice()
       .sort(function (a, b) {
@@ -298,7 +380,7 @@
       return item && String(item.lotId) !== lotId;
     });
 
-    items.unshift({
+    var newItem = {
       id: 'history-' + lotId,
       lotId: lotId,
       lotSlug: payload.lotSlug || '',
@@ -306,14 +388,33 @@
       lotImage: payload.lotImage || '',
       currentBid: Number(payload.currentBid || 0),
       viewedAt: new Date().toISOString(),
-    });
-
+    };
+    items.unshift(newItem);
     writeStoredHistory(uid, items.slice(0, 50));
+
+    var sb = getClient();
+    if (sb) {
+      sb.from('viewing_history').upsert({
+        id: newItem.id,
+        user_id: uid,
+        lot_id: lotId,
+        lot_slug: newItem.lotSlug,
+        lot_title: newItem.lotTitle,
+        lot_image: newItem.lotImage,
+        current_bid: newItem.currentBid,
+        viewed_at: newItem.viewedAt,
+      }, { onConflict: 'user_id,lot_id' }).then(function () {}).catch(function () {});
+    }
   }
 
   async function clearViewingHistory() {
     var uid = await getUserId(); if (!uid) return;
     writeStoredHistory(uid, []);
+    var sb = getClient();
+    if (sb) {
+      sb.from('viewing_history').delete().eq('user_id', uid)
+        .then(function () {}).catch(function () {});
+    }
   }
 
   // ─── Bids ────────────────────────────────────────────────────────────────────
@@ -394,20 +495,38 @@
     var sb = getClient(); if (!sb) return [];
     var res = await withTimeout(sb
       .from('bids')
-      .select('id, lot_id, amount, status, created_at, lots(id, slug, title, current_bid, lot_images(image_url, is_primary))')
+      .select('id, lot_id, amount, status, created_at, payment_method, lots(id, slug, title, current_bid, lot_images(image_url, is_primary))')
       .eq('user_id', uid)
       .eq('is_simulated', false)
       .order('created_at', { ascending: false })
       .limit(100), 2500, { data: null, error: new Error('timeout') });
+    if (res.error && isMissingBidColumn(res.error, 'payment_method')) {
+      res = await withTimeout(sb
+        .from('bids')
+        .select('id, lot_id, amount, status, created_at, lots(id, slug, title, current_bid, lot_images(image_url, is_primary))')
+        .eq('user_id', uid)
+        .eq('is_simulated', false)
+        .order('created_at', { ascending: false })
+        .limit(100), 2500, { data: null, error: new Error('timeout') });
+    }
     if (res.error) {
       // Fallback without join if FK not set up
       var fallback = await withTimeout(sb
         .from('bids')
-        .select('id, lot_id, amount, status, created_at')
+        .select('id, lot_id, amount, status, created_at, payment_method')
         .eq('user_id', uid)
         .eq('is_simulated', false)
         .order('created_at', { ascending: false })
         .limit(100), 2000, { data: [], error: new Error('timeout') });
+      if (fallback.error && isMissingBidColumn(fallback.error, 'payment_method')) {
+        fallback = await withTimeout(sb
+          .from('bids')
+          .select('id, lot_id, amount, status, created_at')
+          .eq('user_id', uid)
+          .eq('is_simulated', false)
+          .order('created_at', { ascending: false })
+          .limit(100), 2000, { data: [], error: new Error('timeout') });
+      }
       if (fallback.error) return [];
       var fallbackItems = (fallback.data || []).map(function(item) {
         return {
@@ -418,7 +537,7 @@
           lotImage: '',
           bidAmount: item.amount || 0,
           currentBid: item.amount || 0,
-          paymentMethod: '',
+          paymentMethod: normalizePaymentMethod(item.payment_method),
           invoiceMode: '',
           invoiceAmount: item.amount || 0,
           invoiceNumber: '',
@@ -445,7 +564,7 @@
         lotImage: img.image_url || '',
         bidAmount: item.amount || 0,
         currentBid: lot.current_bid || item.amount || 0,
-        paymentMethod: '',
+        paymentMethod: normalizePaymentMethod(item.payment_method),
         invoiceMode: '',
         invoiceAmount: item.amount || 0,
         invoiceNumber: '',

@@ -736,9 +736,18 @@
               <h1 class="text-2xl lg:text-3xl font-serif mb-2">Account Settings</h1>
               <p class="text-muted-foreground">Manage your account settings and preferences</p>
             </div>
+            ${flash.profile && flash.profile.type === "success" ? `
+            <div class="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-600 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M20 6 9 17l-5-5"></path></svg>
+              ${escapeHtml(flash.profile.text)}
+            </div>` : ""}
+            ${flash.profile && flash.profile.type === "error" ? `
+            <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              ${escapeHtml(flash.profile.text)}
+            </div>` : ""}
             <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
               <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">${views[0].icon}Personal Information</h2>
-              ${profileMessage}
               <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-2">
@@ -760,7 +769,6 @@
                   <input autocomplete="tel" class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-phone" placeholder="+1" type="tel" value="${escapeHtml(state.phone)}">
                 </div>
               </div>
-              <button data-save-profile="personal" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 mt-6">Save Changes</button>
             </div>
             <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
               <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>Shipping Address</h2>
@@ -885,16 +893,19 @@
     }
 
     function buildBidInvoiceCommitmentBlock(item) {
-      if (!item || item.status !== "active" || item.paymentMethod !== "invoice") return "";
+      if (!item || item.status !== "active") return "";
+      var paymentMethod = item.paymentMethod === "revolut" ? "revolut" : (item.paymentMethod === "invoice" ? "iban" : item.paymentMethod);
+      if (paymentMethod !== "iban" && paymentMethod !== "revolut") return "";
       var amount = Number(item.invoiceAmount || item.bidAmount || item.currentBid || 0);
       var recipient = item.invoiceRecipient || "Verified bidder";
       var reference = item.invoiceReference || "On file";
       var invoiceNumber = item.invoiceNumber || "PFI-00000000";
       var transferStatus = item.transferStatus || "pending_verification";
+      var isRevolut = paymentMethod === "revolut";
       return `
         <details class="mt-3 rounded-lg border border-amber-200 bg-amber-50/80">
           <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-amber-950">
-            <span>Bank transfer submitted</span>
+            <span>${isRevolut ? "Revolut payment selected" : "Bank transfer submitted"}</span>
             <span class="text-xs text-amber-700">${escapeHtml(transferStatus.replace(/_/g, " "))}</span>
           </summary>
           <div class="space-y-3 border-t border-amber-200 px-3 py-3">
@@ -908,7 +919,7 @@
                 <p class="font-semibold text-amber-950">${formatCurrency(amount)}</p>
               </div>
               <div>
-                <p class="text-amber-700/80">Sender</p>
+                <p class="text-amber-700/80">${isRevolut ? "Recipient" : "Sender"}</p>
                 <p class="font-semibold text-amber-950">${escapeHtml(recipient)}</p>
               </div>
               <div>
@@ -921,8 +932,8 @@
               </div>
             </div>
             <div class="rounded-md bg-white/80 p-3 text-xs text-amber-950">
-              <p class="font-semibold mb-1">Bank details used for payment</p>
-              <p class="text-amber-900">Beneficiary: Auctio Holdings Ltd. IBAN: DE89 3704 0044 0532 0130 00. SWIFT/BIC: DEUTDEBBXXX.</p>
+              <p class="font-semibold mb-1">${isRevolut ? "Selected settlement method" : "Bank details used for payment"}</p>
+              <p class="text-amber-900">${isRevolut ? "Revolut was selected for this bid. Payment coordination will be shared with the bidder directly." : "Beneficiary: Auctio Holdings Ltd. IBAN: DE89 3704 0044 0532 0130 00. SWIFT/BIC: DEUTDEBBXXX."}</p>
             </div>
           </div>
         </details>`;
@@ -1282,34 +1293,48 @@
               return;
             }
 
-	            try {
-	              if (window.SupabaseAPI) {
-	                await window.SupabaseAPI.updateProfile({
-	                  address: addressState.street,
+              try {
+                if (window.SupabaseAPI) {
+                  await window.SupabaseAPI.updateProfile({
+                    firstName: personalState.firstName,
+                    lastName: personalState.lastName,
+                    phone: personalState.phone,
+                    address: addressState.street,
+                    city: addressState.city,
+                    state: addressState.state,
+                    postalCode: addressState.zip,
+                    country: addressState.country,
+                  });
+                }
+                writeStoredProfile({
+                  country: addressState.country,
+                  street: addressState.street,
                   city: addressState.city,
                   state: addressState.state,
-                  postalCode: addressState.zip,
-                  country: addressState.country,
+                  zip: addressState.zip,
                 });
+                cache.profile = Object.assign({}, cache.profile || {}, {
+                  first_name: personalState.firstName,
+                  last_name: personalState.lastName,
+                  phone: personalState.phone,
+                  country: addressState.country,
+                  address: addressState.street,
+                  city: addressState.city,
+                  state: addressState.state,
+                  postal_code: addressState.zip,
+                });
+                updateLegacyUserRecord({
+                  id: state.id,
+                  firstName: personalState.firstName,
+                  lastName: personalState.lastName,
+                  email: state.email,
+                  phone: personalState.phone,
+                  createdAt: state.createdAt,
+                });
+                flash.profile = { type: "success", text: "Settings saved." };
+              } catch (error) {
+                flash.profile = { type: "error", text: error.message || "Unable to save settings." };
               }
-	              writeStoredProfile({
-	                country: addressState.country,
-	                street: addressState.street,
-	                city: addressState.city,
-	                state: addressState.state,
-	                zip: addressState.zip,
-	              });
-	              cache.profile = Object.assign({}, cache.profile || {}, {
-	                country: addressState.country,
-	                address: addressState.street,
-	                city: addressState.city,
-	                state: addressState.state,
-	                postal_code: addressState.zip,
-	              });
-	              flash.profile = { type: "success", text: "Shipping address updated." };
-	            } catch (error) {
-              flash.profile = { type: "error", text: error.message || "Unable to save shipping address." };
-            }
 
             render();
           });

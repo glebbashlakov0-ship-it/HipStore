@@ -668,7 +668,7 @@
             <span data-current-language class="hidden text-[11px] font-semibold uppercase tracking-wide sm:inline">EN</span>
             <span class="sr-only">Switch language</span>
           </button>
-          <div id="header-language-menu" class="hidden absolute right-0 top-full z-[150] mt-2 min-w-[8rem] overflow-x-hidden rounded-md border bg-popover text-popover-foreground p-1 shadow-md max-h-80 overflow-y-auto">
+          <div id="header-language-menu" class="hidden absolute right-0 top-full z-[150] mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground p-1 shadow-md">
             <div class="max-h-80 overflow-y-auto overscroll-contain touch-pan-y" data-language-scroll>
               ${LANGUAGES.map(
                 (lang) => `
@@ -1226,8 +1226,6 @@
     document.querySelectorAll("[data-i18n='login']").forEach((node) => setNodeText(node, auth.login || copy.login));
     document.querySelectorAll("[data-i18n='register']").forEach((node) => setNodeText(node, auth.register || copy.register));
 
-    replaceExactText("#header-language-menu .text-sm.font-medium", copy.language);
-    replaceExactText("#header-language-menu .text-xs.text-muted-foreground", copy.chooseLanguage);
     replaceExactText("#header-search-dialog h2", search.title || copy.search);
     replaceExactText("#header-search-dialog [data-search-view-all]", search.viewAll || copy.viewAllResults);
     replaceExactText("#header-search-dialog [data-search-summary]", search.randomPicks || copy.youMightLike);
@@ -1376,8 +1374,6 @@
   }
 
   function applyPageTranslations(copy) {
-    replaceExactText("#header-language-menu .text-sm.font-medium", copy.language);
-    replaceExactText("#header-language-menu .text-xs.text-muted-foreground", copy.chooseLanguage);
     replaceExactText("#header-search-dialog h2", copy.search);
     replaceExactText("#header-search-dialog [data-search-summary]", copy.youMightLike);
     replaceExactText("#header-search-dialog [data-search-view-all]", copy.viewAllResults);

@@ -406,13 +406,280 @@
     "Zimbabwe": "+263"
   };
 
+  var COUNTRY_ISO_BY_NAME = {
+    "Afghanistan": "AF",
+    "Aland Islands": "AX",
+    "Albania": "AL",
+    "Algeria": "DZ",
+    "American Samoa": "AS",
+    "Andorra": "AD",
+    "Angola": "AO",
+    "Anguilla": "AI",
+    "Antigua and Barbuda": "AG",
+    "Argentina": "AR",
+    "Armenia": "AM",
+    "Aruba": "AW",
+    "Australia": "AU",
+    "Austria": "AT",
+    "Azerbaijan": "AZ",
+    "Bahamas": "BS",
+    "Bahrain": "BH",
+    "Bangladesh": "BD",
+    "Barbados": "BB",
+    "Belarus": "BY",
+    "Belgium": "BE",
+    "Belize": "BZ",
+    "Benin": "BJ",
+    "Bermuda": "BM",
+    "Bhutan": "BT",
+    "Bolivia": "BO",
+    "Bonaire, Sint Eustatius and Saba": "BQ",
+    "Bosnia and Herzegovina": "BA",
+    "Botswana": "BW",
+    "Brazil": "BR",
+    "British Indian Ocean Territory": "IO",
+    "Brunei Darussalam": "BN",
+    "Bulgaria": "BG",
+    "Burkina Faso": "BF",
+    "Burundi": "BI",
+    "Cambodia": "KH",
+    "Cameroon": "CM",
+    "Canada": "CA",
+    "Cape Verde": "CV",
+    "Cayman Islands": "KY",
+    "Central African Republic": "CF",
+    "Chad": "TD",
+    "Chile": "CL",
+    "China": "CN",
+    "Christmas Island": "CX",
+    "Cocos (Keeling) Islands": "CC",
+    "Colombia": "CO",
+    "Comoros": "KM",
+    "Congo": "CG",
+    "Congo, Democratic Republic of the": "CD",
+    "Cook Islands": "CK",
+    "Costa Rica": "CR",
+    "Cote d'Ivoire": "CI",
+    "Croatia": "HR",
+    "Cuba": "CU",
+    "Curacao": "CW",
+    "Cyprus": "CY",
+    "Czech Republic": "CZ",
+    "Denmark": "DK",
+    "Djibouti": "DJ",
+    "Dominica": "DM",
+    "Dominican Republic": "DO",
+    "Ecuador": "EC",
+    "Egypt": "EG",
+    "El Salvador": "SV",
+    "Equatorial Guinea": "GQ",
+    "Eritrea": "ER",
+    "Estonia": "EE",
+    "Ethiopia": "ET",
+    "Falkland Islands": "FK",
+    "Faroe Islands": "FO",
+    "Federated States of Micronesia": "FM",
+    "Fiji": "FJ",
+    "Finland": "FI",
+    "France": "FR",
+    "French Guiana": "GF",
+    "French Polynesia": "PF",
+    "Gabon": "GA",
+    "Gambia": "GM",
+    "Georgia": "GE",
+    "Germany": "DE",
+    "Ghana": "GH",
+    "Gibraltar": "GI",
+    "Greece": "GR",
+    "Greenland": "GL",
+    "Grenada": "GD",
+    "Guadeloupe": "GP",
+    "Guam": "GU",
+    "Guatemala": "GT",
+    "Guernsey": "GG",
+    "Guinea": "GN",
+    "Guinea-Bissau": "GW",
+    "Guyana": "GY",
+    "Haiti": "HT",
+    "Holy See (Vatican City State)": "VA",
+    "Honduras": "HN",
+    "Hong Kong": "HK",
+    "Hungary": "HU",
+    "Iceland": "IS",
+    "India": "IN",
+    "Indonesia": "ID",
+    "Iran": "IR",
+    "Iraq": "IQ",
+    "Ireland": "IE",
+    "Isle of Man": "IM",
+    "Israel": "IL",
+    "Italy": "IT",
+    "Jamaica": "JM",
+    "Japan": "JP",
+    "Jersey": "JE",
+    "Jordan": "JO",
+    "Kazakhstan": "KZ",
+    "Kenya": "KE",
+    "Kiribati": "KI",
+    "Kosovo": "XK",
+    "Kuwait": "KW",
+    "Kyrgyzstan": "KG",
+    "Laos": "LA",
+    "Latvia": "LV",
+    "Lebanon": "LB",
+    "Lesotho": "LS",
+    "Liberia": "LR",
+    "Libya": "LY",
+    "Liechtenstein": "LI",
+    "Lithuania": "LT",
+    "Luxembourg": "LU",
+    "Macao": "MO",
+    "Madagascar": "MG",
+    "Malawi": "MW",
+    "Malaysia": "MY",
+    "Maldives": "MV",
+    "Mali": "ML",
+    "Malta": "MT",
+    "Marshall Islands": "MH",
+    "Martinique": "MQ",
+    "Mauritania": "MR",
+    "Mauritius": "MU",
+    "Mayotte": "YT",
+    "Mexico": "MX",
+    "Moldova": "MD",
+    "Monaco": "MC",
+    "Mongolia": "MN",
+    "Montenegro": "ME",
+    "Montserrat": "MS",
+    "Morocco": "MA",
+    "Mozambique": "MZ",
+    "Myanmar": "MM",
+    "Namibia": "NA",
+    "Nauru": "NR",
+    "Nepal": "NP",
+    "Netherlands": "NL",
+    "New Caledonia": "NC",
+    "New Zealand": "NZ",
+    "Nicaragua": "NI",
+    "Niger": "NE",
+    "Nigeria": "NG",
+    "Niue": "NU",
+    "Norfolk Island": "NF",
+    "North Korea": "KP",
+    "North Macedonia": "MK",
+    "Northern Mariana Islands": "MP",
+    "Norway": "NO",
+    "Oman": "OM",
+    "Pakistan": "PK",
+    "Palau": "PW",
+    "Palestine": "PS",
+    "Panama": "PA",
+    "Papua New Guinea": "PG",
+    "Paraguay": "PY",
+    "Peru": "PE",
+    "Philippines": "PH",
+    "Poland": "PL",
+    "Portugal": "PT",
+    "Puerto Rico": "PR",
+    "Qatar": "QA",
+    "Reunion": "RE",
+    "Romania": "RO",
+    "Russia": "RU",
+    "Rwanda": "RW",
+    "Saint Barthelemy": "BL",
+    "Saint Helena": "SH",
+    "Saint Kitts and Nevis": "KN",
+    "Saint Lucia": "LC",
+    "Saint Martin (French Part)": "MF",
+    "Saint Pierre and Miquelon": "PM",
+    "Saint Vincent and the Grenadines": "VC",
+    "Samoa": "WS",
+    "San Marino": "SM",
+    "Sao Tome and Principe": "ST",
+    "Saudi Arabia": "SA",
+    "Senegal": "SN",
+    "Serbia": "RS",
+    "Seychelles": "SC",
+    "Sierra Leone": "SL",
+    "Singapore": "SG",
+    "Sint Maarten": "SX",
+    "Slovakia": "SK",
+    "Slovenia": "SI",
+    "Solomon Islands": "SB",
+    "Somalia": "SO",
+    "South Africa": "ZA",
+    "South Korea": "KR",
+    "South Sudan": "SS",
+    "Spain": "ES",
+    "Sri Lanka": "LK",
+    "Sudan": "SD",
+    "Suriname": "SR",
+    "Svalbard and Jan Mayen": "SJ",
+    "Swaziland": "SZ",
+    "Sweden": "SE",
+    "Switzerland": "CH",
+    "Syria": "SY",
+    "Taiwan": "TW",
+    "Tajikistan": "TJ",
+    "Tanzania": "TZ",
+    "Thailand": "TH",
+    "Timor-Leste": "TL",
+    "Togo": "TG",
+    "Tokelau": "TK",
+    "Tonga": "TO",
+    "Trinidad and Tobago": "TT",
+    "Tunisia": "TN",
+    "Turkey": "TR",
+    "Turkmenistan": "TM",
+    "Turks and Caicos Islands": "TC",
+    "Tuvalu": "TV",
+    "Uganda": "UG",
+    "Ukraine": "UA",
+    "United Arab Emirates": "AE",
+    "United Kingdom": "GB",
+    "United States": "US",
+    "Uruguay": "UY",
+    "Uzbekistan": "UZ",
+    "Vanuatu": "VU",
+    "Venezuela": "VE",
+    "Vietnam": "VN",
+    "Virgin Islands, British": "VG",
+    "Virgin Islands, U.S.": "VI",
+    "Wallis and Futuna": "WF",
+    "Western Sahara": "EH",
+    "Yemen": "YE",
+    "Zambia": "ZM",
+    "Zimbabwe": "ZW"
+  };
+
+  var PHONE_FLAG_BASE_URL = "https://purecatamphetamine.github.io/country-flag-icons/3x2/";
+
+  function normalizeCountryKey(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/&/g, "and")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/gi, " ")
+      .trim()
+      .toLowerCase();
+  }
+
   var PHONE_COUNTRIES = COUNTRIES.map(function (country) {
     var code = PHONE_CODE_BY_COUNTRY[country] || "+00";
     return {
+      value: code + "|" + country,
       code: code + "|" + country,
+      country: country,
+      dialCode: code,
+      iso: COUNTRY_ISO_BY_NAME[country] || "",
       label: country + " " + code
     };
   });
+
+  var PHONE_COUNTRY_MATCHES = PHONE_COUNTRIES
+    .slice()
+    .sort(function (left, right) { return right.dialCode.length - left.dialCode.length; });
 
   function renderSelectOptions(list, selected, placeholder) {
     var options = [];
@@ -420,11 +687,71 @@
       options.push('<option value="">' + escapeHtml(placeholder) + '</option>');
     }
     list.forEach(function (item) {
-      var value = typeof item === "string" ? item : item.code;
+      var value = typeof item === "string" ? item : (item.value || item.code);
       var label = typeof item === "string" ? item : item.label;
       options.push('<option value="' + escapeHtml(value) + '"' + (value === selected ? " selected" : "") + '>' + escapeHtml(label) + '</option>');
     });
     return options.join("");
+  }
+
+  function getPhoneCountryParts(value) {
+    var raw = String(value || "").trim();
+    if (!raw) return { value: "", dialCode: "", country: "", iso: "" };
+    var dividerIndex = raw.indexOf("|");
+    var dialCode = dividerIndex === -1 ? raw : raw.slice(0, dividerIndex);
+    var country = dividerIndex === -1 ? "" : raw.slice(dividerIndex + 1);
+    return {
+      value: raw,
+      dialCode: dialCode,
+      country: country,
+      iso: COUNTRY_ISO_BY_NAME[country] || ""
+    };
+  }
+
+  function getPhoneFlagUrl(iso) {
+    return iso ? PHONE_FLAG_BASE_URL + String(iso).toUpperCase() + ".svg" : "";
+  }
+
+  function findPhoneCountryValueByName(countryName) {
+    var normalized = normalizeCountryKey(countryName);
+    if (!normalized) return "";
+    var match = PHONE_COUNTRIES.find(function (entry) {
+      return normalizeCountryKey(entry.country) === normalized;
+    });
+    return match ? match.value : "";
+  }
+
+  function splitStoredPhoneValue(rawPhone, countryHint) {
+    var value = String(rawPhone || "").trim();
+    if (!value) return { phoneCountryValue: "", localNumber: "" };
+    var compact = value.replace(/[^\d+]/g, "");
+    if (compact.charAt(0) !== "+") {
+      return { phoneCountryValue: "", localNumber: value };
+    }
+
+    var hintedCountryValue = findPhoneCountryValueByName(countryHint);
+    if (hintedCountryValue) {
+      var hintedCountryParts = getPhoneCountryParts(hintedCountryValue);
+      if (hintedCountryParts.dialCode && compact.indexOf(hintedCountryParts.dialCode) === 0) {
+        return {
+          phoneCountryValue: hintedCountryValue,
+          localNumber: value.replace(new RegExp("^\\s*" + hintedCountryParts.dialCode.replace("+", "\\+") + "\\s*"), "").trim()
+        };
+      }
+    }
+
+    for (var i = 0; i < PHONE_COUNTRY_MATCHES.length; i += 1) {
+      var match = PHONE_COUNTRY_MATCHES[i];
+      if (compact.indexOf(match.dialCode) === 0) {
+        var localNumber = value.replace(new RegExp("^\\s*" + match.dialCode.replace("+", "\\+") + "\\s*"), "").trim();
+        return {
+          phoneCountryValue: match.value,
+          localNumber: localNumber
+        };
+      }
+    }
+
+    return { phoneCountryValue: "", localNumber: value };
   }
 
   function pickStrings(translations, language) {
@@ -448,14 +775,14 @@
         thankYou: pick(["bidding", "thankYou"], "Awaiting payment verification"),
         step1: pick(["bidding", "step1"], "Select Amount"),
         step2: pick(["bidding", "step2"], "Details"),
-        step3: pick(["bidding", "step3"], "Invoice"),
+        step3: pick(["bidding", "step3"], "Payment"),
         bidSummary: pick(["bidding", "bidSummary"], "Bid Summary"),
         itemDetails: pick(["bidding", "itemDetails"], "Item Details"),
         currentBid: pick(["bidding", "currentBid"], "Current Bid"),
         yourBid: pick(["bidding", "yourBid"], "Your Bid"),
-        authorizationHold: pick(["bidding", "authorizationHold"], "Settlement Method"),
-        dueNow: pick(["bidding", "dueNow"], "Transfer Amount"),
-        authHoldDescription: pick(["bidding", "authHoldDescription"], "Payment on this step is made by bank transfer using the invoice details below. The bid is submitted only after transfer confirmation."),
+        authorizationHold: pick(["bidding", "authorizationHold"], "Authorization Hold"),
+        dueNow: pick(["bidding", "dueNow"], "Temporary Hold"),
+        authHoldDescription: pick(["bidding", "authHoldDescription"], "We will verify your card has available balance. No funds will be charged and will be returned within a few minutes."),
         selectBidAmount: pick(["bidding", "selectBidAmount"], "Select Your Bid Amount"),
         minimumBid: pick(["bidding", "minimumBid"], "Minimum Bid"),
         selectPreset: pick(["bidding", "selectPreset"], "Select a preset amount or enter a custom bid"),
@@ -463,6 +790,13 @@
         enterCustomBid: pick(["bidding", "enterCustomBid"], "Enter custom bid"),
         confirmBid: pick(["bidding", "confirmBid"], "Confirm Bid"),
         bidderInformation: pick(["bidding", "bidderInformation"], "Bidder Information"),
+        contactInformation: pick(["bidding", "contactInformation"], "Contact Information"),
+        shippingAddress: pick(["bidding", "shippingAddress"], "Shipping Address"),
+        phoneNumber: pick(["bidding", "phoneNumber"], "Phone Number"),
+        streetAddress: pick(["bidding", "streetAddress"], "Street Address"),
+        postalCode: pick(["bidding", "postalCode"], "Postal Code"),
+        edit: pick(["bidding", "edit"], "Edit"),
+        saveDetails: pick(["bidding", "saveDetails"], "Save Details"),
         firstName: pick(["bidding", "firstName"], "First Name"),
         lastName: pick(["bidding", "lastName"], "Last Name"),
         phone: pick(["bidding", "phone"], "Phone"),
@@ -471,7 +805,7 @@
         addressLine1: pick(["bidding", "addressLine1"], "Street Address"),
         city: pick(["bidding", "city"], "City"),
         country: pick(["bidding", "country"], "Country"),
-        continueToPayment: pick(["bidding", "continueToPayment"], "Continue to Invoice"),
+        continueToPayment: pick(["bidding", "continueToPayment"], "Continue to Payment"),
         selectPaymentMethod: pick(["bidding", "selectPaymentMethod"], "Pay by Bank Transfer"),
         creditOrDebitCard: pick(["bidding", "creditOrDebitCard"], "Payment by invoice"),
         visaMastercard: pick(["bidding", "visaMastercard"], "Transfer to the bank details below"),
@@ -522,9 +856,150 @@
       "@media (min-width:640px){.bidding-status-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}" +
       ".bidding-error{color:#dc2626;font-size:12px;margin-top:6px;}" +
       ".bidding-field.invalid{border-color:#dc2626;}" +
+      ".bidding-muted-input{background:#f3f4f6;}" +
+      ".PhoneInput{align-items:center;display:flex;}" +
+      ".PhoneInputCountry{position:relative;border-right:1px solid hsl(var(--border));align-items:center;margin-right:.5rem;padding-right:.75rem;display:flex;min-width:4.75rem;gap:.35rem;}" +
+      ".PhoneInputCountryIcon{width:1.5rem;height:1rem;flex:0 0 auto;}" +
+      ".PhoneInputCountryIcon--border{background-color:#0000001a;box-shadow:0 0 0 1px #00000080,inset 0 0 0 1px #00000080;}" +
+      ".PhoneInputCountryIconImg{width:100%;height:100%;display:block;object-fit:cover;}" +
+      ".PhoneInputCountryCode{font-size:.875rem;line-height:1.25rem;white-space:nowrap;color:inherit;}" +
+      ".PhoneInputCountrySelect{z-index:2;opacity:0;cursor:pointer;border:0;width:100%;height:100%;position:absolute;top:0;left:0;}" +
+      ".PhoneInputCountrySelectArrow{pointer-events:none;margin-left:auto;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #6b7280;}" +
+      ".PhoneInputInput{flex:1;min-width:0;border:0;background:transparent;padding:0;outline:none;font-size:.875rem;line-height:1.25rem;}" +
+      ".PhoneInputCountrySelect:focus+.PhoneInputCountryIcon{outline:2px solid hsl(var(--ring));outline-offset:2px;}" +
+      ".bidding-country-wrap{position:relative;}" +
+      ".bidding-country-native{position:absolute;inset:0;opacity:0;cursor:pointer;}" +
       ".bidding-choice.active{border-color:hsl(var(--foreground));}" +
       "@media (min-width:1024px){.bidding-desktop-layout{display:grid;grid-template-columns:minmax(0,1fr) 430px;align-items:start;gap:.35rem;}.bidding-main-col{grid-column:1;grid-row:1;width:auto;min-width:0;order:0 !important;align-self:start;}.bidding-side-col{grid-column:2;grid-row:1;width:auto;position:static;top:auto;order:0 !important;align-self:start;}}";
     document.head.appendChild(style);
+  }
+
+  function renderContactCard(strings) {
+    return `
+      <div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm">
+        <div data-slot="card-content" class="p-4 space-y-3">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-medium">${escapeHtml(strings.bidding.contactInformation)}</h3>
+            <button data-slot="button" data-bid-edit-section="contact" class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground rounded-md has-[>svg]:px-2.5 h-8 px-3 gap-1.5" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>
+              Edit
+            </button>
+          </div>
+          <div data-contact-view class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3"><span class="text-muted-foreground">Name:</span><span class="font-medium" data-summary-field="name">-</span></div>
+            <div class="flex justify-between gap-3"><span class="text-muted-foreground">Email:</span><span class="font-medium break-all" data-summary-field="email">-</span></div>
+            <div class="flex justify-between gap-3"><span class="text-muted-foreground">${escapeHtml(strings.bidding.phoneNumber)}:</span><span class="font-medium" data-summary-field="phone">-</span></div>
+          </div>
+          <div data-contact-form class="space-y-3" style="display:none">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="firstName">${escapeHtml(strings.bidding.firstName)} *</label>
+                <input id="firstName" data-required data-field="firstName" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
+                <div class="bidding-error hidden"></div>
+              </div>
+              <div>
+                <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="lastName">${escapeHtml(strings.bidding.lastName)} *</label>
+                <input id="lastName" data-required data-field="lastName" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
+                <div class="bidding-error hidden"></div>
+              </div>
+            </div>
+            <div>
+              <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="email">${escapeHtml(strings.bidding.email)} *</label>
+              <input id="email" data-required data-email data-field="email" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" placeholder="${escapeHtml(strings.bidding.emailPlaceholder)}" type="email" value="">
+              <div class="bidding-error hidden"></div>
+            </div>
+            <div>
+              <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="phone">${escapeHtml(strings.bidding.phoneNumber)} *</label>
+              <div class="flex h-9 w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring PhoneInput">
+                <div class="PhoneInputCountry">
+                  <select aria-label="Phone number country" data-field="phoneCountry" class="PhoneInputCountrySelect">${renderSelectOptions(PHONE_COUNTRIES, "+49|Germany")}</select>
+                  <div aria-hidden="true" class="PhoneInputCountryIcon PhoneInputCountryIcon--border">
+                    <img data-phone-flag class="PhoneInputCountryIconImg" alt="Germany" src="${escapeHtml(getPhoneFlagUrl("DE"))}">
+                  </div>
+                  <span data-phone-code class="PhoneInputCountryCode">+49</span>
+                  <div class="PhoneInputCountrySelectArrow"></div>
+                </div>
+                <input id="phone" autocomplete="tel" data-required data-field="phone" class="bidding-field PhoneInputInput" type="tel" value="">
+              </div>
+              <div class="bidding-error hidden"></div>
+            </div>
+            <button data-slot="button" data-bid-save-section="contact" class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive bg-primary text-primary-foreground hover:bg-primary/90 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 w-full" type="button">Save</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderShippingCard(strings) {
+    return `
+      <div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm">
+        <div data-slot="card-content" class="p-4 space-y-3">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-medium">${escapeHtml(strings.bidding.shippingAddress)}</h3>
+            <button data-slot="button" data-bid-edit-section="shipping" class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground rounded-md has-[>svg]:px-2.5 h-8 px-3 gap-1.5" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>
+              Edit
+            </button>
+          </div>
+          <div data-shipping-view class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3"><span class="text-muted-foreground">${escapeHtml(strings.bidding.streetAddress)}:</span><span class="font-medium text-right" data-summary-field="address">-</span></div>
+            <div class="flex justify-between gap-3"><span class="text-muted-foreground">${escapeHtml(strings.bidding.city)}:</span><span class="font-medium text-right" data-summary-field="city">-</span></div>
+            <div class="flex justify-between gap-3"><span class="text-muted-foreground">${escapeHtml(strings.bidding.postalCode)}:</span><span class="font-medium text-right" data-summary-field="postalCode">-</span></div>
+            <div class="flex justify-between gap-3"><span class="text-muted-foreground">${escapeHtml(strings.bidding.country)}:</span><span class="font-medium text-right" data-summary-field="country">-</span></div>
+          </div>
+          <div data-shipping-form class="space-y-3" style="display:none">
+            <div>
+              <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="streetAddress">${escapeHtml(strings.bidding.streetAddress)} *</label>
+              <input id="streetAddress" data-required data-field="address" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
+              <div class="bidding-error hidden"></div>
+            </div>
+            <div>
+              <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="addressLine2">Address Line 2 (Optional)</label>
+              <input id="addressLine2" data-field="addressLine2" class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="city">${escapeHtml(strings.bidding.city)} *</label>
+                <input id="city" data-required data-field="city" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
+                <div class="bidding-error hidden"></div>
+              </div>
+              <div>
+                <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="postalCode">${escapeHtml(strings.bidding.postalCode)} *</label>
+                <input id="postalCode" data-required data-field="postalCode" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
+                <div class="bidding-error hidden"></div>
+              </div>
+            </div>
+            <div>
+              <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="country">${escapeHtml(strings.bidding.country)} *</label>
+              <div class="bidding-country-wrap">
+                <button data-slot="popover-trigger" class="inline-flex items-center gap-2 whitespace-nowrap rounded-md transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive border shadow-xs hover:bg-accent hover:text-accent-foreground px-4 py-2 has-[>svg]:px-3 w-full justify-between h-9 text-sm font-normal bg-transparent" role="combobox" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="bidding-country-select">
+                  <span data-country-label>Select country...</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 h-4 w-4 shrink-0 opacity-50"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+                </button>
+                <select id="country" data-required data-field="country" class="bidding-country-native" aria-label="Country">${renderSelectOptions(COUNTRIES, "", "Select country...")}</select>
+              </div>
+              <div class="bidding-error hidden"></div>
+            </div>
+            <button data-slot="button" data-bid-save-section="shipping" class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive bg-primary text-primary-foreground hover:bg-primary/90 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 w-full" type="button">Save</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderBidDetailsStep(strings) {
+    return `
+      <div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="2" style="display:none">
+        <div data-slot="card-content" class="p-4 md:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-serif text-lg md:text-xl">${escapeHtml(strings.bidding.bidderInformation)}</h2>
+            <button type="button" data-bid-back data-slot="button" class="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-xs md:text-sm">${escapeHtml(strings.common.back)}</button>
+          </div>
+          <form class="space-y-4" data-bid-details-form>
+            ${renderContactCard(strings)}
+            ${renderShippingCard(strings)}
+            <button type="button" data-bid-next data-slot="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-6 w-full h-10 md:h-12 text-sm md:text-base">${escapeHtml(strings.bidding.continueToPayment)}</button>
+          </form>
+        </div>
+      </div>`;
   }
 
   function renderNotFound(main, text) {
@@ -544,7 +1019,8 @@
 
     main.innerHTML =
       '<div class="bidding-page">' +
-      '<section class="container mx-auto px-4 py-4 md:py-6"><div class="max-w-6xl mx-auto">' +
+      '<div class="border-b border-border/30"><div class="container mx-auto px-4 py-2"><a class="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors" href="../lot/index.html?slug=' + encodeURIComponent(lot.slug || "") + '"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="m15 18-6-6 6-6"></path></svg>' + escapeHtml(strings.bidding.backToLot) + '</a></div></div>' +
+      '<section class="container mx-auto px-4 py-4 md:py-6"><div class="max-w-5xl mx-auto">' +
       '<div class="text-center mb-4 md:mb-6"><h1 class="font-serif text-xl md:text-2xl mb-1">' + escapeHtml(strings.bidding.title) + '</h1><p class="text-xs md:text-sm text-muted-foreground">' + escapeHtml(strings.bidding.subtitle) + '</p></div>' +
       '<div class="flex items-center justify-center gap-2 md:gap-4 mb-6 md:mb-8">' +
       '<div class="flex items-center gap-1.5 md:gap-2"><div class="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium bg-foreground text-background" data-bid-step-pill="1">1</div><span class="text-xs md:text-sm font-medium hidden sm:inline">' + escapeHtml(strings.bidding.step1) + '</span></div>' +
@@ -560,8 +1036,8 @@
         return '<button type="button" class="bidding-choice p-3 rounded-lg border-2 transition-all text-left border-border hover:border-foreground/50' + (index === 0 ? ' active' : '') + '" data-bid-choice="' + amount + '"><p class="text-sm md:text-base font-semibold">' + formatCurrency(amount) + '</p><p class="text-[10px] md:text-xs text-muted-foreground">+' + formatCurrency(amount - minimumBid) + '</p></button>';
       }).join("") +
       '</div></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div><label class="text-sm md:text-base mb-2 block" for="bid-custom">' + escapeHtml(strings.bidding.customAmount) + '</label><div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-base md:text-lg font-medium">€</span><input id="bid-custom" data-bid-custom class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-7 h-10 md:h-12 text-base md:text-lg" type="number" min="' + minimumBid + '" step="50" placeholder="' + escapeHtml(strings.bidding.enterCustomBid) + '"/><div class="bidding-error hidden" data-bid-custom-error></div></div></div><button type="button" data-bid-next data-slot="button" class="bidding-primary-btn">' + escapeHtml(strings.bidding.confirmBid) + '</button></div></div></div>' +
-      '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="2" style="display:none"><div data-slot="card-content" class="p-4 md:p-6"><div class="flex items-center justify-between mb-4"><h2 class="font-serif text-lg md:text-xl">' + escapeHtml(strings.bidding.bidderInformation) + '</h2><button type="button" data-bid-back data-slot="button" class="bidding-secondary-btn">' + escapeHtml(strings.common.back) + '</button></div><form class="space-y-4" data-bid-details-form><div class="space-y-3 md:space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4"><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-first-name">' + escapeHtml(strings.bidding.firstName) + ' *</label><input id="bid-first-name" data-required data-field="firstName" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" value=""><div class="bidding-error hidden"></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-last-name">' + escapeHtml(strings.bidding.lastName) + ' *</label><input id="bid-last-name" data-required data-field="lastName" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" value=""><div class="bidding-error hidden"></div></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-email">' + escapeHtml(strings.bidding.email) + ' *</label><div class="relative"><input id="bid-email" data-required data-email data-field="email" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" placeholder="' + escapeHtml(strings.bidding.emailPlaceholder) + '" type="email" value=""></div><div class="bidding-error hidden"></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-phone">' + escapeHtml(strings.bidding.phone) + ' *</label><div class="flex h-9 md:h-10 w-full rounded-md border bg-background px-3 py-2 text-sm border-input"><select data-field="phoneCountry" class="mr-2 max-w-[110px] bg-transparent outline-none">' + renderSelectOptions(PHONE_COUNTRIES, "+49|Germany") + '</select><input id="bid-phone" data-required data-field="phone" class="flex-1 bg-transparent outline-none" type="tel" value=""></div><div class="bidding-error hidden"></div></div><div class="space-y-3"><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-country">' + escapeHtml(strings.bidding.country) + ' *</label><select id="bid-country" data-required data-field="country" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm">' + renderSelectOptions(COUNTRIES, "Germany", "Select country...") + '</select><div class="bidding-error hidden"></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-address">' + escapeHtml(strings.bidding.addressLine1) + ' *</label><input id="bid-address" data-required data-field="address" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" placeholder="Hauptstra' + String.fromCharCode(223) + 'e 123" value=""><div class="bidding-error hidden"></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-address-2">Address Line 2 (Optional)</label><input id="bid-address-2" data-field="addressLine2" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" placeholder="Apartment, building, etc." value=""></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4"><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-city">' + escapeHtml(strings.bidding.city) + ' *</label><input id="bid-city" data-required data-field="city" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" placeholder="Berlin" value=""><div class="bidding-error hidden"></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-state">State/Province *</label><select id="bid-state" data-required data-field="state" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm"><option value="">Select...</option><option value="Berlin">Berlin</option><option value="Bavaria">Bavaria</option><option value="Hamburg">Hamburg</option><option value="Hesse">Hesse</option><option value="North Rhine-Westphalia">North Rhine-Westphalia</option></select><div class="bidding-error hidden"></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="bid-postal">Postal Code *</label><input id="bid-postal" data-required data-field="postalCode" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" placeholder="10115" value=""><div class="bidding-error hidden"></div></div></div><button type="button" data-bid-next data-slot="button" class="bidding-primary-btn">' + escapeHtml(strings.bidding.continueToPayment) + '</button></div></form></div></div>' +
-      '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="3" style="display:none"><div data-slot="card-content" class="p-4 md:p-6"><div class="flex items-center justify-between mb-4"><h2 class="font-serif text-lg md:text-xl">' + escapeHtml(strings.bidding.selectPaymentMethod) + '</h2><button type="button" data-bid-back data-slot="button" class="bidding-secondary-btn">' + escapeHtml(strings.common.back) + '</button></div><div class="space-y-4"><div class="rounded-xl border border-border bg-muted/30 p-4 md:p-5"><div class="flex items-start justify-between gap-3"><div><p class="text-base md:text-lg font-semibold">' + escapeHtml(strings.bidding.creditOrDebitCard) + '</p><p class="text-sm text-muted-foreground mt-1">' + escapeHtml(strings.bidding.visaMastercard) + '</p></div><div class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">' + escapeHtml(strings.bidding.fastAndSecure) + '</div></div><div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Invoice number</p><p class="font-semibold" data-invoice-number>' + escapeHtml(invoiceNumber) + '</p></div><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Transfer amount</p><p class="font-semibold" data-summary-step3-amount>' + formatCurrency(holdAmount) + '</p></div></div><p class="mt-4 text-sm text-muted-foreground leading-relaxed">' + escapeHtml(strings.bidding.securePaymentDescription) + '</p></div><div class="rounded-xl border border-amber-200 bg-amber-50/80 p-4"><p class="text-sm font-semibold text-amber-950">Invoice and bank details</p><div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm"><div class="rounded-lg bg-white/80 border border-amber-200 p-3"><p class="text-xs uppercase tracking-wide text-amber-700 mb-1">Beneficiary</p><p class="font-semibold text-amber-950">Auctio Holdings Ltd.</p></div><div class="rounded-lg bg-white/80 border border-amber-200 p-3"><p class="text-xs uppercase tracking-wide text-amber-700 mb-1">Bank</p><p class="font-semibold text-amber-950">Deutsche Bank AG, Berlin</p></div><div class="rounded-lg bg-white/80 border border-amber-200 p-3"><p class="text-xs uppercase tracking-wide text-amber-700 mb-1">IBAN</p><p class="font-semibold text-amber-950">DE89 3704 0044 0532 0130 00</p></div><div class="rounded-lg bg-white/80 border border-amber-200 p-3"><p class="text-xs uppercase tracking-wide text-amber-700 mb-1">SWIFT / BIC</p><p class="font-semibold text-amber-950">DEUTDEBBXXX</p></div><div class="rounded-lg bg-white/80 border border-amber-200 p-3"><p class="text-xs uppercase tracking-wide text-amber-700 mb-1">Reference</p><p class="font-semibold text-amber-950" data-invoice-reference-preview>' + escapeHtml(invoiceNumber) + '</p></div><div class="rounded-lg bg-white/80 border border-amber-200 p-3"><p class="text-xs uppercase tracking-wide text-amber-700 mb-1">Payment deadline</p><p class="font-semibold text-amber-950">Immediate confirmation required</p></div></div><p class="mt-4 text-sm text-amber-900">Send the transfer using these details, then confirm the sender details below. The bid remains subject to payment verification.</p><div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3"><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="invoice-recipient">Sender full name *</label><input id="invoice-recipient" data-invoice-required data-invoice-field="recipient" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" placeholder="Full legal name" value=""><div class="bidding-error hidden"></div></div><div><label class="flex items-center gap-2 font-medium text-xs md:text-sm" for="invoice-reference">Transfer reference *</label><input id="invoice-reference" data-invoice-required data-invoice-field="reference" class="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 h-9 md:h-10 text-sm" placeholder="' + escapeHtml(invoiceNumber) + '" value="' + escapeHtml(invoiceNumber) + '"><div class="bidding-error hidden"></div></div></div><label class="mt-4 flex items-start gap-3 rounded-lg border border-amber-300 bg-white/80 p-3 text-sm text-amber-950"><input type="checkbox" data-bid-invoice-confirm class="mt-1 h-4 w-4 rounded border-border"><span>' + escapeHtml(strings.bidding.agreeToTerms) + ' <a href="../terms.html" class="font-medium text-foreground underline underline-offset-4">' + escapeHtml(strings.bidding.termsOfSale) + '</a>.</span></label><div class="bidding-error hidden" data-bid-invoice-error></div></div><button type="button" data-bid-submit data-slot="button" class="bidding-primary-btn">' + escapeHtml(strings.bidding.completePayment) + '</button></div></div></div>' +
+      renderBidDetailsStep(strings) +
+      '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="3" style="display:none"><div data-slot="card-content" class="p-4 md:p-6"><div class="flex items-center justify-between mb-4"><h2 class="font-serif text-lg md:text-xl">' + escapeHtml(strings.bidding.selectPaymentMethod) + '</h2><button type="button" data-bid-back data-slot="button" class="bidding-secondary-btn">' + escapeHtml(strings.common.back) + '</button></div><div class="space-y-4"><div class="rounded-xl border border-border bg-muted/30 p-4 md:p-5"><div class="flex items-start justify-between gap-3"><div><p class="text-base md:text-lg font-semibold">' + escapeHtml(strings.bidding.creditOrDebitCard) + '</p><p class="text-sm text-muted-foreground mt-1">' + escapeHtml(strings.bidding.visaMastercard) + '</p></div><div class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">' + escapeHtml(strings.bidding.fastAndSecure) + '</div></div><div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Invoice number</p><p class="font-semibold" data-invoice-number>' + escapeHtml(invoiceNumber) + '</p></div><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Transfer amount</p><p class="font-semibold" data-summary-step3-amount>' + formatCurrency(holdAmount) + '</p></div></div><p class="mt-4 text-sm text-muted-foreground leading-relaxed">' + escapeHtml(strings.bidding.securePaymentDescription) + '</p></div><div class="rounded-xl border border-gray-200 bg-gray-50 p-5" data-payment-info-card><div class="flex items-start gap-4 mb-4"><div style="min-width:40px;height:40px;background:#111827;border-radius:12px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div><p class="font-semibold text-gray-900 text-base">Payment Instructions</p><p class="text-sm text-gray-500 mt-0.5">Sent to your email after bid confirmation</p></div></div><div class="rounded-lg bg-white border border-gray-200 p-4 text-sm text-gray-700 leading-relaxed" data-payment-info-text>Your bank transfer details — beneficiary name, IBAN, SWIFT/BIC and payment reference — will be sent to your email address within 2 hours of confirming your bid.</div><div class="mt-3 grid grid-cols-2 gap-2"><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Sent within 2 hours</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Secure & verified</div></div></div><label class="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm cursor-pointer"><input type="checkbox" data-bid-invoice-confirm class="mt-0.5 h-4 w-4 rounded border-gray-300" style="flex-shrink:0"><span class="text-gray-700 leading-relaxed">I confirm my bid and agree to complete payment within 48 hours of receiving the payment instructions sent to my email address.</span></label><div class="bidding-error hidden" data-bid-invoice-error></div><button type="button" data-bid-submit data-slot="button" class="bidding-primary-btn">Confirm Bid</button></div></div></div>' +
       '</div><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm hidden" data-bid-success><div class="bidding-success"><div class="bidding-success-banner rounded-[28px] border border-slate-200 px-5 py-6 sm:px-7 sm:py-7"><div class="bidding-success-layout"><div class="bidding-success-icon inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="10"></circle></svg></div><div class="min-w-0 flex-1"><p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">Payment Status</p><h2 class="mt-2 font-serif text-3xl leading-tight text-slate-900 sm:text-4xl">' + escapeHtml(strings.bidding.thankYou) + '</h2><p class="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-[15px]">We received your payment confirmation and placed the bid into manual review. Our finance team will verify the transfer reference before the bid becomes fully approved.</p><div class="bidding-status-grid mt-5"><div class="bidding-status-card rounded-2xl p-4 sm:p-5"><span class="bidding-status-label">Current Status</span><p class="bidding-status-value">Awaiting payment confirmation</p></div><div class="bidding-status-card rounded-2xl p-4 sm:p-5"><span class="bidding-status-label">Settlement Method</span><p class="bidding-status-value">Bank transfer by invoice</p></div></div><div class="mt-6 flex flex-col gap-3 sm:flex-row"><a href="../lot/index.html?slug=' + encodeURIComponent(lot.slug || "") + '" class="bidding-primary-btn sm:w-auto">' + escapeHtml(strings.bidding.backToLot) + '</a><button type="button" class="bidding-inline-link">Payment under review</button></div></div></div></div></div></div>' +
       '</div></div></section></div>';
 
@@ -590,65 +1066,220 @@
     var invoiceAmountNode = document.querySelector("[data-summary-step3-amount]");
     var invoiceConfirm = document.querySelector("[data-bid-invoice-confirm]");
     var invoiceError = document.querySelector("[data-bid-invoice-error]");
+    var editButtons = Array.from(document.querySelectorAll("[data-bid-edit-section]"));
+    var summaryFieldNodes = Array.from(document.querySelectorAll("[data-summary-field]"));
+    var selectedPaymentMethod = 'iban';
+    var isSubmitting = false;
+
+    function getFieldValue(name) {
+      var field = document.querySelector('[data-field="' + name + '"]');
+      return field ? String(field.value || "").trim() : "";
+    }
+
+    function formatDisplayValue(value) {
+      return value || "-";
+    }
+
+    function getDisplayName() {
+      return [getFieldValue("firstName"), getFieldValue("lastName")].filter(Boolean).join(" ");
+    }
+
+    function getDisplayPhone() {
+      var parts = getPhoneCountryParts(getFieldValue("phoneCountry"));
+      var phone = getFieldValue("phone");
+      if (!parts.dialCode && !phone) return "";
+      var compactPhone = phone.replace(/[^\d+]/g, "");
+      if (parts.dialCode && compactPhone.indexOf(parts.dialCode) === 0) return phone;
+      return [parts.dialCode, phone].filter(Boolean).join(" ").trim();
+    }
+
+    function updateDetailsSummary() {
+      summaryFieldNodes.forEach(function (node) {
+        var key = node.getAttribute("data-summary-field");
+        if (key === "name") node.textContent = formatDisplayValue(getDisplayName());
+        if (key === "email") node.textContent = formatDisplayValue(getFieldValue("email"));
+        if (key === "phone") node.textContent = formatDisplayValue(getDisplayPhone());
+        if (key === "address") {
+          node.textContent = formatDisplayValue([getFieldValue("address"), getFieldValue("addressLine2")].filter(Boolean).join(", "));
+        }
+        if (key === "city") node.textContent = formatDisplayValue(getFieldValue("city"));
+        if (key === "postalCode") node.textContent = formatDisplayValue(getFieldValue("postalCode"));
+        if (key === "country") node.textContent = formatDisplayValue(getFieldValue("country"));
+      });
+    }
+
+    function syncCountryLabel() {
+      var countryField = document.querySelector('[data-field="country"]');
+      var countryLabel = document.querySelector('[data-country-label]');
+      if (!countryLabel) return;
+      var value = countryField ? String(countryField.value || "").trim() : "";
+      countryLabel.textContent = value || "Select country...";
+    }
+
+    function syncPhoneCountryDisplay() {
+      var phoneCountryField = document.querySelector('[data-field="phoneCountry"]');
+      var phoneCodeNode = document.querySelector("[data-phone-code]");
+      var phoneFlagNode = document.querySelector("[data-phone-flag]");
+      if (!phoneCountryField) return;
+      var parts = getPhoneCountryParts(phoneCountryField.value);
+      var flagUrl = getPhoneFlagUrl(parts.iso);
+      if (phoneCodeNode) phoneCodeNode.textContent = parts.dialCode || "+00";
+      if (phoneFlagNode) {
+        phoneFlagNode.alt = parts.country || "Country flag";
+        if (flagUrl) {
+          phoneFlagNode.src = flagUrl;
+          phoneFlagNode.style.display = "block";
+        } else {
+          phoneFlagNode.removeAttribute("src");
+          phoneFlagNode.style.display = "none";
+        }
+      }
+      phoneCountryField.title = parts.country || "";
+    }
+
 
     function updateSummary() {
       if (summaryBidNode) summaryBidNode.textContent = formatCurrency(selectedBid);
-      if (summaryHoldNode) summaryHoldNode.textContent = strings.bidding.creditOrDebitCard;
-      if (summaryDueNode) summaryDueNode.textContent = formatCurrency(selectedBid);
+      if (summaryHoldNode) summaryHoldNode.textContent = formatCurrency(holdAmount);
+      if (summaryDueNode) summaryDueNode.textContent = formatCurrency(holdAmount);
       if (invoiceAmountNode) invoiceAmountNode.textContent = formatCurrency(selectedBid);
       if (invoiceReferencePreviewNode) {
         invoiceReferencePreviewNode.textContent = (document.querySelector('[data-invoice-field="reference"]') || {}).value || (invoiceNumberNode ? invoiceNumberNode.textContent : "");
       }
       invoiceCommitmentAmount = selectedBid;
+      updateDetailsSummary();
     }
 
-    function submitBid() {
-      stepNodes.forEach(function (node) {
-        node.classList.add("hidden");
-        node.style.display = "none";
-      });
-      if (successCard) {
-        successCard.classList.remove("hidden");
-        successCard.style.display = "block";
-        successCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    function setSubmittingState(nextValue) {
+      isSubmitting = Boolean(nextValue);
+      if (!submitButton) return;
+      submitButton.disabled = isSubmitting;
+      submitButton.style.opacity = isSubmitting ? "0.7" : "";
+      submitButton.style.cursor = isSubmitting ? "wait" : "";
+    }
+
+    function isMissingBidColumn(error, columnName) {
+      if (!error) return false;
+      var message = String(error.message || error.details || error.hint || "");
+      return message.indexOf("Could not find the '" + columnName + "' column of 'bids'") !== -1 ||
+        message.indexOf("column bids." + columnName + " does not exist") !== -1;
+    }
+
+    async function insertBidRecord(bidPayload) {
+      if (!window._supabase) throw new Error("Bidding service is unavailable.");
+
+      var result = await window._supabase
+        .from("bids")
+        .insert(bidPayload);
+
+      if (result.error && isMissingBidColumn(result.error, "payment_method")) {
+        var fallbackPayload = Object.assign({}, bidPayload);
+        delete fallbackPayload.payment_method;
+        result = await window._supabase
+          .from("bids")
+          .insert(fallbackPayload);
       }
 
-      if (window.SupabaseAPI && lot && lot.id) {
-        window._supabase && window._supabase.auth.getSession().then(function (res) {
-          var session = res.data && res.data.session;
-          if (!session) return;
-          window.SupabaseAPI.addStoredBid({
-            id: 'bid-' + lot.id + '-' + Date.now(),
-            lotId: lot.id,
-            lotSlug: lot.slug || '',
-            lotTitle: lot.title || 'Lot',
-            lotImage: (lot.lot_images && lot.lot_images[0] && (lot.lot_images[0].image_url || lot.lot_images[0].image)) || '',
-            bidAmount: selectedBid,
-            currentBid: selectedBid,
-            status: 'active',
-            paymentMethod: 'invoice',
-            invoiceMode: 'bank_transfer',
-            invoiceAmount: invoiceCommitmentAmount,
-            invoiceNumber: (invoiceNumberNode && invoiceNumberNode.textContent) || '',
-            invoiceRecipient: (document.querySelector('[data-invoice-field="recipient"]') || {}).value || '',
-            invoiceReference: (document.querySelector('[data-invoice-field="reference"]') || {}).value || '',
-            invoiceAuthorizedAt: new Date().toISOString(),
-            transferStatus: 'pending_verification',
-            placedAt: new Date().toISOString(),
-          }).catch(function () {});
-          window._supabase.from("bids").insert({
-            user_id: session.user.id,
-            lot_id: lot.id,
-            amount: selectedBid,
-            status: "active",
-            is_simulated: false,
-            created_at: new Date().toISOString(),
-          }).then(function () {}).catch(function () {});
-        }).catch(function () {});
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to save your bid.");
+      }
+    }
+
+    async function syncBidderProfile(session) {
+      if (!window._supabase || !session || !session.user) return;
+      var profileData = {
+        id: session.user.id,
+        email: (document.querySelector('[data-field="email"]') || {}).value || session.user.email || '',
+        first_name: (document.querySelector('[data-field="firstName"]') || {}).value || '',
+        last_name: (document.querySelector('[data-field="lastName"]') || {}).value || '',
+        phone: (document.querySelector('[data-field="phone"]') || {}).value || '',
+        country: (document.querySelector('[data-field="country"]') || {}).value || '',
+        city: (document.querySelector('[data-field="city"]') || {}).value || '',
+        address: (document.querySelector('[data-field="address"]') || {}).value || '',
+        state: (document.querySelector('[data-field="state"]') || {}).value || '',
+        postal_code: (document.querySelector('[data-field="postalCode"]') || {}).value || '',
+      };
+
+      var profileRes = await window._supabase.from('profiles').upsert(profileData, { onConflict: 'id' });
+      if (profileRes && profileRes.error) {
+        throw new Error(profileRes.error.message || "Failed to save profile.");
+      }
+    }
+
+    async function submitBid() {
+      if (isSubmitting) return;
+      if (invoiceError) invoiceError.classList.add("hidden");
+      setSubmittingState(true);
+
+      try {
+        if (!window.SupabaseAPI || !window._supabase || !lot || !lot.id) {
+          throw new Error("Bidding service is unavailable.");
+        }
+
+        var sessionRes = await window._supabase.auth.getSession();
+        var session = sessionRes.data && sessionRes.data.session;
+        if (!session || !session.user) {
+          throw new Error("Your session expired. Please sign in again before placing a bid.");
+        }
+
+        var nowIso = new Date().toISOString();
+        var bidId = 'bid-' + lot.id + '-' + Date.now();
+        await insertBidRecord({
+          id: bidId,
+          user_id: session.user.id,
+          lot_id: lot.id,
+          amount: selectedBid,
+          status: "active",
+          is_simulated: false,
+          payment_method: selectedPaymentMethod,
+          created_at: nowIso,
+        });
+
+        try {
+          await syncBidderProfile(session);
+        } catch (_profileError) {}
+
+        await window.SupabaseAPI.addStoredBid({
+          id: bidId,
+          lotId: lot.id,
+          lotSlug: lot.slug || '',
+          lotTitle: lot.title || 'Lot',
+          lotImage: (lot.lot_images && lot.lot_images[0] && (lot.lot_images[0].image_url || lot.lot_images[0].image)) || '',
+          bidAmount: selectedBid,
+          currentBid: selectedBid,
+          status: 'active',
+          paymentMethod: selectedPaymentMethod,
+          invoiceMode: selectedPaymentMethod === 'revolut' ? 'revolut' : 'bank_transfer',
+          invoiceAmount: invoiceCommitmentAmount,
+          invoiceNumber: (invoiceNumberNode && invoiceNumberNode.textContent) || '',
+          invoiceRecipient: (document.querySelector('[data-invoice-field="recipient"]') || {}).value || '',
+          invoiceReference: (document.querySelector('[data-invoice-field="reference"]') || {}).value || '',
+          invoiceAuthorizedAt: nowIso,
+          transferStatus: 'pending_verification',
+          placedAt: nowIso,
+        });
+
+        stepNodes.forEach(function (node) {
+          node.classList.add("hidden");
+          node.style.display = "none";
+        });
+        if (successCard) {
+          successCard.classList.remove("hidden");
+          successCard.style.display = "block";
+          successCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      } catch (error) {
+        if (invoiceError) {
+          invoiceError.textContent = error && error.message ? error.message : "Failed to submit your bid. Please try again.";
+          invoiceError.classList.remove("hidden");
+        }
+      } finally {
+        setSubmittingState(false);
       }
     }
 
     function validateStep3() {
+      if (selectedPaymentMethod === 'revolut') return true;
       var valid = true;
       document.querySelectorAll("[data-invoice-required]").forEach(function (field) {
         var wrapper = field.parentElement;
@@ -748,9 +1379,13 @@
       var valid = true;
       document.querySelectorAll("[data-required]").forEach(function (field) {
         var wrapper = field.parentElement;
-        var error = wrapper && wrapper.querySelector(".bidding-error");
+        var error = null;
         var value = String(field.value || "").trim();
         field.classList.remove("invalid");
+        while (wrapper && !error) {
+          error = wrapper.querySelector(".bidding-error");
+          wrapper = wrapper.parentElement;
+        }
         if (error) error.classList.add("hidden");
 
         if (!value) {
@@ -772,6 +1407,15 @@
           }
         }
       });
+      if (!valid) {
+        var contactFields = ['firstName', 'lastName', 'email', 'phone'];
+        var shippingFields = ['address', 'city', 'postalCode', 'country'];
+        var hasContactError = contactFields.some(function(f) { var el = document.querySelector('[data-field="' + f + '"]'); return el && el.classList.contains('invalid'); });
+        var hasShippingError = shippingFields.some(function(f) { var el = document.querySelector('[data-field="' + f + '"]'); return el && el.classList.contains('invalid'); });
+        var PEN2 = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>';
+        if (hasContactError) { openSection('contact'); var b = document.querySelector('[data-bid-edit-section="contact"]'); if (b) b.innerHTML = PEN2 + 'Cancel'; }
+        if (hasShippingError) { openSection('shipping'); var b2 = document.querySelector('[data-bid-edit-section="shipping"]'); if (b2) b2.innerHTML = PEN2 + 'Cancel'; }
+      }
       return valid;
     }
 
@@ -793,6 +1437,59 @@
         updateSummary();
       });
     }
+
+    var PEN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>';
+
+    function openSection(section) {
+      var form = section === 'contact' ? document.querySelector('[data-contact-form]') : document.querySelector('[data-shipping-form]');
+      var view = section === 'contact' ? document.querySelector('[data-contact-view]') : document.querySelector('[data-shipping-view]');
+      if (form) form.style.display = 'block';
+      if (view) view.style.display = 'none';
+    }
+
+    function closeSection(section) {
+      var form = section === 'contact' ? document.querySelector('[data-contact-form]') : document.querySelector('[data-shipping-form]');
+      var view = section === 'contact' ? document.querySelector('[data-contact-view]') : document.querySelector('[data-shipping-view]');
+      if (form) form.style.display = 'none';
+      if (view) view.style.display = '';
+    }
+
+    editButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        var section = button.getAttribute("data-bid-edit-section");
+        var form = section === 'contact' ? document.querySelector('[data-contact-form]') : document.querySelector('[data-shipping-form]');
+        if (!form) return;
+        var isOpen = form.style.display !== 'none';
+        if (isOpen) {
+          closeSection(section);
+          button.innerHTML = PEN_SVG + 'Edit';
+        } else {
+          openSection(section);
+          button.innerHTML = PEN_SVG + 'Cancel';
+        }
+      });
+    });
+
+    document.querySelectorAll('[data-bid-save-section]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var section = btn.getAttribute('data-bid-save-section');
+        updateDetailsSummary();
+        closeSection(section);
+        var editBtn = document.querySelector('[data-bid-edit-section="' + section + '"]');
+        if (editBtn) editBtn.innerHTML = PEN_SVG + 'Edit';
+      });
+    });
+
+    document.querySelectorAll("[data-field]").forEach(function (field) {
+      field.addEventListener("input", updateDetailsSummary);
+      field.addEventListener("change", updateDetailsSummary);
+    });
+
+    document.querySelector('[data-field="country"]')?.addEventListener("change", syncCountryLabel);
+    document.querySelector('[data-field="phoneCountry"]')?.addEventListener("change", function () {
+      syncPhoneCountryDisplay();
+      updateDetailsSummary();
+    });
 
     document.querySelectorAll('[data-invoice-field="reference"]').forEach(function (field) {
       field.addEventListener("input", updateSummary);
@@ -818,11 +1515,12 @@
     if (window.SupabaseAPI) {
       window.SupabaseAPI.getProfile().then(function (profile) {
         if (!profile) return;
+        var phoneParts = splitStoredPhoneValue(profile.phone || "", profile.country || "");
         var fields = {
           firstName: profile.first_name || "",
           lastName: profile.last_name || "",
           email: profile.email || "",
-          phone: profile.phone || "",
+          phone: phoneParts.localNumber || profile.phone || "",
           address: profile.address || "",
           city: profile.city || "",
           state: profile.state || "",
@@ -834,11 +1532,64 @@
           var el = document.querySelector('[data-field="' + key + '"]');
           if (el) el.value = fields[key];
         });
+        var phoneCountryField = document.querySelector('[data-field="phoneCountry"]');
+        if (phoneCountryField) {
+          var phoneCountryValue = phoneParts.phoneCountryValue || findPhoneCountryValueByName(profile.country || "");
+          if (phoneCountryValue) phoneCountryField.value = phoneCountryValue;
+        }
+        var emailField = document.querySelector('[data-field="email"]');
+        if (emailField) {
+          var lockEmail = Boolean(fields.email);
+          emailField.disabled = lockEmail;
+          emailField.classList.toggle("bidding-muted-input", lockEmail);
+        }
+        syncCountryLabel();
+        syncPhoneCountryDisplay();
+        updateDetailsSummary();
+        var PEN3 = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>';
       }).catch(function () {});
     }
 
     updateSummary();
+    syncCountryLabel();
+    syncPhoneCountryDisplay();
     renderStep();
+
+    // ── Payment method selector on step 3 ───────────────────────────────
+    try { (function setupPaymentMethodSelector() {
+      var infoCard = document.querySelector('[data-payment-info-card]');
+      if (!infoCard) return;
+
+      var ibanText = 'Your bank transfer details — beneficiary name, IBAN, SWIFT/BIC and payment reference — will be sent to your email address within 2 hours of confirming your bid.';
+      var revText  = 'Your Revolut payment details will be sent to your email address within 2 hours of confirming your bid. No transfer is needed at this stage.';
+
+      var tabsDiv = document.createElement('div');
+      tabsDiv.style.cssText = 'display:flex;gap:8px;margin-bottom:16px';
+      tabsDiv.innerHTML =
+        '<button type="button" class="pay-method-btn" data-pay-method="iban" style="flex:1;padding:11px 8px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #111827;background:#111827;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s">' +
+        '<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>' +
+        'Bank Transfer</button>' +
+        '<button type="button" class="pay-method-btn" data-pay-method="revolut" style="flex:1;padding:11px 8px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #e5e7eb;background:#f9fafb;color:#374151;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg>' +
+        'Revolut</button>';
+
+      infoCard.parentNode.insertBefore(tabsDiv, infoCard);
+
+      tabsDiv.querySelectorAll('.pay-method-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          selectedPaymentMethod = btn.dataset.payMethod;
+          var isIban = selectedPaymentMethod === 'iban';
+          tabsDiv.querySelectorAll('.pay-method-btn').forEach(function (b) {
+            var active = b.dataset.payMethod === selectedPaymentMethod;
+            b.style.background  = active ? '#111827' : '#f9fafb';
+            b.style.color       = active ? '#fff'    : '#374151';
+            b.style.borderColor = active ? '#111827' : '#e5e7eb';
+          });
+          var infoText = infoCard.querySelector('[data-payment-info-text]');
+          if (infoText) infoText.textContent = isIban ? ibanText : revText;
+        });
+      });
+    })(); } catch (e) { console.warn('Payment method selector error:', e); }
 
     if (submitButton) {
       submitButton.addEventListener("click", function () {
