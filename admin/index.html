@@ -342,6 +342,16 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="admin.js"></script>
+  <script>
+    (function () {
+      var path = String(window.location.pathname || '/');
+      if (path.endsWith('/index.html')) path = path.slice(0, -'index.html'.length);
+      if (!path.endsWith('/')) path += '/';
+
+      var adminScript = document.createElement('script');
+      adminScript.src = path + 'admin.js';
+      document.body.appendChild(adminScript);
+    })();
+  </script>
 </body>
 </html>
