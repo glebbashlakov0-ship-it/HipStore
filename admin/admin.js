@@ -750,6 +750,10 @@
     if (errorDiv) errorDiv.style.display = 'none';
 
     try {
+      if (!window.supabase || !window.supabase.createClient) {
+        throw new Error('Supabase SDK failed to load.');
+      }
+      if (!sb) initSupabase();
       state.adminStatuses = loadAdminStatuses();
       state.leads         = await loadLeads();
       state.filteredLeads = state.leads.slice();
@@ -767,7 +771,6 @@
   // INIT
   // ═══════════════════════════════════════════════════════════════════════
   function init() {
-    initSupabase();
     state.adminStatuses = loadAdminStatuses();
 
     // Init EmailJS
@@ -852,5 +855,9 @@
     if (el) el.addEventListener(event, handler);
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
