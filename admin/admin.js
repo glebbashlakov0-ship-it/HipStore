@@ -66,6 +66,7 @@
   };
 
   var sb = null;
+  var lotCatalogPromise = null;
 
   // ═══════════════════════════════════════════════════════════════════════
   // AUTH
@@ -88,9 +89,9 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // ADMIN STATUSES  (localStorage — сохраняются между сессиями)
+  // LEGACY ADMIN STATUSES  (old localStorage-only storage)
   // ═══════════════════════════════════════════════════════════════════════
-  function loadAdminStatuses() {
+  function loadLegacyAdminStatuses() {
     try {
       return JSON.parse(localStorage.getItem(ADMIN_STATUSES_KEY)) || {};
     } catch (e) {
@@ -98,9 +99,9 @@
     }
   }
 
-  function saveAdminStatuses() {
+  function clearLegacyAdminStatuses() {
     try {
-      localStorage.setItem(ADMIN_STATUSES_KEY, JSON.stringify(state.adminStatuses));
+      localStorage.removeItem(ADMIN_STATUSES_KEY);
     } catch (e) {}
   }
 
@@ -110,7 +111,42 @@
 
   function setLeadStatus(bidId, status) {
     state.adminStatuses[bidId] = status;
-    saveAdminStatuses();
+    var lead = state.leads.find(function (item) { return item.id === bidId; });
+    if (lead) lead.status = status;
+  }
+
+  async function persistLeadStatus(bidId, status) {
+    if (!sb) initSupabase();
+    var res = await sb
+      .from('bids')
+      .update({ status: status })
+      .eq('id', bidId);
+    if (res.error) throw new Error(res.error.message || 'Unable to save bid status.');
+  }
+
+  async function syncLegacyStatusesToDatabase() {
+    var legacy = loadLegacyAdminStatuses();
+    var entries = Object.keys(legacy).map(function (bidId) {
+      return [bidId, legacy[bidId]];
+    }).filter(function (entry) {
+      var lead = state.leads.find(function (item) { return item.id === entry[0]; });
+      return lead && entry[1] && entry[1] !== lead.status;
+    });
+
+    if (!entries.length) {
+      clearLegacyAdminStatuses();
+      return 0;
+    }
+
+    for (var i = 0; i < entries.length; i++) {
+      var bidId = entries[i][0];
+      var status = entries[i][1];
+      await persistLeadStatus(bidId, status);
+      setLeadStatus(bidId, status);
+    }
+
+    clearLegacyAdminStatuses();
+    return entries.length;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -123,13 +159,6 @@
     });
   }
 
-  function isMissingBidColumn(error, columnName) {
-    if (!error) return false;
-    var message = String(error.message || error.details || error.hint || '');
-    return message.indexOf("Could not find the '" + columnName + "' column of 'bids'") !== -1 ||
-      message.indexOf('column bids.' + columnName + ' does not exist') !== -1;
-  }
-
   function normalizePaymentMethod(value) {
     return value === 'revolut' ? 'revolut' : 'iban';
   }
@@ -137,18 +166,10 @@
   async function loadAllBids() {
     var res = await sb
       .from('bids')
-      .select('id, lot_id, user_id, amount, status, created_at, is_simulated, payment_method')
+      .select('*')
       .eq('is_simulated', false)
       .order('created_at', { ascending: false })
       .limit(500);
-    if (res.error && isMissingBidColumn(res.error, 'payment_method')) {
-      res = await sb
-        .from('bids')
-        .select('id, lot_id, user_id, amount, status, created_at, is_simulated')
-        .eq('is_simulated', false)
-        .order('created_at', { ascending: false })
-        .limit(500);
-    }
     if (res.error) throw new Error(res.error.message);
     return res.data || [];
   }
@@ -167,36 +188,29 @@
 
   async function loadLots(lotIds) {
     if (!lotIds.length) return {};
+    if (!lotCatalogPromise) {
+      lotCatalogPromise = fetch('../data/all-shop-lots.json')
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .catch(function () { return []; });
+    }
+
+    var allLots = await lotCatalogPromise;
+    var wanted = {};
+    lotIds.forEach(function (id) { wanted[String(id)] = true; });
+
     var map = {};
-
-    // Try primary Supabase first (lots may be mirrored there)
-    var res = await sb
-      .from('lots')
-      .select('id, slug, title, current_bid, end_time, lot_images(image_url, is_primary)')
-      .in('id', lotIds);
-    if (!res.error && res.data) {
-      res.data.forEach(function (l) { map[l.id] = l; });
-    }
-
-    // Fill missing from local JSON fallback
-    var missing = lotIds.filter(function (id) { return !map[id]; });
-    if (missing.length) {
-      try {
-        var fallback = await fetch('../data/all-shop-lots.json', { cache: 'no-store' }).then(function (r) { return r.json(); });
-        (fallback || []).forEach(function (item) {
-          if (item && item.id && missing.indexOf(String(item.id)) !== -1) {
-            map[String(item.id)] = {
-              id: item.id,
-              slug: item.slug || '',
-              title: item.title || item.name || '',
-              current_bid: item.currentBid || item.current_bid || 0,
-              end_time: item.end_time || item.endTime || null,
-              lot_images: item.lot_images || [{ image_url: item.image || '', is_primary: true }],
-            };
-          }
-        });
-      } catch (e) {}
-    }
+    (allLots || []).forEach(function (item) {
+      var itemId = item && item.id ? String(item.id) : '';
+      if (!itemId || !wanted[itemId]) return;
+      map[itemId] = {
+        id: item.id,
+        slug: item.slug || '',
+        title: item.title || item.name || '',
+        current_bid: item.currentBid || item.current_bid || 0,
+        end_time: item.end_time || item.endTime || null,
+        lot_images: item.lot_images || [{ image_url: item.image || '', is_primary: true }],
+      };
+    });
 
     return map;
   }
@@ -423,13 +437,22 @@
 
     // Status selects
     tbody.querySelectorAll('.lead-status-select').forEach(function (sel) {
-      sel.addEventListener('change', function () {
+      sel.addEventListener('change', async function () {
         var id  = sel.dataset.leadId;
         var val = sel.value;
+        var lead = state.leads.find(function (item) { return item.id === id; });
+        var prev = lead ? lead.status : 'active';
+
         setLeadStatus(id, val);
-        var cls = STATUS_CLASSES[val] || 'bg-gray-100 text-gray-600';
-        sel.className = 'lead-status-select text-xs font-medium px-2.5 py-1.5 rounded-full cursor-pointer border-0 outline-none ' + cls;
-        updateStats();
+        applyFilters();
+
+        try {
+          await persistLeadStatus(id, val);
+        } catch (e) {
+          setLeadStatus(id, prev);
+          applyFilters();
+          showToast('Не удалось сохранить статус: ' + (e.message || 'unknown'), 'error');
+        }
       });
     });
 
@@ -658,6 +681,7 @@
 
       if (state.currentAction === 'win-invoice') {
         setLeadStatus(lead.id, 'won');
+        await persistLeadStatus(lead.id, 'won');
       }
       closeBankModal();
       applyFilters();
@@ -689,6 +713,7 @@
 
       showToast('Уведомление отправлено → ' + lead.email, 'success');
       setLeadStatus(lead.id, 'won');
+      await persistLeadStatus(lead.id, 'won');
       closeWinModal();
       applyFilters();
     } catch (e) {
@@ -754,8 +779,9 @@
         throw new Error('Supabase SDK failed to load.');
       }
       if (!sb) initSupabase();
-      state.adminStatuses = loadAdminStatuses();
+      state.adminStatuses = {};
       state.leads         = await loadLeads();
+      await syncLegacyStatusesToDatabase();
       state.filteredLeads = state.leads.slice();
       applyFilters();
       if (loading) loading.style.display = 'none';
@@ -771,7 +797,7 @@
   // INIT
   // ═══════════════════════════════════════════════════════════════════════
   function init() {
-    state.adminStatuses = loadAdminStatuses();
+    state.adminStatuses = {};
 
     // Init EmailJS
     if (CONFIG.emailjs.publicKey) {
