@@ -773,6 +773,15 @@
         subtitle: pick(["bidding", "subtitle"], "Complete your bid in just a few steps"),
         backToLot: pick(["bidding", "backToLot"], "Back to Lot"),
         thankYou: pick(["bidding", "thankYou"], "Awaiting payment verification"),
+        successEyebrow: pick(["bidding", "successEyebrow"], "Bid submitted"),
+        successTitle: pick(["bidding", "successTitle"], "Your bid is under review"),
+        successMessage: pick(["bidding", "successMessage"], "We received your confirmation. Our team will verify the transfer and update your bid as soon as the payment is checked."),
+        successStatusLabel: pick(["bidding", "successStatusLabel"], "Status"),
+        successMethodLabel: pick(["bidding", "successMethodLabel"], "Payment method"),
+        successAmountLabel: pick(["bidding", "successAmountLabel"], "Bid amount"),
+        successReferenceLabel: pick(["bidding", "successReferenceLabel"], "Reference"),
+        successOpenBids: pick(["bidding", "successOpenBids"], "Open my bids"),
+        successPending: pick(["bidding", "successPending"], "Pending verification"),
         step1: pick(["bidding", "step1"], "Select Amount"),
         step2: pick(["bidding", "step2"], "Details"),
         step3: pick(["bidding", "step3"], "Payment"),
@@ -841,19 +850,19 @@
       ".bidding-primary-btn:hover{background:#1f2937;border-color:#1f2937;transform:translateY(-1px);box-shadow:0 18px 36px rgba(17,24,39,.18);}" +
       ".bidding-secondary-btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:2.5rem;padding:.65rem 1rem;border-radius:999px;border:1px solid rgba(17,24,39,.14);background:#fff;color:#111827;font-size:.82rem;font-weight:600;transition:background .18s ease,border-color .18s ease,color .18s ease;}" +
       ".bidding-secondary-btn:hover{background:#f6f1e8;border-color:rgba(17,24,39,.24);}" +
-      ".bidding-success{padding:1.5rem 0;text-align:left;width:100%;}" +
-      ".bidding-success-banner{width:100%;max-width:none;position:relative;overflow:hidden;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);box-shadow:0 22px 50px rgba(15,23,42,.08);}" +
-      ".bidding-success-banner:before{content:'';position:absolute;inset:auto -10% -38% auto;width:220px;height:220px;border-radius:999px;background:radial-gradient(circle,rgba(148,163,184,.12),rgba(148,163,184,0));pointer-events:none;}" +
-      ".bidding-success-layout{display:flex;flex-direction:column;gap:1rem;align-items:flex-start;}" +
-      ".bidding-success-icon{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;box-shadow:0 12px 30px rgba(15,23,42,.18);}" +
-      ".bidding-status-grid{display:grid;grid-template-columns:1fr;gap:.75rem;width:100%;}" +
-      ".bidding-status-card{border:1px solid rgba(15,23,42,.08);background:rgba(255,255,255,.92);backdrop-filter:blur(8px);}" +
-      ".bidding-status-label{display:block;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#64748b;margin-bottom:.4rem;}" +
-      ".bidding-status-value{font-size:1rem;font-weight:600;color:#1f2937;}" +
-      ".bidding-inline-link{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding:.85rem 1.35rem;border-radius:999px;background:#fff;color:#111827;border:1px solid rgba(17,24,39,.14);font-size:.92rem;font-weight:600;transition:background .18s ease,border-color .18s ease,transform .18s ease;}" +
-      ".bidding-inline-link:hover{background:#f8f5ef;border-color:rgba(17,24,39,.24);transform:translateY(-1px);}" +
-      "@media (min-width:640px){.bidding-success-layout{flex-direction:row;gap:1.25rem;}}" +
-      "@media (min-width:640px){.bidding-status-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}" +
+      ".bidding-success{padding:0;width:100%;}" +
+      ".bidding-success-panel{max-width:760px;margin:0 auto;border:1px solid rgba(15,23,42,.08);border-radius:24px;background:#fff;box-shadow:0 20px 45px rgba(15,23,42,.06);padding:1.1rem;}" +
+      ".bidding-success-head{display:flex;flex-direction:column;gap:1rem;align-items:flex-start;}" +
+      ".bidding-success-mark{display:inline-flex;align-items:center;justify-content:center;width:3rem;height:3rem;border-radius:999px;background:#ecfdf3;color:#166534;border:1px solid #bbf7d0;}" +
+      ".bidding-success-eyebrow{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:#64748b;font-weight:600;}" +
+      ".bidding-success-title{margin-top:.35rem;font-family:ui-serif,Georgia,Cambria,\"Times New Roman\",Times,serif;font-size:1.85rem;line-height:1.08;color:#0f172a;}" +
+      ".bidding-success-copy{margin-top:.75rem;max-width:42rem;font-size:.95rem;line-height:1.65;color:#475569;}" +
+      ".bidding-success-meta{display:grid;grid-template-columns:1fr;gap:.75rem;margin-top:1.25rem;}" +
+      ".bidding-success-item{padding:.95rem 1rem;border:1px solid rgba(15,23,42,.08);border-radius:16px;background:#fafafa;}" +
+      ".bidding-success-item-label{display:block;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#64748b;margin-bottom:.35rem;}" +
+      ".bidding-success-item-value{font-size:.96rem;font-weight:600;color:#0f172a;word-break:break-word;}" +
+      ".bidding-success-actions{display:flex;flex-direction:column;gap:.75rem;margin-top:1.25rem;}" +
+      "@media (min-width:640px){.bidding-success-panel{padding:1.4rem;}.bidding-success-head{flex-direction:row;gap:1rem;}.bidding-success-title{font-size:2.15rem;}.bidding-success-meta{grid-template-columns:repeat(2,minmax(0,1fr));}.bidding-success-actions{flex-direction:row;}}"+
       ".bidding-error{color:#dc2626;font-size:12px;margin-top:6px;}" +
       ".bidding-field.invalid{border-color:#dc2626;}" +
       ".bidding-muted-input{background:#f3f4f6;}" +
@@ -1038,7 +1047,7 @@
       '</div></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div><label class="text-sm md:text-base mb-2 block" for="bid-custom">' + escapeHtml(strings.bidding.customAmount) + '</label><div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-base md:text-lg font-medium">€</span><input id="bid-custom" data-bid-custom class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-7 h-10 md:h-12 text-base md:text-lg" type="number" min="' + minimumBid + '" step="50" placeholder="' + escapeHtml(strings.bidding.enterCustomBid) + '"/><div class="bidding-error hidden" data-bid-custom-error></div></div></div><button type="button" data-bid-next data-slot="button" class="bidding-primary-btn">' + escapeHtml(strings.bidding.confirmBid) + '</button></div></div></div>' +
       renderBidDetailsStep(strings) +
       '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="3" style="display:none"><div data-slot="card-content" class="p-4 md:p-6"><div class="flex items-center justify-between mb-4"><h2 class="font-serif text-lg md:text-xl">' + escapeHtml(strings.bidding.selectPaymentMethod) + '</h2><button type="button" data-bid-back data-slot="button" class="bidding-secondary-btn">' + escapeHtml(strings.common.back) + '</button></div><div class="space-y-4"><div class="rounded-xl border border-border bg-muted/30 p-4 md:p-5"><div class="flex items-start justify-between gap-3"><div><p class="text-base md:text-lg font-semibold">' + escapeHtml(strings.bidding.creditOrDebitCard) + '</p><p class="text-sm text-muted-foreground mt-1">' + escapeHtml(strings.bidding.visaMastercard) + '</p></div><div class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">' + escapeHtml(strings.bidding.fastAndSecure) + '</div></div><div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Invoice number</p><p class="font-semibold" data-invoice-number>' + escapeHtml(invoiceNumber) + '</p></div><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Transfer amount</p><p class="font-semibold" data-summary-step3-amount>' + formatCurrency(holdAmount) + '</p></div></div><p class="mt-4 text-sm text-muted-foreground leading-relaxed">' + escapeHtml(strings.bidding.securePaymentDescription) + '</p></div><div class="rounded-xl border border-gray-200 bg-gray-50 p-5" data-payment-info-card><div class="flex items-start gap-4 mb-4"><div style="min-width:40px;height:40px;background:#111827;border-radius:12px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div><p class="font-semibold text-gray-900 text-base">Payment Instructions</p><p class="text-sm text-gray-500 mt-0.5">Sent to your email after bid confirmation</p></div></div><div class="rounded-lg bg-white border border-gray-200 p-4 text-sm text-gray-700 leading-relaxed" data-payment-info-text>Your bank transfer details — beneficiary name, IBAN, SWIFT/BIC and payment reference — will be sent to your email address within 2 hours of confirming your bid.</div><div class="mt-3 grid grid-cols-2 gap-2"><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Sent within 2 hours</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Secure & verified</div></div></div><label class="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm cursor-pointer"><input type="checkbox" data-bid-invoice-confirm class="mt-0.5 h-4 w-4 rounded border-gray-300" style="flex-shrink:0"><span class="text-gray-700 leading-relaxed">I confirm my bid and agree to complete payment within 48 hours of receiving the payment instructions sent to my email address.</span></label><div class="bidding-error hidden" data-bid-invoice-error></div><button type="button" data-bid-submit data-slot="button" class="bidding-primary-btn">Confirm Bid</button></div></div></div>' +
-      '</div><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm hidden" data-bid-success><div class="bidding-success"><div class="bidding-success-banner rounded-[28px] border border-slate-200 px-5 py-6 sm:px-7 sm:py-7"><div class="bidding-success-layout"><div class="bidding-success-icon inline-flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="10"></circle></svg></div><div class="min-w-0 flex-1"><p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">Payment Status</p><h2 class="mt-2 font-serif text-3xl leading-tight text-slate-900 sm:text-4xl">' + escapeHtml(strings.bidding.thankYou) + '</h2><p class="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-[15px]">We received your payment confirmation and placed the bid into manual review. Our finance team will verify the transfer reference before the bid becomes fully approved.</p><div class="bidding-status-grid mt-5"><div class="bidding-status-card rounded-2xl p-4 sm:p-5"><span class="bidding-status-label">Current Status</span><p class="bidding-status-value">Awaiting payment confirmation</p></div><div class="bidding-status-card rounded-2xl p-4 sm:p-5"><span class="bidding-status-label">Settlement Method</span><p class="bidding-status-value">Bank transfer by invoice</p></div></div><div class="mt-6 flex flex-col gap-3 sm:flex-row"><a href="../lot/index.html?slug=' + encodeURIComponent(lot.slug || "") + '" class="bidding-primary-btn sm:w-auto">' + escapeHtml(strings.bidding.backToLot) + '</a><button type="button" class="bidding-inline-link">Payment under review</button></div></div></div></div></div></div>' +
+      '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm hidden" data-bid-success><div class="bidding-success"><div class="bidding-success-panel"><div class="bidding-success-head"><div class="bidding-success-mark"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M20 6 9 17l-5-5"></path></svg></div><div class="min-w-0 flex-1"><p class="bidding-success-eyebrow">' + escapeHtml(strings.bidding.successEyebrow) + '</p><h2 class="bidding-success-title">' + escapeHtml(strings.bidding.successTitle) + '</h2><p class="bidding-success-copy">' + escapeHtml(strings.bidding.successMessage) + '</p></div></div><div class="bidding-success-meta"><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successStatusLabel) + '</span><p class="bidding-success-item-value" data-success-status>' + escapeHtml(strings.bidding.successPending) + '</p></div><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successMethodLabel) + '</span><p class="bidding-success-item-value" data-success-method>IBAN transfer</p></div><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successAmountLabel) + '</span><p class="bidding-success-item-value" data-success-amount>' + formatCurrency(holdAmount) + '</p></div><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successReferenceLabel) + '</span><p class="bidding-success-item-value" data-success-reference>' + escapeHtml(invoiceNumber) + '</p></div></div><div class="bidding-success-actions"><a href="../lot/index.html?slug=' + encodeURIComponent(lot.slug || "") + '" class="bidding-primary-btn sm:w-auto">' + escapeHtml(strings.bidding.backToLot) + '</a><a href="../account.html?view=bids" class="bidding-secondary-btn sm:w-auto">' + escapeHtml(strings.bidding.successOpenBids) + '</a></div></div></div></div>' +
       '</div></div></section></div>';
 
     wirePage(lot, minimumBid, strings);
@@ -1063,6 +1072,10 @@
     var backButtons = Array.from(document.querySelectorAll("[data-bid-back]"));
     var submitButton = document.querySelector("[data-bid-submit]");
     var successCard = document.querySelector("[data-bid-success]");
+    var successStatusNode = document.querySelector("[data-success-status]");
+    var successMethodNode = document.querySelector("[data-success-method]");
+    var successAmountNode = document.querySelector("[data-success-amount]");
+    var successReferenceNode = document.querySelector("[data-success-reference]");
     var invoiceAmountNode = document.querySelector("[data-summary-step3-amount]");
     var invoiceConfirm = document.querySelector("[data-bid-invoice-confirm]");
     var invoiceError = document.querySelector("[data-bid-invoice-error]");
@@ -1156,6 +1169,17 @@
       submitButton.disabled = isSubmitting;
       submitButton.style.opacity = isSubmitting ? "0.7" : "";
       submitButton.style.cursor = isSubmitting ? "wait" : "";
+    }
+
+    function getPaymentMethodLabel() {
+      return selectedPaymentMethod === "revolut" ? "Revolut" : "IBAN transfer";
+    }
+
+    function updateSuccessState() {
+      if (successStatusNode) successStatusNode.textContent = strings.bidding.successPending;
+      if (successMethodNode) successMethodNode.textContent = getPaymentMethodLabel();
+      if (successAmountNode) successAmountNode.textContent = formatCurrency(selectedBid);
+      if (successReferenceNode) successReferenceNode.textContent = (invoiceNumberNode && invoiceNumberNode.textContent) || "";
     }
 
     function isMissingBidColumn(error, columnName) {
@@ -1259,6 +1283,8 @@
           placedAt: nowIso,
         });
 
+        updateSuccessState();
+
         stepNodes.forEach(function (node) {
           node.classList.add("hidden");
           node.style.display = "none";
@@ -1279,7 +1305,6 @@
     }
 
     function validateStep3() {
-      if (selectedPaymentMethod === 'revolut') return true;
       var valid = true;
       document.querySelectorAll("[data-invoice-required]").forEach(function (field) {
         var wrapper = field.parentElement;
@@ -1301,7 +1326,7 @@
       if (!invoiceConfirm || !invoiceConfirm.checked) {
         valid = false;
         if (invoiceError) {
-          invoiceError.textContent = "Transfer confirmation is required before the bid can be submitted.";
+          invoiceError.textContent = "Confirmation is required before the bid can be submitted.";
           invoiceError.classList.remove("hidden");
         }
       }
@@ -1551,6 +1576,7 @@
     }
 
     updateSummary();
+    updateSuccessState();
     syncCountryLabel();
     syncPhoneCountryDisplay();
     renderStep();
