@@ -178,7 +178,7 @@
     if (!userIds.length) return {};
     var res = await sb
       .from('profiles')
-      .select('id, email, first_name, last_name, phone, country, city')
+      .select('id, email, first_name, last_name, phone, country, city, address, postal_code')
       .in('id', userIds);
     if (res.error) return {};
     var map = {};
@@ -241,8 +241,10 @@
         lastName:   profile.last_name  || '',
         email:      profile.email      || '',
         phone:      profile.phone      || '',
+        address:    profile.address    || '',
         country:    profile.country    || '',
         city:       profile.city       || '',
+        postalCode: profile.postal_code || '',
         placedAt:      bid.created_at,
         paymentMethod: normalizePaymentMethod(bid.payment_method),
       };
@@ -300,6 +302,14 @@
 
   function getGeo(lead) {
     return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
+  }
+
+  function getDeliveryTo(lead) {
+    return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
+  }
+
+  function getDeliveryAddress(lead) {
+    return [lead.address, lead.city, lead.postalCode, lead.country].filter(Boolean).join(', ') || '—';
   }
 
   function getDueDate(days) {
@@ -669,8 +679,11 @@
         to_email:        lead.email,
         to_name:         getFullName(lead),
         lot_title:       lead.lotTitle,
+        lot_image:       lead.lotImage || '',
         bid_amount:      formatCurrency(amount),
         invoice_number:  ref,
+        delivery_to:     getDeliveryTo(lead),
+        delivery_address:getDeliveryAddress(lead),
         payment_type:    pd.type,
         payment_details: formatPaymentBlock(pd, amount, ref),
         due_date:        getDueDate(14),
@@ -703,8 +716,11 @@
         to_email:        lead.email,
         to_name:         getFullName(lead),
         lot_title:       lead.lotTitle,
+        lot_image:       lead.lotImage || '',
         bid_amount:      formatCurrency(lead.bidAmount),
         invoice_number:  '—',
+        delivery_to:     getDeliveryTo(lead),
+        delivery_address:getDeliveryAddress(lead),
         payment_type:    'Payment instructions will follow',
         payment_details: 'Our team will contact you shortly with payment details.',
         due_date:        getDueDate(14),

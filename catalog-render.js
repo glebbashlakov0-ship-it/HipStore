@@ -238,9 +238,31 @@
     });
   }
 
-  function renderFeatured(items) {
+  function sortItemsByEndTime(items) {
+    return (Array.isArray(items) ? items.slice() : []).sort(function (a, b) {
+      var aTime = new Date(a && (a.endTime || a.end_time) || "").getTime();
+      var bTime = new Date(b && (b.endTime || b.end_time) || "").getTime();
+      if (!Number.isFinite(aTime) && !Number.isFinite(bTime)) return 0;
+      if (!Number.isFinite(aTime)) return 1;
+      if (!Number.isFinite(bTime)) return -1;
+      return aTime - bTime;
+    });
+  }
+
+  function filterWatchItems(items) {
+    return (Array.isArray(items) ? items : []).filter(function (item) {
+      return getTopLevelCategory(item) === "watches";
+    });
+  }
+
+  function renderFeatured(items, fallbackItems) {
     var main = document.querySelector("main.flex-1");
     if (!main) return;
+    var featuredItems = takeUnique(filterWatchItems(filterActiveItems(items)), 8);
+    var fallbackFeaturedItems = takeUnique(
+      featuredItems.concat(sortItemsByEndTime(filterWatchItems(filterActiveItems(fallbackItems)))),
+      8
+    );
 
     var howItWorksHeading = Array.from(main.querySelectorAll("h2")).find(function (node) {
       return node.textContent.trim() === "How It Works";
@@ -279,8 +301,14 @@
       existingSection.querySelector('.flex.gap-3.sm\\:gap-4.overflow-x-auto.pb-4.scrollbar-hide.snap-x.snap-mandatory');
     if (!row) return;
 
-    row.innerHTML = items
-      .slice(0, 8)
+    if (!fallbackFeaturedItems.length) {
+      existingSection.style.display = "none";
+      return;
+    }
+
+    existingSection.style.display = "";
+
+    row.innerHTML = fallbackFeaturedItems
       .map(function (item) {
         return '<div class="flex-shrink-0 w-[240px] md:w-[260px] snap-start">' + renderCard(item) + "</div>";
       })
@@ -853,7 +881,7 @@
         console.error("Remote landing fetch failed:", error);
       }
 
-      renderFeatured(results[0]);
+      renderFeatured(results[0], results[1]);
       renderLandingCategorySections(results[1], remoteSources);
       renderCollectionLandingSections(results[1], remoteSources);
       renderShopAll(results[1], results[2], results[3]);
