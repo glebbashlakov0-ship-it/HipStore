@@ -213,6 +213,15 @@
     return new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
   }
 
+  function isLotOpen(item) {
+    if (!item) return false;
+    var status = String(item.status || "").toLowerCase();
+    if (status === "closed" || status === "sold" || status === "ended") return false;
+    var endTime = item.end_time || item.endTime || "";
+    var diff = new Date(endTime).getTime() - Date.now();
+    return Number.isFinite(diff) && diff > 0;
+  }
+
   function normalizeLotTranslation(item, language) {
     var translation = (item.lot_translations || []).find(function (entry) {
       return entry.language === language;
@@ -282,6 +291,9 @@
     if (!bundle || !bundle.lot) return Promise.resolve(bundle);
     return fetchRemoteLotData(bundle.rawLot && bundle.rawLot.slug || bundle.lot.slug, language).then(function (remoteLot) {
       if (!remoteLot) return bundle;
+      if (bundle.fallbackItems && bundle.fallbackItems.length && isLotOpen(bundle.lot) && !isLotOpen(remoteLot)) {
+        return bundle;
+      }
       bundle.rawLot = Object.assign({}, bundle.rawLot || {}, remoteLot.raw || remoteLot);
       bundle.lot = Object.assign({}, bundle.lot, remoteLot);
       return bundle;
@@ -366,21 +378,26 @@
   function loadLotBundle(slug, language) {
     var lotSelect = encodeURIComponent("*,lot_images(*),categories(name,slug),lot_translations(*)");
     var lotFilter = encodeURIComponent("eq." + slug);
-    return requestSupabase("/rest/v1/lots?select=" + lotSelect + "&slug=" + lotFilter + "&limit=1")
-      .then(function (lots) {
-        var rawLot = lots && lots[0];
-        if (rawLot) {
-          return {
-            rawLot: rawLot,
-            lot: normalizeLotTranslation(rawLot, language),
-            fallbackItems: null,
-          };
-        }
-        return loadLotFromFallback(slug, language);
-      })
-      .catch(function () {
-        return loadLotFromFallback(slug, language);
-      });
+    return loadLotFromFallback(slug, language).then(function (fallbackBundle) {
+      if (fallbackBundle && fallbackBundle.rawLot && fallbackBundle.lot) {
+        return fallbackBundle;
+      }
+      return requestSupabase("/rest/v1/lots?select=" + lotSelect + "&slug=" + lotFilter + "&limit=1")
+        .then(function (lots) {
+          var rawLot = lots && lots[0];
+          if (rawLot) {
+            return {
+              rawLot: rawLot,
+              lot: normalizeLotTranslation(rawLot, language),
+              fallbackItems: null,
+            };
+          }
+          return null;
+        })
+        .catch(function () {
+          return null;
+        });
+    });
   }
 
   function loadRelatedAndBids(rawLot, language, fallbackItems) {
@@ -389,10 +406,24 @@
     }
 
     if (fallbackItems && fallbackItems.length) {
-      return Promise.resolve({
-        bids: [],
-        relatedLots: buildFallbackRelatedLots(rawLot, fallbackItems, language),
-      });
+      var fallbackBidsPath =
+        "/rest/v1/bids?select=*&lot_id=eq." +
+        encodeURIComponent(rawLot.id) +
+        "&order=created_at.desc&limit=12";
+
+      return requestSupabase(fallbackBidsPath)
+        .then(function (bids) {
+          return {
+            bids: Array.isArray(bids) ? bids : [],
+            relatedLots: buildFallbackRelatedLots(rawLot, fallbackItems, language),
+          };
+        })
+        .catch(function () {
+          return {
+            bids: [],
+            relatedLots: buildFallbackRelatedLots(rawLot, fallbackItems, language),
+          };
+        });
     }
 
     var bidsPath =

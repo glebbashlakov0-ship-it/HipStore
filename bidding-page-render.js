@@ -1247,7 +1247,7 @@
         }
 
         var nowIso = new Date().toISOString();
-        var bidId = 'bid-' + lot.id + '-' + Date.now();
+        var bidId = 'bid-' + lot.id + '-' + Date.now() + '-' + (selectedPaymentMethod === 'revolut' ? 'revolut' : 'iban');
         await insertBidRecord({
           id: bidId,
           user_id: session.user.id,

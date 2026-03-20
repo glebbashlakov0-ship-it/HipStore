@@ -121,8 +121,16 @@
       message.indexOf('column bids.' + columnName + ' does not exist') !== -1;
   }
 
-  function normalizePaymentMethod(value) {
-    return value === 'revolut' ? 'revolut' : 'iban';
+  function getPaymentMethodFromBidId(bidId) {
+    var value = String(bidId || '').toLowerCase();
+    if (/-(revolut)$/.test(value)) return 'revolut';
+    if (/-(iban)$/.test(value)) return 'iban';
+    return '';
+  }
+
+  function normalizePaymentMethod(value, bidId) {
+    if (value === 'revolut' || value === 'iban') return value;
+    return getPaymentMethodFromBidId(bidId);
   }
 
   // ─── Profile ────────────────────────────────────────────────────────────────
@@ -537,7 +545,7 @@
           lotImage: '',
           bidAmount: item.amount || 0,
           currentBid: item.amount || 0,
-          paymentMethod: normalizePaymentMethod(item.payment_method),
+          paymentMethod: normalizePaymentMethod(item.payment_method, item.id),
           invoiceMode: '',
           invoiceAmount: item.amount || 0,
           invoiceNumber: '',
@@ -564,7 +572,7 @@
         lotImage: img.image_url || '',
         bidAmount: item.amount || 0,
         currentBid: lot.current_bid || item.amount || 0,
-        paymentMethod: normalizePaymentMethod(item.payment_method),
+        paymentMethod: normalizePaymentMethod(item.payment_method, item.id),
         invoiceMode: '',
         invoiceAmount: item.amount || 0,
         invoiceNumber: '',

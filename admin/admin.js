@@ -159,8 +159,16 @@
     });
   }
 
-  function normalizePaymentMethod(value) {
-    return value === 'revolut' ? 'revolut' : 'iban';
+  function getPaymentMethodFromBidId(bidId) {
+    var value = String(bidId || '').toLowerCase();
+    if (/-(revolut)$/.test(value)) return 'revolut';
+    if (/-(iban)$/.test(value)) return 'iban';
+    return '';
+  }
+
+  function normalizePaymentMethod(value, bidId) {
+    if (value === 'revolut' || value === 'iban') return value;
+    return getPaymentMethodFromBidId(bidId);
   }
 
   async function loadAllBids() {
@@ -246,7 +254,7 @@
         city:       profile.city       || '',
         postalCode: profile.postal_code || '',
         placedAt:      bid.created_at,
-        paymentMethod: normalizePaymentMethod(bid.payment_method),
+        paymentMethod: normalizePaymentMethod(bid.payment_method, bid.id),
       };
     });
   }
@@ -396,8 +404,10 @@
         '    <div class="text-sm font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
         '    <div class="mt-0.5">',
         lead.paymentMethod === 'revolut'
-          ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">💜 Revolut</span>'
-          : '<span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>',
+          ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-white bg-[#191c1f] px-2 py-0.5 rounded-full"><svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
+          : lead.paymentMethod === 'iban'
+            ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>'
+            : '<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">Не сохранён</span>',
         '    </div>',
         '  </td>',
         // Status
@@ -505,7 +515,7 @@
   function openBankModal(action) {
     state.currentAction = action;
     var lead = state.currentLead;
-    var paymentMethod = normalizePaymentMethod(lead.paymentMethod);
+    var paymentMethod = normalizePaymentMethod(lead.paymentMethod, lead.id);
 
     setText('modal-bank-title', action === 'invoice' ? 'Отправить инвойс' : 'Победа + Инвойс');
 
@@ -522,8 +532,13 @@
     if (refEl) refEl.value = genInvoiceNumber();
 
     // Lock payment method to the option the client selected on the site.
-    switchPaymentType(paymentMethod);
-    setPaymentTypeReadOnly(paymentMethod);
+    if (paymentMethod) {
+      switchPaymentType(paymentMethod);
+      setPaymentTypeReadOnly(paymentMethod);
+    } else {
+      switchPaymentType('iban');
+      setPaymentTypeEditable();
+    }
 
     showEl('modal-bank');
   }
@@ -592,6 +607,20 @@
       note.textContent = paymentType === 'revolut'
         ? 'Клиент выбрал Revolut. Этот способ оплаты зафиксирован.'
         : 'Клиент выбрал IBAN. Этот способ оплаты зафиксирован.';
+    }
+  }
+
+  function setPaymentTypeEditable() {
+    var note = document.getElementById('payment-method-note');
+    document.querySelectorAll('[data-payment-type]').forEach(function (btn) {
+      btn.disabled = false;
+      btn.setAttribute('aria-disabled', 'false');
+      btn.style.cursor = '';
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '1';
+    });
+    if (note) {
+      note.textContent = 'Для этой старой заявки способ оплаты не сохранился. Выбери вручную один раз.';
     }
   }
 
@@ -869,6 +898,12 @@
     on('close-bank-modal',   'click', closeBankModal);
     on('close-bank-modal-2', 'click', closeBankModal);
     on('send-email-btn',     'click', handleSendInvoice);
+    document.querySelectorAll('[data-payment-type]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.disabled) return;
+        switchPaymentType(btn.dataset.paymentType);
+      });
+    });
 
     // ── Modal: win ─────────────────────────────────────────────────────
     on('close-win-modal',   'click', closeWinModal);
