@@ -427,7 +427,36 @@
   // RENDER — TABLE
   // ═══════════════════════════════════════════════════════════════════════
   function applyFilters() {
-    state.filteredLeads = state.leads.slice();
+    var statusFilter = state.filterStatus || 'all';
+    var query = String(state.searchQuery || '').trim().toLowerCase();
+
+    state.filteredLeads = state.leads.filter(function (lead) {
+      var leadStatus = getLeadStatus(lead.id, lead.status);
+      if (statusFilter !== 'all' && leadStatus !== statusFilter) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      var haystack = [
+        lead.lotTitle,
+        getFullName(lead),
+        lead.email,
+        lead.phone,
+        getGeo(lead),
+        getBidRef(lead.id),
+        formatCurrency(lead.bidAmount),
+        STATUS_LABELS[leadStatus],
+        lead.paymentMethod === 'revolut' ? 'revolut' : '',
+        lead.paymentMethod === 'iban' ? 'iban' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.indexOf(query) !== -1;
+    });
+
     renderTable();
     updateStats();
   }
@@ -1056,18 +1085,29 @@
     var searchEl = document.getElementById('search-input');
     if (searchEl) {
       searchEl.value = '';
-      searchEl.readOnly = true;
-      searchEl.tabIndex = -1;
-      searchEl.placeholder = 'Показаны все ставки';
-      searchEl.classList.add('bg-gray-50', 'text-gray-400', 'cursor-not-allowed');
+      searchEl.readOnly = false;
+      searchEl.tabIndex = 0;
+      searchEl.placeholder = 'Поиск по имени, email, телефону...';
+      searchEl.classList.remove('bg-gray-50', 'text-gray-400', 'cursor-not-allowed');
+      searchEl.addEventListener('input', function () {
+        state.searchQuery = searchEl.value || '';
+        applyFilters();
+      });
     }
 
     // ── Filter tabs ────────────────────────────────────────────────────
     document.querySelectorAll('[data-filter-status]').forEach(function (btn) {
-      btn.disabled = true;
-      btn.style.opacity = '0.55';
-      btn.style.cursor = 'default';
-      btn.style.pointerEvents = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.style.pointerEvents = '';
+      btn.addEventListener('click', function () {
+        var nextStatus = btn.dataset.filterStatus || 'all';
+        if (state.filterStatus === nextStatus) return;
+        state.filterStatus = nextStatus;
+        resetFilterTabsUi();
+        applyFilters();
+      });
     });
 
     // ── Modal: bank ────────────────────────────────────────────────────
