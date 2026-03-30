@@ -61,7 +61,6 @@
     adminStatuses:  {},
     confirmations:  {},
     sentEmails:     {},
-    timers:         {},
     loadInFlight:   false,
   };
 
@@ -446,18 +445,13 @@
     var tbody = document.getElementById('leads-body');
     if (!tbody) return;
 
-    // Clear timers
-    Object.keys(state.timers).forEach(function (k) { clearInterval(state.timers[k]); });
-    state.timers = {};
-
     if (!state.filteredLeads.length) {
       tbody.innerHTML = '<div class="text-center py-14 text-gray-400 text-sm">Нет записей</div>';
       return;
     }
 
-    tbody.innerHTML = state.filteredLeads.map(function (lead) {
+    tbody.innerHTML = state.filteredLeads.map(function (lead, index) {
       var status      = getLeadStatus(lead.id, lead.status);
-      var statusLabel = STATUS_LABELS[status] || status;
       var statusCls   = STATUS_CLASSES[status] || 'bg-gray-100 text-gray-600';
       var name        = getFullName(lead);
       var geo         = getGeo(lead);
@@ -497,16 +491,19 @@
 
       return [
         '<div class="px-4 py-3 transition-colors hover:bg-gray-50' + (freshLead ? ' bg-amber-50/30' : '') + '">',
-        '  <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,2.7fr)_minmax(0,1.35fr)_minmax(0,0.9fr)_150px_auto] gap-3 xl:items-center">',
+        '  <div class="grid grid-cols-1 xl:grid-cols-[44px_minmax(0,2.7fr)_minmax(0,1.35fr)_minmax(0,0.9fr)_150px_auto] gap-3 xl:items-center">',
+        '    <div class="hidden xl:flex items-center justify-center text-xs font-semibold text-gray-400">',
+        '      ' + String(index + 1) + '.',
+        '    </div>',
         '    <div class="flex items-center gap-3 min-w-0">',
         '      ' + imgHtml,
         '      <div class="min-w-0 flex-1">',
         '        <div class="flex items-center gap-2 min-w-0">',
-        '          <div class="text-sm font-medium text-gray-900 truncate" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
+          '          <div class="text-sm font-medium text-gray-900 truncate" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
         (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide shrink-0">New</span>' : ''),
         '        </div>',
         '        <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">',
-        '          <span class="' + timerCls + ' font-mono" id="timer-' + lead.id + '">' + escapeHtml(timerText) + '</span>',
+        '          <span class="' + timerCls + ' font-mono">' + escapeHtml(timerText) + '</span>',
         '          <span class="text-gray-300">•</span>',
         '          <span class="text-gray-400 font-mono">#' + escapeHtml(bidRef) + '</span>',
         '          <span class="text-gray-300">•</span>',
@@ -553,21 +550,6 @@
         '</div>',
       ].join('\n');
     }).join('\n');
-
-    // Start countdowns
-    state.filteredLeads.forEach(function (lead) {
-      if (!lead.lotEndTime) return;
-      var el = document.getElementById('timer-' + lead.id);
-      if (!el) return;
-      state.timers[lead.id] = setInterval(function () {
-        var text = formatCountdown(lead.lotEndTime);
-        var cls  = timerUrgencyClass(lead.lotEndTime);
-        if (!el) { clearInterval(state.timers[lead.id]); return; }
-        el.textContent = text;
-        el.className = 'text-xs mt-1 font-mono ' + cls;
-        if (text === 'Завершён') clearInterval(state.timers[lead.id]);
-      }, 1000);
-    });
 
     // Status selects
     tbody.querySelectorAll('.lead-status-select').forEach(function (sel) {
