@@ -28,6 +28,7 @@
   var ADMIN_STATUSES_KEY = 'auctio_admin_statuses';
   var ADMIN_CONFIRMATIONS_KEY = 'auctio_admin_confirmations';
   var ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails';
+  var ADMIN_AUTO_REFRESH_MS = 15000;
 
   var STATUS_LABELS = {
     active:    'В работе',
@@ -63,6 +64,8 @@
     confirmations:  {},
     sentEmails:     {},
     timers:         {},
+    loadInFlight:   false,
+    autoRefreshTimer: null,
   };
 
   var sb = null;
@@ -945,24 +948,50 @@
   // SCREENS
   // ═══════════════════════════════════════════════════════════════════════
   function showLogin() {
+    stopAutoRefresh();
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('admin-ui').style.display     = 'none';
   }
 
   function showAdmin() {
+    startAutoRefresh();
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-ui').style.display     = 'block';
   }
 
-  async function loadAndRender() {
+  function stopAutoRefresh() {
+    if (state.autoRefreshTimer) {
+      clearInterval(state.autoRefreshTimer);
+      state.autoRefreshTimer = null;
+    }
+  }
+
+  function refreshIfVisible() {
+    if (!isAuthenticated()) return;
+    if (document.visibilityState && document.visibilityState !== 'visible') return;
+    loadAndRender({ silent: true });
+  }
+
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    state.autoRefreshTimer = setInterval(refreshIfVisible, ADMIN_AUTO_REFRESH_MS);
+  }
+
+  async function loadAndRender(options) {
+    var silent = Boolean(options && options.silent);
+    if (state.loadInFlight) return;
+
     var loading  = document.getElementById('leads-loading');
     var errorDiv = document.getElementById('leads-error');
     var errorTxt = document.getElementById('leads-error-text');
     var wrapper  = document.getElementById('leads-table-wrapper');
 
-    if (loading)  loading.style.display  = 'flex';
-    if (wrapper)  wrapper.style.display  = 'none';
-    if (errorDiv) errorDiv.style.display = 'none';
+    state.loadInFlight = true;
+    if (!silent) {
+      if (loading)  loading.style.display  = 'flex';
+      if (wrapper)  wrapper.style.display  = 'none';
+      if (errorDiv) errorDiv.style.display = 'none';
+    }
 
     try {
       if (!window.supabase || !window.supabase.createClient) {
@@ -978,10 +1007,17 @@
       applyFilters();
       if (loading) loading.style.display = 'none';
       if (wrapper) wrapper.style.display = 'block';
+      if (errorDiv) errorDiv.style.display = 'none';
     } catch (e) {
-      if (loading)  loading.style.display  = 'none';
-      if (errorDiv) errorDiv.style.display = 'flex';
-      if (errorTxt) errorTxt.textContent   = e.message || 'Ошибка загрузки';
+      if (loading) loading.style.display = 'none';
+      if (silent) {
+        showToast('Не удалось обновить данные: ' + (e.message || 'unknown'), 'error');
+      } else {
+        if (errorDiv) errorDiv.style.display = 'flex';
+        if (errorTxt) errorTxt.textContent   = e.message || 'Ошибка загрузки';
+      }
+    } finally {
+      state.loadInFlight = false;
     }
   }
 
@@ -1016,6 +1052,8 @@
     // ── Logout / Refresh ───────────────────────────────────────────────
     on('logout-btn',  'click', logout);
     on('refresh-btn', 'click', loadAndRender);
+    window.addEventListener('focus', refreshIfVisible);
+    document.addEventListener('visibilitychange', refreshIfVisible);
 
     // ── Search ─────────────────────────────────────────────────────────
     var searchEl = document.getElementById('search-input');
