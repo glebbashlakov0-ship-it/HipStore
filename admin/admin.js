@@ -492,7 +492,7 @@
     state.timers = {};
 
     if (!state.filteredLeads.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-14 text-gray-400 text-sm">Нет записей</td></tr>';
+      tbody.innerHTML = '<div class="text-center py-14 text-gray-400 text-sm">Нет записей</div>';
       return;
     }
 
@@ -527,76 +527,79 @@
       }).join('');
 
       return [
-        '<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors' + (freshLead ? ' bg-amber-50/40' : '') + '">',
-        // Lot + timer
-        '  <td class="px-4 py-3">',
-        '    <div class="flex items-start gap-3">',
+        '<div class="px-4 py-4 transition-colors hover:bg-gray-50' + (freshLead ? ' bg-amber-50/40' : '') + '">',
+        '  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">',
+        '    <div class="flex items-start gap-3 min-w-0 flex-1">',
         '      ' + imgHtml,
-        '      <div class="min-w-0 pt-0.5">',
+        '      <div class="min-w-0 flex-1">',
         '        <div class="flex items-center gap-2 flex-wrap mb-0.5">',
-        '          <div class="text-sm font-medium text-gray-900 leading-snug line-clamp-2 max-w-[200px]" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
+        '          <div class="text-sm font-medium text-gray-900 leading-snug" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
         (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">New</span>' : ''),
         '        </div>',
         '        <div class="text-xs mt-1 ' + timerCls + ' font-mono" id="timer-' + lead.id + '">' + escapeHtml(timerText) + '</div>',
         '        <div class="text-[11px] text-gray-400 mt-1 font-mono">#' + escapeHtml(bidRef) + ' • ' + escapeHtml(placedAtText) + '</div>',
-        '      </div>',
-        '    </div>',
-        '  </td>',
-        // Client
-        '  <td class="px-4 py-3">',
-        '    <div class="text-sm font-medium text-gray-900">' + escapeHtml(name) + '</div>',
-        '    <div class="text-xs text-gray-400 mt-0.5">' + escapeHtml(lead.email) + '</div>',
-        '  </td>',
-        // Phone
-        '  <td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(lead.phone || '—') + '</td>',
-        // Geo
-        '  <td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(geo) + '</td>',
-        // Amount + payment method
-        '  <td class="px-4 py-3">',
-        '    <div class="text-sm font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
-        '    <div class="mt-0.5">',
+        '        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mt-3">',
+        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
+        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Клиент</div>',
+        '            <div class="text-sm font-medium text-gray-900 mt-1">' + escapeHtml(name) + '</div>',
+        '            <div class="text-xs text-gray-500 mt-1 break-all">' + escapeHtml(lead.email || '—') + '</div>',
+        '          </div>',
+        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
+        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Телефон</div>',
+        '            <div class="text-sm text-gray-700 mt-1">' + escapeHtml(lead.phone || '—') + '</div>',
+        '          </div>',
+        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
+        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Гео</div>',
+        '            <div class="text-sm text-gray-700 mt-1">' + escapeHtml(geo) + '</div>',
+        '          </div>',
+        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
+        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Ставка</div>',
+        '            <div class="text-sm font-semibold text-gray-900 mt-1">' + formatCurrency(lead.bidAmount) + '</div>',
+        '            <div class="mt-1">',
         lead.paymentMethod === 'revolut'
           ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-white bg-[#191c1f] px-2 py-0.5 rounded-full"><svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
           : lead.paymentMethod === 'iban'
             ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>'
             : '<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">Не сохранён</span>',
+        '            </div>',
+        '          </div>',
+        '        </div>',
+        '      </div>',
         '    </div>',
-        '  </td>',
-        // Status
-        '  <td class="px-4 py-3">',
-        '    <select class="lead-status-select text-xs font-medium px-2.5 py-1.5 rounded-full cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
+        '    <div class="xl:w-[280px] shrink-0 space-y-3">',
+        '      <div>',
+        '        <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium mb-2">Статус</div>',
+        '        <select class="lead-status-select w-full text-xs font-medium px-2.5 py-2 rounded-lg cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
         statusOptions,
         '    </select>',
-        '  </td>',
-        // Actions
-        '  <td class="px-4 py-3">',
-        '    <div class="flex items-center gap-1.5 flex-nowrap">',
-        // Btn 1: Invoice
+        '      </div>',
+        '      <div>',
+        '        <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium mb-2">Действия</div>',
+        '        <div class="flex flex-wrap items-center gap-1.5">',
         '      <button class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
         '        Инвойс',
         '        ' + renderSentCheck(invoiceSent),
         '      </button>',
-        // Btn 2: Win + Invoice
         '      <button class="lead-action-btn action-win-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        Победа+',
         '        ' + renderSentCheck(winInvoiceSent),
         '      </button>',
-        // Btn 3: Win only
         '      <button class="lead-action-btn action-win-only inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
         '        Победа',
         '        ' + renderSentCheck(winOnlySent),
         '      </button>',
-        // Btn 4: Confirmation
         '      <button class="lead-action-btn action-confirmation inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        ' + confirmationLabel,
         '      </button>',
+        '        </div>',
+        '      </div>',
         '    </div>',
-        '  </td>',
-        '</tr>',
+        '  </div>',
+        '</div>',
       ].join('\n');
     }).join('\n');
 
