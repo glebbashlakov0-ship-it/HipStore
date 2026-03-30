@@ -404,6 +404,49 @@
     return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
   }
 
+  function renderRecentBids() {
+    var root = document.getElementById('recent-bids');
+    if (!root) return;
+
+    var recent = state.leads.slice(0, 5);
+    setText('recent-bids-count', 'Последние: ' + recent.length + ' / ' + state.leads.length);
+
+    if (!recent.length) {
+      root.innerHTML = '<div class="px-4 py-6 text-sm text-gray-400">Ставок пока нет</div>';
+      return;
+    }
+
+    root.innerHTML = recent.map(function (lead) {
+      var status = getLeadStatus(lead.id, lead.status);
+      var statusLabel = STATUS_LABELS[status] || status;
+      var bidRef = getBidRef(lead.id);
+      var placedAtText = formatPlacedAt(lead.placedAt);
+      var paymentLabel = lead.paymentMethod === 'revolut'
+        ? 'Revolut'
+        : lead.paymentMethod === 'iban'
+          ? 'IBAN'
+          : 'Не сохранён';
+      return [
+        '<div class="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">',
+        '  <div class="min-w-0">',
+        '    <div class="flex items-center gap-2 flex-wrap">',
+        '      <span class="text-xs font-mono text-gray-400">#' + escapeHtml(bidRef) + '</span>',
+        (isFreshLead(lead) ? '      <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">New</span>' : ''),
+        '      <span class="text-xs text-gray-400">' + escapeHtml(placedAtText) + '</span>',
+        '    </div>',
+        '    <div class="text-sm font-medium text-gray-900 mt-1">' + escapeHtml(lead.lotTitle) + '</div>',
+        '    <div class="text-xs text-gray-500 mt-1">' + escapeHtml(getFullName(lead)) + ' • ' + escapeHtml(lead.email || '—') + '</div>',
+        '  </div>',
+        '  <div class="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm flex-wrap">',
+        '    <span class="font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</span>',
+        '    <span class="text-gray-500">' + escapeHtml(paymentLabel) + '</span>',
+        '    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ' + (STATUS_CLASSES[status] || 'bg-gray-100 text-gray-600') + '">' + escapeHtml(statusLabel) + '</span>',
+        '  </div>',
+        '</div>',
+      ].join('\n');
+    }).join('\n');
+  }
+
   function getDeliveryTo(lead) {
     return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
   }
@@ -623,6 +666,7 @@
     setText('stats-won',    won);
     setText('stats-paid',   paid);
     setText('visible-count', 'Показано: ' + state.filteredLeads.length + ' / ' + total);
+    renderRecentBids();
   }
 
   function setText(id, val) {
