@@ -469,13 +469,13 @@
         .filter(Boolean)
         .join(' • ') || '—';
       var lotThumb = lead.lotImage
-        ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-7 h-7 object-cover rounded-md shrink-0" loading="lazy" />'
-        : '<div class="w-7 h-7 bg-gray-100 rounded-md shrink-0"></div>';
+        ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-6 h-6 object-cover rounded shrink-0" loading="lazy" />'
+        : '<div class="w-6 h-6 bg-gray-100 rounded shrink-0"></div>';
       var paymentBadgeHtml = lead.paymentMethod === 'revolut'
-        ? '<span class="inline-flex items-center gap-1 text-[10px] font-medium text-white bg-[#191c1f] px-1.5 py-0.5 rounded-full"><svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
+        ? '<span class="inline-flex items-center gap-0.5 text-[9px] font-medium text-white bg-[#191c1f] px-1.5 py-0.5 rounded-full"><svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
         : lead.paymentMethod === 'iban'
-          ? '<span class="inline-flex items-center gap-1 text-[10px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>'
-          : '<span class="inline-flex items-center gap-1 text-[10px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full">Не сохранён</span>';
+          ? '<span class="inline-flex items-center gap-0.5 text-[9px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full"><svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>'
+          : '<span class="inline-flex items-center gap-1 text-[9px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full">—</span>';
 
       var statusOptions = Object.keys(STATUS_LABELS).map(function (k) {
         return '<option value="' + k + '"' + (status === k ? ' selected' : '') + '>' + STATUS_LABELS[k] + '</option>';
@@ -483,53 +483,53 @@
 
       return [
         '<tr class="border-b border-gray-100 hover:bg-gray-50' + (freshLead ? ' bg-amber-50/30' : '') + '">',
-        '  <td class="px-3 py-2 text-[11px] font-semibold text-gray-400 align-middle">' + String(index + 1) + '.</td>',
-        '  <td class="px-3 py-2 align-middle">',
-        '    <div class="flex items-center gap-2 min-w-0">',
+        '  <td class="px-2.5 py-1.5 text-[10px] font-semibold text-gray-400 align-middle">' + String(index + 1) + '.</td>',
+        '  <td class="px-2.5 py-1.5 align-middle">',
+        '    <div class="flex items-center gap-1.5 min-w-0">',
         '      ' + lotThumb,
         '      <div class="min-w-0 flex-1">',
-        '        <div class="flex items-center gap-2 min-w-0">',
-        '          <span class="text-[13px] font-medium text-gray-900 truncate" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</span>',
-        (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide shrink-0">New</span>' : ''),
+        '        <div class="flex items-center gap-1.5 min-w-0">',
+        '          <span class="text-[12px] font-medium text-gray-900 truncate" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</span>',
+        (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide shrink-0">New</span>' : ''),
         '        </div>',
-        '        <div class="text-[10px] text-gray-400 truncate mt-0.5">',
+        '        <div class="text-[9px] text-gray-400 truncate mt-0.5">',
         '          <span class="' + timerCls + ' font-mono">' + escapeHtml(timerText) + '</span> • <span class="font-mono">#' + escapeHtml(bidRef) + '</span> • ' + escapeHtml(placedAtText),
         '        </div>',
         '      </div>',
         '    </div>',
         '  </td>',
-        '  <td class="px-3 py-2 align-middle">',
-        '    <div class="text-[13px] font-medium text-gray-900 truncate">' + escapeHtml(name) + '</div>',
-        '    <div class="text-[10px] text-gray-500 truncate mt-0.5" title="' + escapeHtml(clientSubline) + '">' + escapeHtml(clientSubline) + '</div>',
+        '  <td class="px-2.5 py-1.5 align-middle">',
+        '    <div class="text-[12px] font-medium text-gray-900 truncate">' + escapeHtml(name) + '</div>',
+        '    <div class="text-[9px] text-gray-500 truncate mt-0.5" title="' + escapeHtml(clientSubline) + '">' + escapeHtml(clientSubline) + '</div>',
         '  </td>',
-        '  <td class="px-3 py-2 align-middle">',
-        '    <div class="text-[13px] font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
+        '  <td class="px-2.5 py-1.5 align-middle">',
+        '    <div class="text-[12px] font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
         '    <div class="mt-0.5">' + paymentBadgeHtml + '</div>',
         '  </td>',
-        '  <td class="px-3 py-2 align-middle">',
-        '    <select class="lead-status-select w-[132px] text-[11px] font-medium px-2 py-1.5 rounded-lg cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
+        '  <td class="px-2.5 py-1.5 align-middle">',
+        '    <select class="lead-status-select w-full max-w-[108px] text-[10px] font-medium px-1.5 py-1 rounded-lg cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
         statusOptions,
         '    </select>',
         '  </td>',
-        '  <td class="px-3 py-2 align-middle">',
+        '  <td class="px-2.5 py-1.5 align-middle">',
         '    <div class="flex flex-wrap items-center gap-1">',
-        '      <button class="lead-action-btn action-invoice inline-flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
-        '        <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
-        '        Инвойс',
+        '      <button class="lead-action-btn action-invoice inline-flex items-center gap-0.5 px-1 py-0.5 text-[9px] font-medium rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
+        '        <svg class="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+        '        Инв.',
         '        ' + renderSentCheck(invoiceSent),
         '      </button>',
-        '      <button class="lead-action-btn action-win-invoice inline-flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
-        '        <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-        '        Победа+',
+        '      <button class="lead-action-btn action-win-invoice inline-flex items-center gap-0.5 px-1 py-0.5 text-[9px] font-medium rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
+        '        <svg class="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        '        Поб+',
         '        ' + renderSentCheck(winInvoiceSent),
         '      </button>',
-        '      <button class="lead-action-btn action-win-only inline-flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
-        '        <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
-        '        Победа',
+        '      <button class="lead-action-btn action-win-only inline-flex items-center gap-0.5 px-1 py-0.5 text-[9px] font-medium rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
+        '        <svg class="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
+        '        Поб.',
         '        ' + renderSentCheck(winOnlySent),
         '      </button>',
-        '      <button class="lead-action-btn action-confirmation inline-flex items-center gap-0.5 px-1.5 py-1 text-[10px] font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
-        '        <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        '      <button class="lead-action-btn action-confirmation inline-flex items-center gap-0.5 px-1 py-0.5 text-[9px] font-medium rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
+        '        <svg class="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        ' + confirmationLabel,
         '      </button>',
         '    </div>',
