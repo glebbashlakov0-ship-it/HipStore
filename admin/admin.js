@@ -591,6 +591,7 @@
     setText('stats-active', active);
     setText('stats-won',    won);
     setText('stats-paid',   paid);
+    setText('visible-count', 'Показано: ' + state.filteredLeads.length + ' / ' + total);
   }
 
   function setText(id, val) {
