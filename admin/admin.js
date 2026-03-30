@@ -404,49 +404,6 @@
     return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
   }
 
-  function renderRecentBids() {
-    var root = document.getElementById('recent-bids');
-    if (!root) return;
-
-    var recent = state.leads.slice(0, 5);
-    setText('recent-bids-count', 'Последние: ' + recent.length + ' / ' + state.leads.length);
-
-    if (!recent.length) {
-      root.innerHTML = '<div class="px-4 py-6 text-sm text-gray-400">Ставок пока нет</div>';
-      return;
-    }
-
-    root.innerHTML = recent.map(function (lead) {
-      var status = getLeadStatus(lead.id, lead.status);
-      var statusLabel = STATUS_LABELS[status] || status;
-      var bidRef = getBidRef(lead.id);
-      var placedAtText = formatPlacedAt(lead.placedAt);
-      var paymentLabel = lead.paymentMethod === 'revolut'
-        ? 'Revolut'
-        : lead.paymentMethod === 'iban'
-          ? 'IBAN'
-          : 'Не сохранён';
-      return [
-        '<div class="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">',
-        '  <div class="min-w-0">',
-        '    <div class="flex items-center gap-2 flex-wrap">',
-        '      <span class="text-xs font-mono text-gray-400">#' + escapeHtml(bidRef) + '</span>',
-        (isFreshLead(lead) ? '      <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">New</span>' : ''),
-        '      <span class="text-xs text-gray-400">' + escapeHtml(placedAtText) + '</span>',
-        '    </div>',
-        '    <div class="text-sm font-medium text-gray-900 mt-1">' + escapeHtml(lead.lotTitle) + '</div>',
-        '    <div class="text-xs text-gray-500 mt-1">' + escapeHtml(getFullName(lead)) + ' • ' + escapeHtml(lead.email || '—') + '</div>',
-        '  </div>',
-        '  <div class="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm flex-wrap">',
-        '    <span class="font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</span>',
-        '    <span class="text-gray-500">' + escapeHtml(paymentLabel) + '</span>',
-        '    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ' + (STATUS_CLASSES[status] || 'bg-gray-100 text-gray-600') + '">' + escapeHtml(statusLabel) + '</span>',
-        '  </div>',
-        '</div>',
-      ].join('\n');
-    }).join('\n');
-  }
-
   function getDeliveryTo(lead) {
     return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
   }
@@ -519,63 +476,57 @@
       var confirmationLabel = lead.confirmationSent ? 'Подтв.✓' : 'Подтв.';
 
       var imgHtml = lead.lotImage
-        ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-10 h-10 object-cover rounded-lg shrink-0" loading="lazy" />'
-        : '<div class="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center"><svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
+        ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-9 h-9 object-cover rounded-md shrink-0" loading="lazy" />'
+        : '<div class="w-9 h-9 bg-gray-100 rounded-md shrink-0 flex items-center justify-center"><svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
+      var emailText = lead.email || '—';
+      var phoneText = lead.phone || '—';
+      var geoText = geo || '—';
+      var contactMeta = phoneText;
+      if (geoText !== '—') contactMeta = phoneText === '—' ? geoText : phoneText + ' • ' + geoText;
+      var paymentBadgeHtml = lead.paymentMethod === 'revolut'
+        ? '<span class="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#191c1f] px-2 py-0.5 rounded-full"><svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
+        : lead.paymentMethod === 'iban'
+          ? '<span class="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>'
+          : '<span class="inline-flex items-center gap-1 text-[11px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">Не сохранён</span>';
 
       var statusOptions = Object.keys(STATUS_LABELS).map(function (k) {
         return '<option value="' + k + '"' + (status === k ? ' selected' : '') + '>' + STATUS_LABELS[k] + '</option>';
       }).join('');
 
       return [
-        '<div class="px-4 py-4 transition-colors hover:bg-gray-50' + (freshLead ? ' bg-amber-50/40' : '') + '">',
-        '  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">',
-        '    <div class="flex items-start gap-3 min-w-0 flex-1">',
+        '<div class="px-4 py-3 transition-colors hover:bg-gray-50' + (freshLead ? ' bg-amber-50/30' : '') + '">',
+        '  <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,2.7fr)_minmax(0,1.35fr)_minmax(0,0.9fr)_150px_auto] gap-3 xl:items-center">',
+        '    <div class="flex items-center gap-3 min-w-0">',
         '      ' + imgHtml,
         '      <div class="min-w-0 flex-1">',
-        '        <div class="flex items-center gap-2 flex-wrap mb-0.5">',
-        '          <div class="text-sm font-medium text-gray-900 leading-snug" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
-        (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">New</span>' : ''),
+        '        <div class="flex items-center gap-2 min-w-0">',
+        '          <div class="text-sm font-medium text-gray-900 truncate" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
+        (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide shrink-0">New</span>' : ''),
         '        </div>',
-        '        <div class="text-xs mt-1 ' + timerCls + ' font-mono" id="timer-' + lead.id + '">' + escapeHtml(timerText) + '</div>',
-        '        <div class="text-[11px] text-gray-400 mt-1 font-mono">#' + escapeHtml(bidRef) + ' • ' + escapeHtml(placedAtText) + '</div>',
-        '        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mt-3">',
-        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
-        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Клиент</div>',
-        '            <div class="text-sm font-medium text-gray-900 mt-1">' + escapeHtml(name) + '</div>',
-        '            <div class="text-xs text-gray-500 mt-1 break-all">' + escapeHtml(lead.email || '—') + '</div>',
-        '          </div>',
-        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
-        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Телефон</div>',
-        '            <div class="text-sm text-gray-700 mt-1">' + escapeHtml(lead.phone || '—') + '</div>',
-        '          </div>',
-        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
-        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Гео</div>',
-        '            <div class="text-sm text-gray-700 mt-1">' + escapeHtml(geo) + '</div>',
-        '          </div>',
-        '          <div class="rounded-lg bg-gray-50 px-3 py-2">',
-        '            <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Ставка</div>',
-        '            <div class="text-sm font-semibold text-gray-900 mt-1">' + formatCurrency(lead.bidAmount) + '</div>',
-        '            <div class="mt-1">',
-        lead.paymentMethod === 'revolut'
-          ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-white bg-[#191c1f] px-2 py-0.5 rounded-full"><svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
-          : lead.paymentMethod === 'iban'
-            ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>'
-            : '<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">Не сохранён</span>',
-        '            </div>',
-        '          </div>',
+        '        <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">',
+        '          <span class="' + timerCls + ' font-mono" id="timer-' + lead.id + '">' + escapeHtml(timerText) + '</span>',
+        '          <span class="text-gray-300">•</span>',
+        '          <span class="text-gray-400 font-mono">#' + escapeHtml(bidRef) + '</span>',
+        '          <span class="text-gray-300">•</span>',
+        '          <span class="text-gray-400">' + escapeHtml(placedAtText) + '</span>',
         '        </div>',
         '      </div>',
         '    </div>',
-        '    <div class="xl:w-[280px] shrink-0 space-y-3">',
-        '      <div>',
-        '        <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium mb-2">Статус</div>',
-        '        <select class="lead-status-select w-full text-xs font-medium px-2.5 py-2 rounded-lg cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
+        '    <div class="min-w-0">',
+        '      <div class="text-sm font-medium text-gray-900 truncate">' + escapeHtml(name) + '</div>',
+        '      <div class="text-xs text-gray-500 truncate">' + escapeHtml(emailText) + '</div>',
+        '      <div class="text-[11px] text-gray-400 mt-0.5 truncate">' + escapeHtml(contactMeta) + '</div>',
+        '    </div>',
+        '    <div class="min-w-0">',
+        '      <div class="text-sm font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
+        '      <div class="mt-1">' + paymentBadgeHtml + '</div>',
+        '    </div>',
+        '    <div class="xl:justify-self-end">',
+        '      <select class="lead-status-select w-full xl:w-[150px] text-xs font-medium px-2.5 py-2 rounded-lg cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
         statusOptions,
-        '    </select>',
-        '      </div>',
-        '      <div>',
-        '        <div class="text-[11px] uppercase tracking-wide text-gray-400 font-medium mb-2">Действия</div>',
-        '        <div class="flex flex-wrap items-center gap-1.5">',
+        '      </select>',
+        '    </div>',
+        '    <div class="flex flex-wrap items-center gap-1.5 xl:justify-end">',
         '      <button class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
         '        Инвойс',
@@ -595,8 +546,6 @@
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        ' + confirmationLabel,
         '      </button>',
-        '        </div>',
-        '      </div>',
         '    </div>',
         '  </div>',
         '</div>',
@@ -669,7 +618,6 @@
     setText('stats-won',    won);
     setText('stats-paid',   paid);
     setText('visible-count', 'Показано: ' + state.filteredLeads.length + ' / ' + total);
-    renderRecentBids();
   }
 
   function setText(id, val) {
