@@ -427,16 +427,7 @@
   // RENDER — TABLE
   // ═══════════════════════════════════════════════════════════════════════
   function applyFilters() {
-    var q = state.searchQuery.toLowerCase().trim();
-    state.filteredLeads = state.leads.filter(function (lead) {
-      var status = getLeadStatus(lead.id, lead.status);
-      if (state.filterStatus !== 'all' && status !== state.filterStatus) return false;
-      if (q) {
-        var haystack = [lead.firstName, lead.lastName, lead.email, lead.phone, lead.country, lead.city, lead.lotTitle].join(' ').toLowerCase();
-        if (haystack.indexOf(q) === -1) return false;
-      }
-      return true;
-    });
+    state.filteredLeads = state.leads.slice();
     renderTable();
     updateStats();
   }
@@ -1065,19 +1056,18 @@
     var searchEl = document.getElementById('search-input');
     if (searchEl) {
       searchEl.value = '';
-      searchEl.addEventListener('input', function () {
-        state.searchQuery = searchEl.value;
-        applyFilters();
-      });
+      searchEl.readOnly = true;
+      searchEl.tabIndex = -1;
+      searchEl.placeholder = 'Показаны все ставки';
+      searchEl.classList.add('bg-gray-50', 'text-gray-400', 'cursor-not-allowed');
     }
 
     // ── Filter tabs ────────────────────────────────────────────────────
     document.querySelectorAll('[data-filter-status]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.filterStatus = btn.dataset.filterStatus;
-        resetFilterTabsUi();
-        applyFilters();
-      });
+      btn.disabled = true;
+      btn.style.opacity = '0.55';
+      btn.style.cursor = 'default';
+      btn.style.pointerEvents = 'none';
     });
 
     // ── Modal: bank ────────────────────────────────────────────────────
