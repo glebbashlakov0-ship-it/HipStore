@@ -279,6 +279,14 @@
     return new Error(message);
   }
 
+  function createConfirmEmailError(email) {
+    var error = new Error(
+      'Your account was created for ' + String(email || '').trim().toLowerCase() + '. Please confirm your email or sign in again to start bidding.'
+    );
+    error.isConfirmEmail = true;
+    return error;
+  }
+
   function shouldRetryAuth(error) {
     var message = String((error && error.message) || '');
     return (
@@ -324,6 +332,27 @@
     } catch (_error) {
       return null;
     }
+  }
+
+  async function finalizeAuthenticatedUser(user, payload) {
+    if (!user || !user.id) throw new Error('Registration failed. Please sign in again.');
+
+    setCurrentUser(user, {
+      first_name: String(payload.firstName || '').trim(),
+      last_name: String(payload.lastName || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      email: String(payload.email || '').trim().toLowerCase()
+    });
+
+    await syncProfileRecord(user.id, {
+      email: String(payload.email || '').trim().toLowerCase(),
+      first_name: String(payload.firstName || '').trim(),
+      last_name: String(payload.lastName || '').trim(),
+      phone: String(payload.phone || '').trim()
+    });
+
+    dispatchAuth();
+    return window.AuctioAuth.getCurrentUser();
   }
 
   async function recoverLoginAfterTimeout() {
@@ -401,21 +430,37 @@
         throw new Error('An account with this email already exists.');
       }
 
-      setCurrentUser(result.data.user, {
-        first_name: String(payload.firstName || '').trim(),
-        last_name: String(payload.lastName || '').trim(),
-        phone: String(payload.phone || '').trim(),
-        email: email
-      });
-      await syncProfileRecord(result.data.user.id, {
-        email: email,
-        first_name: String(payload.firstName || '').trim(),
-        last_name: String(payload.lastName || '').trim(),
-        phone: String(payload.phone || '').trim()
-      });
-      dispatchAuth();
+      var sessionUser = result.data.session && result.data.session.user ? result.data.session.user : null;
+      if (!sessionUser) {
+        try {
+          var loginAfterSignUp = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+          });
+          if (!loginAfterSignUp.error && loginAfterSignUp.data && loginAfterSignUp.data.user && loginAfterSignUp.data.session) {
+            clearAuthOutage();
+            sessionUser = loginAfterSignUp.data.user;
+          } else {
+            clearCurrentUser();
+            dispatchAuth();
+            throw createConfirmEmailError(email);
+          }
+        } catch (signInError) {
+          var signInMessage = String((signInError && signInError.message) || '');
+          clearCurrentUser();
+          dispatchAuth();
+          if (
+            signInError && signInError.isConfirmEmail ||
+            signInMessage.indexOf('Email not confirmed') !== -1 ||
+            signInMessage.indexOf('confirm') !== -1
+          ) {
+            throw createConfirmEmailError(email);
+          }
+          throw normalizeError(signInError, 'Unable to complete registration.');
+        }
+      }
 
-      return window.AuctioAuth.getCurrentUser();
+      return finalizeAuthenticatedUser(sessionUser, payload);
     };
 
     window.AuctioAuth.login = async function (email, password) {

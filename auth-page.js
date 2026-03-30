@@ -421,6 +421,13 @@
     let activeView = allowedTabs.has(initialTab) ? initialTab : "overview";
     let flash = { profile: null, password: null, danger: null };
 
+    function handleAuthLoss() {
+      if (window.AuctioAuth.getCurrentUser()) return;
+      window.location.href = window.AuctioAuth.buildAuthPageUrl("login", basePath);
+    }
+
+    window.addEventListener("auctio:auth", handleAuthLoss);
+
     function setActionButtonState(button, isLoading, idleLabel, loadingLabel) {
       if (!button) return;
       button.disabled = !!isLoading;
