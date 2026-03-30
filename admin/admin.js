@@ -954,9 +954,29 @@
   }
 
   function showAdmin() {
+    resetFilters();
     startAutoRefresh();
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-ui').style.display     = 'block';
+  }
+
+  function resetFilterTabsUi() {
+    document.querySelectorAll('[data-filter-status]').forEach(function (btn) {
+      var isActive = btn.dataset.filterStatus === state.filterStatus;
+      btn.className = btn.className.replace(/tab-active|tab-inactive/g, '').trim();
+      btn.className += isActive ? ' tab-active' : ' tab-inactive';
+    });
+  }
+
+  function resetFilters(options) {
+    state.filterStatus = 'all';
+    state.searchQuery = '';
+    var searchEl = document.getElementById('search-input');
+    if (searchEl) searchEl.value = '';
+    resetFilterTabsUi();
+    if (options && options.rerender && state.leads.length) {
+      applyFilters();
+    }
   }
 
   function stopAutoRefresh() {
@@ -1054,10 +1074,14 @@
     on('refresh-btn', 'click', loadAndRender);
     window.addEventListener('focus', refreshIfVisible);
     document.addEventListener('visibilitychange', refreshIfVisible);
+    window.addEventListener('pageshow', function () {
+      resetFilters({ rerender: true });
+    });
 
     // ── Search ─────────────────────────────────────────────────────────
     var searchEl = document.getElementById('search-input');
     if (searchEl) {
+      searchEl.value = '';
       searchEl.addEventListener('input', function () {
         state.searchQuery = searchEl.value;
         applyFilters();
@@ -1068,10 +1092,7 @@
     document.querySelectorAll('[data-filter-status]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         state.filterStatus = btn.dataset.filterStatus;
-        document.querySelectorAll('[data-filter-status]').forEach(function (b) {
-          b.className = b.className.replace('tab-active', 'tab-inactive');
-        });
-        btn.className = btn.className.replace('tab-inactive', 'tab-active');
+        resetFilterTabsUi();
         applyFilters();
       });
     });
@@ -1104,6 +1125,9 @@
     if (isAuthenticated()) {
       showAdmin();
       loadAndRender();
+      setTimeout(function () {
+        resetFilters({ rerender: true });
+      }, 50);
     } else {
       showLogin();
     }
