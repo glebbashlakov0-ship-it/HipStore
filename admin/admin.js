@@ -446,7 +446,7 @@
     if (!tbody) return;
 
     if (!state.filteredLeads.length) {
-      tbody.innerHTML = '<div class="text-center py-14 text-gray-400 text-sm">Нет записей</div>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-14 text-gray-400 text-sm">Нет записей</td></tr>';
       return;
     }
 
@@ -471,14 +471,15 @@
         : 'Отправить подтверждение';
       var confirmationLabel = lead.confirmationSent ? 'Подтв.✓' : 'Подтв.';
 
-      var imgHtml = lead.lotImage
-        ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-9 h-9 object-cover rounded-md shrink-0" loading="lazy" />'
-        : '<div class="w-9 h-9 bg-gray-100 rounded-md shrink-0 flex items-center justify-center"><svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
       var emailText = lead.email || '—';
       var phoneText = lead.phone || '—';
       var geoText = geo || '—';
-      var contactMeta = phoneText;
-      if (geoText !== '—') contactMeta = phoneText === '—' ? geoText : phoneText + ' • ' + geoText;
+      var clientSubline = [emailText, phoneText !== '—' ? phoneText : '', geoText !== '—' ? geoText : '']
+        .filter(Boolean)
+        .join(' • ') || '—';
+      var lotThumb = lead.lotImage
+        ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-8 h-8 object-cover rounded-md shrink-0" loading="lazy" />'
+        : '<div class="w-8 h-8 bg-gray-100 rounded-md shrink-0"></div>';
       var paymentBadgeHtml = lead.paymentMethod === 'revolut'
         ? '<span class="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#191c1f] px-2 py-0.5 rounded-full"><svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
         : lead.paymentMethod === 'iban'
@@ -490,64 +491,59 @@
       }).join('');
 
       return [
-        '<div class="px-4 py-3 transition-colors hover:bg-gray-50' + (freshLead ? ' bg-amber-50/30' : '') + '">',
-        '  <div class="grid grid-cols-[44px_minmax(260px,2.7fr)_minmax(220px,1.35fr)_minmax(120px,0.9fr)_150px_auto] gap-3 items-center min-w-[1100px]">',
-        '    <div class="flex items-center justify-center text-xs font-semibold text-gray-400">',
-        '      ' + String(index + 1) + '.',
-        '    </div>',
-        '    <div class="flex items-center gap-3 min-w-0">',
-        '      ' + imgHtml,
+        '<tr class="border-b border-gray-100 hover:bg-gray-50' + (freshLead ? ' bg-amber-50/30' : '') + '">',
+        '  <td class="px-4 py-2.5 text-xs font-semibold text-gray-400 align-middle">' + String(index + 1) + '.</td>',
+        '  <td class="px-4 py-2.5 align-middle">',
+        '    <div class="flex items-center gap-2 min-w-0">',
+        '      ' + lotThumb,
         '      <div class="min-w-0 flex-1">',
         '        <div class="flex items-center gap-2 min-w-0">',
-          '          <div class="text-sm font-medium text-gray-900 truncate" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
+        '          <span class="text-sm font-medium text-gray-900 truncate" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</span>',
         (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide shrink-0">New</span>' : ''),
         '        </div>',
-        '        <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">',
-        '          <span class="' + timerCls + ' font-mono">' + escapeHtml(timerText) + '</span>',
-        '          <span class="text-gray-300">•</span>',
-        '          <span class="text-gray-400 font-mono">#' + escapeHtml(bidRef) + '</span>',
-        '          <span class="text-gray-300">•</span>',
-        '          <span class="text-gray-400">' + escapeHtml(placedAtText) + '</span>',
+        '        <div class="text-[11px] text-gray-400 truncate mt-0.5">',
+        '          <span class="' + timerCls + ' font-mono">' + escapeHtml(timerText) + '</span> • <span class="font-mono">#' + escapeHtml(bidRef) + '</span> • ' + escapeHtml(placedAtText),
         '        </div>',
         '      </div>',
         '    </div>',
-        '    <div class="min-w-0">',
-        '      <div class="text-sm font-medium text-gray-900 truncate">' + escapeHtml(name) + '</div>',
-        '      <div class="text-xs text-gray-500 truncate">' + escapeHtml(emailText) + '</div>',
-        '      <div class="text-[11px] text-gray-400 mt-0.5 truncate">' + escapeHtml(contactMeta) + '</div>',
-        '    </div>',
-        '    <div class="min-w-0">',
-        '      <div class="text-sm font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
-        '      <div class="mt-1">' + paymentBadgeHtml + '</div>',
-        '    </div>',
-        '    <div class="justify-self-end">',
-        '      <select class="lead-status-select w-[150px] text-xs font-medium px-2.5 py-2 rounded-lg cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
+        '  </td>',
+        '  <td class="px-4 py-2.5 align-middle">',
+        '    <div class="text-sm font-medium text-gray-900 truncate">' + escapeHtml(name) + '</div>',
+        '    <div class="text-[11px] text-gray-500 truncate mt-0.5" title="' + escapeHtml(clientSubline) + '">' + escapeHtml(clientSubline) + '</div>',
+        '  </td>',
+        '  <td class="px-4 py-2.5 align-middle">',
+        '    <div class="text-sm font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
+        '    <div class="mt-1">' + paymentBadgeHtml + '</div>',
+        '  </td>',
+        '  <td class="px-4 py-2.5 align-middle">',
+        '    <select class="lead-status-select w-[150px] text-xs font-medium px-2.5 py-2 rounded-lg cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
         statusOptions,
-        '      </select>',
-        '    </div>',
-        '    <div class="flex flex-wrap items-center gap-1.5 justify-end">',
-        '      <button class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
+        '    </select>',
+        '  </td>',
+        '  <td class="px-4 py-2.5 align-middle">',
+        '    <div class="flex flex-wrap items-center gap-1.5">',
+        '      <button class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
         '        Инвойс',
         '        ' + renderSentCheck(invoiceSent),
         '      </button>',
-        '      <button class="lead-action-btn action-win-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
+        '      <button class="lead-action-btn action-win-invoice inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        Победа+',
         '        ' + renderSentCheck(winInvoiceSent),
         '      </button>',
-        '      <button class="lead-action-btn action-win-only inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
+        '      <button class="lead-action-btn action-win-only inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
         '        Победа',
         '        ' + renderSentCheck(winOnlySent),
         '      </button>',
-        '      <button class="lead-action-btn action-confirmation inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
+        '      <button class="lead-action-btn action-confirmation inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        ' + confirmationLabel,
         '      </button>',
         '    </div>',
-        '  </div>',
-        '</div>',
+        '  </td>',
+        '</tr>',
       ].join('\n');
     }).join('\n');
 

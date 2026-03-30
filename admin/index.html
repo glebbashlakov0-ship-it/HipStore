@@ -142,11 +142,20 @@
 
         <!-- Leads list -->
         <div id="leads-table-wrapper" style="display:none">
-          <div class="px-4 py-2 border-b border-gray-100 text-[10px] uppercase tracking-[0.18em] text-gray-400 font-medium">
-            Ставки
-          </div>
           <div class="overflow-x-auto">
-            <div id="leads-body" class="divide-y divide-gray-100 min-w-[1100px]"></div>
+            <table class="min-w-[1180px] w-full text-left border-collapse">
+              <thead class="bg-gray-50 border-b border-gray-100">
+                <tr class="text-[10px] uppercase tracking-[0.18em] text-gray-400">
+                  <th class="px-4 py-2.5 font-medium w-[44px]">#</th>
+                  <th class="px-4 py-2.5 font-medium">Лот</th>
+                  <th class="px-4 py-2.5 font-medium">Клиент</th>
+                  <th class="px-4 py-2.5 font-medium w-[150px]">Ставка</th>
+                  <th class="px-4 py-2.5 font-medium w-[170px]">Статус</th>
+                  <th class="px-4 py-2.5 font-medium w-[360px]">Действия</th>
+                </tr>
+              </thead>
+              <tbody id="leads-body" class="bg-white divide-y divide-gray-100"></tbody>
+            </table>
           </div>
         </div>
 
