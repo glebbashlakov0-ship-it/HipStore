@@ -350,6 +350,30 @@
     return '€' + Number(amount || 0).toLocaleString('en-US');
   }
 
+  function formatPlacedAt(iso) {
+    if (!iso) return '—';
+    var date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).replace(',', '');
+  }
+
+  function getBidRef(bidId) {
+    var value = String(bidId || '');
+    if (!value) return '—';
+    return value.length > 10 ? value.slice(-10) : value;
+  }
+
+  function isFreshLead(lead) {
+    if (!lead || !lead.placedAt) return false;
+    var diff = Date.now() - new Date(lead.placedAt).getTime();
+    return diff >= 0 && diff < 30 * 60 * 1000;
+  }
+
   function formatCountdown(endTimeIso) {
     if (!endTimeIso) return null;
     var diff = new Date(endTimeIso).getTime() - Date.now();
@@ -437,6 +461,9 @@
       var geo         = getGeo(lead);
       var timerText   = lead.lotEndTime ? formatCountdown(lead.lotEndTime) : '—';
       var timerCls    = timerUrgencyClass(lead.lotEndTime);
+      var placedAtText = formatPlacedAt(lead.placedAt);
+      var bidRef = getBidRef(lead.id);
+      var freshLead = isFreshLead(lead);
       var invoiceSent = hasSentEmail(lead.id, 'invoice');
       var winInvoiceSent = hasSentEmail(lead.id, 'win-invoice');
       var winOnlySent = hasSentEmail(lead.id, 'win-only');
@@ -457,14 +484,18 @@
       }).join('');
 
       return [
-        '<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">',
+        '<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors' + (freshLead ? ' bg-amber-50/40' : '') + '">',
         // Lot + timer
         '  <td class="px-4 py-3">',
         '    <div class="flex items-start gap-3">',
         '      ' + imgHtml,
         '      <div class="min-w-0 pt-0.5">',
-        '        <div class="text-sm font-medium text-gray-900 leading-snug line-clamp-2 max-w-[200px]" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
+        '        <div class="flex items-center gap-2 flex-wrap mb-0.5">',
+        '          <div class="text-sm font-medium text-gray-900 leading-snug line-clamp-2 max-w-[200px]" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
+        (freshLead ? '          <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">New</span>' : ''),
+        '        </div>',
         '        <div class="text-xs mt-1 ' + timerCls + ' font-mono" id="timer-' + lead.id + '">' + escapeHtml(timerText) + '</div>',
+        '        <div class="text-[11px] text-gray-400 mt-1 font-mono">#' + escapeHtml(bidRef) + ' • ' + escapeHtml(placedAtText) + '</div>',
         '      </div>',
         '    </div>',
         '  </td>',
