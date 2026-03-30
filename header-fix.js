@@ -1,5 +1,6 @@
 (() => {
   const LOGO_FILE = "logo1.svg";
+  const TAWK_EMBED_SRC = "https://embed.tawk.to/69c04d8cd88c2b1c3430783d/1jkbitra2";
   const LANGUAGES = [
     { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
     { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
@@ -2049,6 +2050,27 @@
     ensureTranslationObserver(resolvedBasePath);
   }
 
+  function ensureTawkChat() {
+    if (typeof document === "undefined") {
+      return;
+    }
+    if (document.querySelector(`script[src="${TAWK_EMBED_SRC}"]`)) {
+      return;
+    }
+    window.Tawk_API = window.Tawk_API || {};
+    window.Tawk_LoadStart = window.Tawk_LoadStart || new Date();
+    const firstScript = document.getElementsByTagName("script")[0];
+    if (!firstScript || !firstScript.parentNode) {
+      return;
+    }
+    const embedScript = document.createElement("script");
+    embedScript.async = true;
+    embedScript.src = TAWK_EMBED_SRC;
+    embedScript.charset = "UTF-8";
+    embedScript.setAttribute("crossorigin", "*");
+    firstScript.parentNode.insertBefore(embedScript, firstScript);
+  }
+
   window.__AUCTIO_HEADER = {
     enhanceHeader,
     syncLanguage,
@@ -2085,6 +2107,7 @@
         replaceHeader();
         fixFooterLogo();
         enhanceHeader(basePath);
+        ensureTawkChat();
       },
       { once: true }
     );
@@ -2093,5 +2116,6 @@
     replaceHeader();
     fixFooterLogo();
     enhanceHeader(basePath);
+    ensureTawkChat();
   }
 })();

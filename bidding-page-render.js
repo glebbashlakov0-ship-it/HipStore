@@ -789,9 +789,9 @@
         itemDetails: pick(["bidding", "itemDetails"], "Item Details"),
         currentBid: pick(["bidding", "currentBid"], "Current Bid"),
         yourBid: pick(["bidding", "yourBid"], "Your Bid"),
-        authorizationHold: pick(["bidding", "authorizationHold"], "Authorization Hold"),
-        dueNow: pick(["bidding", "dueNow"], "Temporary Hold"),
-        authHoldDescription: pick(["bidding", "authHoldDescription"], "We will verify your card has available balance. No funds will be charged and will be returned within a few minutes."),
+        authorizationHold: "Payment Method",
+        dueNow: "Amount Due",
+        authHoldDescription: "IBAN is a bank transfer to an account. Revolut is a transfer through the Revolut digital bank. No card payment is used on this step.",
         selectBidAmount: pick(["bidding", "selectBidAmount"], "Select Your Bid Amount"),
         minimumBid: pick(["bidding", "minimumBid"], "Minimum Bid"),
         selectPreset: pick(["bidding", "selectPreset"], "Select a preset amount or enter a custom bid"),
@@ -815,12 +815,12 @@
         city: pick(["bidding", "city"], "City"),
         country: pick(["bidding", "country"], "Country"),
         continueToPayment: pick(["bidding", "continueToPayment"], "Continue to Payment"),
-        selectPaymentMethod: pick(["bidding", "selectPaymentMethod"], "Pay by Bank Transfer"),
-        creditOrDebitCard: pick(["bidding", "creditOrDebitCard"], "Payment by invoice"),
-        visaMastercard: pick(["bidding", "visaMastercard"], "Transfer to the bank details below"),
-        fastAndSecure: pick(["bidding", "fastAndSecure"], "Pending verification"),
+        selectPaymentMethod: "Choose Payment Method",
+        creditOrDebitCard: "Transfer Instructions",
+        visaMastercard: "Choose whether you want to pay by IBAN bank transfer or through Revolut",
+        fastAndSecure: "No card payment",
         completePayment: pick(["bidding", "completePayment"], "I Paid"),
-        securePaymentDescription: pick(["bidding", "securePaymentDescription"], "Use the invoice details below to make the transfer now. After you confirm the transfer, the bid is placed and marked for payment verification."),
+        securePaymentDescription: "Select IBAN for a classic bank transfer to an account, or Revolut for payment through the Revolut digital bank. We will email the details for the selected method after confirmation.",
         agreeToTerms: pick(["bidding", "agreeToTerms"], "I confirm that I have sent the transfer for this invoice and I agree to"),
         termsOfSale: pick(["bidding", "termsOfSale"], "Terms of Sale"),
       },
@@ -1039,14 +1039,14 @@
       '<div class="flex items-center gap-1.5 md:gap-2"><div class="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium bg-muted text-muted-foreground" data-bid-step-pill="3">3</div><span class="text-xs md:text-sm font-medium hidden sm:inline">' + escapeHtml(strings.bidding.step3) + '</span></div>' +
       '</div>' +
       '<div class="bidding-desktop-layout">' +
-      '<div class="bidding-side-col"><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"><div data-slot="card-content" class="p-4"><h3 class="font-serif text-base md:text-lg mb-3">' + escapeHtml(strings.bidding.bidSummary) + '</h3><div class="space-y-3"><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-2">' + escapeHtml(strings.bidding.itemDetails) + '</p><div class="flex gap-2.5"><img alt="' + escapeHtml(lot.title) + '" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-sm flex-shrink-0" src="' + escapeHtml(image) + '"><div class="min-w-0"><p class="font-medium text-xs md:text-sm line-clamp-2 leading-snug">' + escapeHtml(lot.title) + '</p><p class="text-[10px] md:text-xs text-muted-foreground mt-1">' + escapeHtml(strings.bidding.currentBid) + ': ' + formatCurrency(lot.current_bid || 0) + '</p></div></div></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div class="space-y-1.5"><div class="flex justify-between text-xs md:text-sm"><span class="text-muted-foreground">' + escapeHtml(strings.bidding.yourBid) + '</span><span class="font-medium" data-summary-your-bid>—</span></div><div class="flex justify-between text-xs md:text-sm"><span class="text-muted-foreground">' + escapeHtml(strings.bidding.authorizationHold) + '</span><span class="font-medium" data-summary-hold>' + escapeHtml(strings.bidding.creditOrDebitCard) + '</span></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div class="flex justify-between"><span class="font-medium text-sm md:text-base">' + escapeHtml(strings.bidding.dueNow) + '</span><span class="font-semibold text-base md:text-lg" data-summary-due>' + formatCurrency(holdAmount) + '</span></div><p class="text-[10px] text-muted-foreground leading-relaxed">' + escapeHtml(strings.bidding.authHoldDescription) + '</p></div></div></div></div></div>' +
+      '<div class="bidding-side-col"><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"><div data-slot="card-content" class="p-4"><h3 class="font-serif text-base md:text-lg mb-3">' + escapeHtml(strings.bidding.bidSummary) + '</h3><div class="space-y-3"><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-2">' + escapeHtml(strings.bidding.itemDetails) + '</p><div class="flex gap-2.5"><img alt="' + escapeHtml(lot.title) + '" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-sm flex-shrink-0" src="' + escapeHtml(image) + '"><div class="min-w-0"><p class="font-medium text-xs md:text-sm line-clamp-2 leading-snug">' + escapeHtml(lot.title) + '</p><p class="text-[10px] md:text-xs text-muted-foreground mt-1">' + escapeHtml(strings.bidding.currentBid) + ': ' + formatCurrency(lot.current_bid || 0) + '</p></div></div></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div class="space-y-1.5"><div class="flex justify-between text-xs md:text-sm"><span class="text-muted-foreground">' + escapeHtml(strings.bidding.yourBid) + '</span><span class="font-medium" data-summary-your-bid>—</span></div><div class="flex justify-between text-xs md:text-sm"><span class="text-muted-foreground">' + escapeHtml(strings.bidding.authorizationHold) + '</span><span class="font-medium" data-summary-hold>IBAN bank transfer</span></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div class="flex justify-between"><span class="font-medium text-sm md:text-base">' + escapeHtml(strings.bidding.dueNow) + '</span><span class="font-semibold text-base md:text-lg" data-summary-due>' + formatCurrency(holdAmount) + '</span></div><p class="text-[10px] text-muted-foreground leading-relaxed">' + escapeHtml(strings.bidding.authHoldDescription) + '</p></div></div></div></div></div>' +
       '<div class="bidding-main-col"><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="1"><div data-slot="card-content" class="p-4 md:p-6"><h2 class="font-serif text-lg md:text-xl mb-4">' + escapeHtml(strings.bidding.selectBidAmount) + '</h2><div class="space-y-4"><div class="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg"><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5">' + escapeHtml(strings.bidding.currentBid) + '</p><p class="text-base md:text-lg font-semibold">' + formatCurrency(lot.current_bid || 0) + '</p></div><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5">' + escapeHtml(strings.bidding.minimumBid) + '</p><p class="text-base md:text-lg font-semibold">' + formatCurrency(minimumBid) + '</p></div></div><div><p class="text-xs md:text-sm text-muted-foreground mb-3">' + escapeHtml(strings.bidding.selectPreset) + '</p><div class="grid grid-cols-2 md:grid-cols-3 gap-2">' +
       choices.map(function (amount, index) {
         return '<button type="button" class="bidding-choice p-3 rounded-lg border-2 transition-all text-left border-border hover:border-foreground/50' + (index === 0 ? ' active' : '') + '" data-bid-choice="' + amount + '"><p class="text-sm md:text-base font-semibold">' + formatCurrency(amount) + '</p><p class="text-[10px] md:text-xs text-muted-foreground">+' + formatCurrency(amount - minimumBid) + '</p></button>';
       }).join("") +
       '</div></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div><label class="text-sm md:text-base mb-2 block" for="bid-custom">' + escapeHtml(strings.bidding.customAmount) + '</label><div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-base md:text-lg font-medium">€</span><input id="bid-custom" data-bid-custom class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-7 h-10 md:h-12 text-base md:text-lg" type="number" min="' + minimumBid + '" step="50" placeholder="' + escapeHtml(strings.bidding.enterCustomBid) + '"/><div class="bidding-error hidden" data-bid-custom-error></div></div></div><button type="button" data-bid-next data-slot="button" class="bidding-primary-btn">' + escapeHtml(strings.bidding.confirmBid) + '</button></div></div></div>' +
       renderBidDetailsStep(strings) +
-      '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="3" style="display:none"><div data-slot="card-content" class="p-4 md:p-6"><div class="flex items-center justify-between mb-4"><h2 class="font-serif text-lg md:text-xl">' + escapeHtml(strings.bidding.selectPaymentMethod) + '</h2><button type="button" data-bid-back data-slot="button" class="bidding-secondary-btn">' + escapeHtml(strings.common.back) + '</button></div><div class="space-y-4"><div class="rounded-xl border border-border bg-muted/30 p-4 md:p-5"><div class="flex items-start justify-between gap-3"><div><p class="text-base md:text-lg font-semibold">' + escapeHtml(strings.bidding.creditOrDebitCard) + '</p><p class="text-sm text-muted-foreground mt-1">' + escapeHtml(strings.bidding.visaMastercard) + '</p></div><div class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">' + escapeHtml(strings.bidding.fastAndSecure) + '</div></div><div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Invoice number</p><p class="font-semibold" data-invoice-number>' + escapeHtml(invoiceNumber) + '</p></div><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Transfer amount</p><p class="font-semibold" data-summary-step3-amount>' + formatCurrency(holdAmount) + '</p></div></div><p class="mt-4 text-sm text-muted-foreground leading-relaxed">' + escapeHtml(strings.bidding.securePaymentDescription) + '</p></div><div class="rounded-xl border border-gray-200 bg-gray-50 p-5" data-payment-info-card><div class="flex items-start gap-4 mb-4"><div style="min-width:40px;height:40px;background:#111827;border-radius:12px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div><p class="font-semibold text-gray-900 text-base">Payment Instructions</p><p class="text-sm text-gray-500 mt-0.5">Sent to your email after bid confirmation</p></div></div><div class="rounded-lg bg-white border border-gray-200 p-4 text-sm text-gray-700 leading-relaxed" data-payment-info-text>Your bank transfer details — beneficiary name, IBAN, SWIFT/BIC and payment reference — will be sent to your email address within 2 hours of confirming your bid.</div><div class="mt-3 grid grid-cols-2 gap-2"><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Sent within 2 hours</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Secure & verified</div></div></div><label class="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm cursor-pointer"><input type="checkbox" data-bid-invoice-confirm class="mt-0.5 h-4 w-4 rounded border-gray-300" style="flex-shrink:0"><span class="text-gray-700 leading-relaxed">I confirm my bid and agree to complete payment within 48 hours of receiving the payment instructions sent to my email address.</span></label><div class="bidding-error hidden" data-bid-invoice-error></div><button type="button" data-bid-submit data-slot="button" class="bidding-primary-btn">Confirm Bid</button></div></div></div>' +
+      '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="3" style="display:none"><div data-slot="card-content" class="p-4 md:p-6"><div class="flex items-center justify-between mb-4"><h2 class="font-serif text-lg md:text-xl">' + escapeHtml(strings.bidding.selectPaymentMethod) + '</h2><button type="button" data-bid-back data-slot="button" class="bidding-secondary-btn">' + escapeHtml(strings.common.back) + '</button></div><div class="space-y-4"><div class="rounded-xl border border-border bg-muted/30 p-4 md:p-5"><div class="flex items-start justify-between gap-3"><div><p class="text-base md:text-lg font-semibold" data-payment-method-title>' + escapeHtml(strings.bidding.creditOrDebitCard) + '</p><p class="text-sm text-muted-foreground mt-1" data-payment-method-subtitle>' + escapeHtml(strings.bidding.visaMastercard) + '</p></div><div class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary" data-payment-method-badge>' + escapeHtml(strings.bidding.fastAndSecure) + '</div></div><div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Reference number</p><p class="font-semibold" data-invoice-number>' + escapeHtml(invoiceNumber) + '</p></div><div class="rounded-lg bg-background p-3 border border-border"><p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Amount due</p><p class="font-semibold" data-summary-step3-amount>' + formatCurrency(holdAmount) + '</p></div></div><p class="mt-4 text-sm text-muted-foreground leading-relaxed" data-payment-method-description>' + escapeHtml(strings.bidding.securePaymentDescription) + '</p></div><div class="rounded-xl border border-gray-200 bg-gray-50 p-5" data-payment-info-card><div class="flex items-start gap-4 mb-4"><div style="min-width:40px;height:40px;background:#111827;border-radius:12px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3 4 7v10h16V7l-8-4Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 17V11h6v6"/></svg></div><div><p class="font-semibold text-gray-900 text-base" data-payment-info-title>Selected payment route</p><p class="text-sm text-gray-500 mt-0.5" data-payment-info-subtitle>Instructions are sent to your email after bid confirmation</p></div></div><div class="rounded-lg bg-white border border-gray-200 p-4 text-sm text-gray-700 leading-relaxed" data-payment-info-text>IBAN is a bank transfer to an account. We will send the beneficiary name, IBAN, SWIFT/BIC and payment reference to your email address within 2 hours of confirming your bid.</div><div class="mt-3 grid grid-cols-2 gap-2"><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Sent within 2 hours</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M5 6h14M7 14h10M9 18h6"/></svg>No card checkout</div></div></div><label class="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm cursor-pointer"><input type="checkbox" data-bid-invoice-confirm class="mt-0.5 h-4 w-4 rounded border-gray-300" style="flex-shrink:0"><span class="text-gray-700 leading-relaxed" data-payment-confirm-copy>I confirm my bid and understand that payment instructions for the selected method will be sent to my email address.</span></label><div class="bidding-error hidden" data-bid-invoice-error></div><button type="button" data-bid-submit data-slot="button" class="bidding-primary-btn">Confirm Bid</button></div></div></div>' +
       '<div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm hidden" data-bid-success><div class="bidding-success"><div class="bidding-success-panel"><div class="bidding-success-head"><div class="bidding-success-mark"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M20 6 9 17l-5-5"></path></svg></div><div class="min-w-0 flex-1"><p class="bidding-success-eyebrow">' + escapeHtml(strings.bidding.successEyebrow) + '</p><h2 class="bidding-success-title">' + escapeHtml(strings.bidding.successTitle) + '</h2><p class="bidding-success-copy">' + escapeHtml(strings.bidding.successMessage) + '</p></div></div><div class="bidding-success-meta"><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successStatusLabel) + '</span><p class="bidding-success-item-value" data-success-status>' + escapeHtml(strings.bidding.successPending) + '</p></div><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successMethodLabel) + '</span><p class="bidding-success-item-value" data-success-method>IBAN transfer</p></div><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successAmountLabel) + '</span><p class="bidding-success-item-value" data-success-amount>' + formatCurrency(holdAmount) + '</p></div><div class="bidding-success-item"><span class="bidding-success-item-label">' + escapeHtml(strings.bidding.successReferenceLabel) + '</span><p class="bidding-success-item-value" data-success-reference>' + escapeHtml(invoiceNumber) + '</p></div></div><div class="bidding-success-actions"><a href="../lot/index.html?slug=' + encodeURIComponent(lot.slug || "") + '" class="bidding-primary-btn sm:w-auto">' + escapeHtml(strings.bidding.backToLot) + '</a><a href="../account.html?view=bids" class="bidding-secondary-btn sm:w-auto">' + escapeHtml(strings.bidding.successOpenBids) + '</a></div></div></div></div>' +
       '</div></div></section></div>';
 
@@ -1077,6 +1077,10 @@
     var successAmountNode = document.querySelector("[data-success-amount]");
     var successReferenceNode = document.querySelector("[data-success-reference]");
     var invoiceAmountNode = document.querySelector("[data-summary-step3-amount]");
+    var paymentMethodTitleNode = document.querySelector("[data-payment-method-title]");
+    var paymentMethodSubtitleNode = document.querySelector("[data-payment-method-subtitle]");
+    var paymentMethodDescriptionNode = document.querySelector("[data-payment-method-description]");
+    var paymentMethodBadgeNode = document.querySelector("[data-payment-method-badge]");
     var invoiceConfirm = document.querySelector("[data-bid-invoice-confirm]");
     var invoiceError = document.querySelector("[data-bid-invoice-error]");
     var editButtons = Array.from(document.querySelectorAll("[data-bid-edit-section]"));
@@ -1153,8 +1157,8 @@
 
     function updateSummary() {
       if (summaryBidNode) summaryBidNode.textContent = formatCurrency(selectedBid);
-      if (summaryHoldNode) summaryHoldNode.textContent = formatCurrency(holdAmount);
-      if (summaryDueNode) summaryDueNode.textContent = formatCurrency(holdAmount);
+      if (summaryHoldNode) summaryHoldNode.textContent = getPaymentMethodLabel();
+      if (summaryDueNode) summaryDueNode.textContent = formatCurrency(selectedBid);
       if (invoiceAmountNode) invoiceAmountNode.textContent = formatCurrency(selectedBid);
       if (invoiceReferencePreviewNode) {
         invoiceReferencePreviewNode.textContent = (document.querySelector('[data-invoice-field="reference"]') || {}).value || (invoiceNumberNode ? invoiceNumberNode.textContent : "");
@@ -1172,7 +1176,27 @@
     }
 
     function getPaymentMethodLabel() {
-      return selectedPaymentMethod === "revolut" ? "Revolut" : "IBAN transfer";
+      return selectedPaymentMethod === "revolut" ? "Revolut" : "IBAN bank transfer";
+    }
+
+    function updatePaymentMethodPresentation() {
+      var isIban = selectedPaymentMethod === "iban";
+      if (paymentMethodTitleNode) {
+        paymentMethodTitleNode.textContent = isIban ? "IBAN Bank Transfer" : "Revolut Digital Bank";
+      }
+      if (paymentMethodSubtitleNode) {
+        paymentMethodSubtitleNode.textContent = isIban
+          ? "Bank transfer to an account using IBAN, SWIFT/BIC and beneficiary details"
+          : "Transfer through the Revolut digital bank using the details we email to you";
+      }
+      if (paymentMethodDescriptionNode) {
+        paymentMethodDescriptionNode.textContent = isIban
+          ? "IBAN is a standard bank transfer to an account. After confirmation, we will email the beneficiary name, IBAN, SWIFT/BIC and payment reference."
+          : "Revolut is a digital bank. After confirmation, we will email the Revolut payment details and reference for your transfer.";
+      }
+      if (paymentMethodBadgeNode) {
+        paymentMethodBadgeNode.textContent = "No card payment";
+      }
     }
 
     function updateSuccessState() {
@@ -1230,6 +1254,38 @@
       }
     }
 
+    function getRecoveredAuthUser() {
+      if (window.AuctioAuth && typeof window.AuctioAuth.getCurrentUser === "function") {
+        var currentUser = window.AuctioAuth.getCurrentUser();
+        if (currentUser && currentUser.id) return currentUser;
+      }
+      if (window.__AUCTIO_AUTH_USER && window.__AUCTIO_AUTH_USER.id) {
+        return window.__AUCTIO_AUTH_USER;
+      }
+      return null;
+    }
+
+    async function resolveBidSession() {
+      if (!window._supabase || !window._supabase.auth) return null;
+
+      var sessionRes = await window._supabase.auth.getSession();
+      var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+      if (session && session.user) return session;
+
+      try {
+        var refreshRes = await window._supabase.auth.refreshSession();
+        session = refreshRes && refreshRes.data ? refreshRes.data.session : null;
+        if (session && session.user) return session;
+      } catch (_refreshError) {}
+
+      var recoveredUser = getRecoveredAuthUser();
+      if (recoveredUser) {
+        return { user: recoveredUser, isRecoveredFallback: true };
+      }
+
+      return null;
+    }
+
     async function submitBid() {
       if (isSubmitting) return;
       if (invoiceError) invoiceError.classList.add("hidden");
@@ -1240,8 +1296,7 @@
           throw new Error("Bidding service is unavailable.");
         }
 
-        var sessionRes = await window._supabase.auth.getSession();
-        var session = sessionRes.data && sessionRes.data.session;
+        var session = await resolveBidSession();
         if (!session || !session.user) {
           throw new Error("Your session expired. Please sign in again before placing a bid.");
         }
@@ -1269,6 +1324,7 @@
           lotSlug: lot.slug || '',
           lotTitle: lot.title || 'Lot',
           lotImage: (lot.lot_images && lot.lot_images[0] && (lot.lot_images[0].image_url || lot.lot_images[0].image)) || '',
+          userId: session.user.id,
           bidAmount: selectedBid,
           currentBid: selectedBid,
           status: 'active',
@@ -1464,6 +1520,10 @@
     }
 
     var PEN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>';
+    var SECTION_REQUIRED_FIELDS = {
+      contact: ['firstName', 'lastName', 'email', 'phone'],
+      shipping: ['address', 'city', 'postalCode', 'country']
+    };
 
     function openSection(section) {
       var form = section === 'contact' ? document.querySelector('[data-contact-form]') : document.querySelector('[data-shipping-form]');
@@ -1479,6 +1539,34 @@
       if (view) view.style.display = '';
     }
 
+    function setSectionEditButtonState(section, isOpen) {
+      var button = document.querySelector('[data-bid-edit-section="' + section + '"]');
+      if (!button) return;
+      button.innerHTML = PEN_SVG + (isOpen ? 'Cancel' : 'Edit');
+    }
+
+    function isSectionComplete(section) {
+      return (SECTION_REQUIRED_FIELDS[section] || []).every(function (fieldName) {
+        var field = document.querySelector('[data-field="' + fieldName + '"]');
+        return field && String(field.value || '').trim();
+      });
+    }
+
+    function syncSectionState(section) {
+      if (isSectionComplete(section)) {
+        closeSection(section);
+        setSectionEditButtonState(section, false);
+      } else {
+        openSection(section);
+        setSectionEditButtonState(section, true);
+      }
+    }
+
+    function syncEditableSections() {
+      syncSectionState('contact');
+      syncSectionState('shipping');
+    }
+
     editButtons.forEach(function (button) {
       button.addEventListener("click", function () {
         var section = button.getAttribute("data-bid-edit-section");
@@ -1487,10 +1575,10 @@
         var isOpen = form.style.display !== 'none';
         if (isOpen) {
           closeSection(section);
-          button.innerHTML = PEN_SVG + 'Edit';
+          setSectionEditButtonState(section, false);
         } else {
           openSection(section);
-          button.innerHTML = PEN_SVG + 'Cancel';
+          setSectionEditButtonState(section, true);
         }
       });
     });
@@ -1499,9 +1587,7 @@
       btn.addEventListener('click', function () {
         var section = btn.getAttribute('data-bid-save-section');
         updateDetailsSummary();
-        closeSection(section);
-        var editBtn = document.querySelector('[data-bid-edit-section="' + section + '"]');
-        if (editBtn) editBtn.innerHTML = PEN_SVG + 'Edit';
+        syncSectionState(section);
       });
     });
 
@@ -1571,14 +1657,16 @@
         syncCountryLabel();
         syncPhoneCountryDisplay();
         updateDetailsSummary();
-        var PEN3 = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>';
+        syncEditableSections();
       }).catch(function () {});
     }
 
     updateSummary();
+    updatePaymentMethodPresentation();
     updateSuccessState();
     syncCountryLabel();
     syncPhoneCountryDisplay();
+    syncEditableSections();
     renderStep();
 
     // ── Payment method selector on step 3 ───────────────────────────────
@@ -1586,15 +1674,15 @@
       var infoCard = document.querySelector('[data-payment-info-card]');
       if (!infoCard) return;
 
-      var ibanText = 'Your bank transfer details — beneficiary name, IBAN, SWIFT/BIC and payment reference — will be sent to your email address within 2 hours of confirming your bid.';
-      var revText  = 'Your Revolut payment details will be sent to your email address within 2 hours of confirming your bid. No transfer is needed at this stage.';
+      var ibanText = 'IBAN is a bank transfer to an account. We will send the beneficiary name, IBAN, SWIFT/BIC and payment reference to your email address within 2 hours of confirming your bid.';
+      var revText  = 'Revolut is a digital bank. We will send your Revolut payment details and payment reference to your email address within 2 hours of confirming your bid.';
 
       var tabsDiv = document.createElement('div');
       tabsDiv.style.cssText = 'display:flex;gap:8px;margin-bottom:16px';
       tabsDiv.innerHTML =
         '<button type="button" class="pay-method-btn" data-pay-method="iban" style="flex:1;padding:11px 8px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #111827;background:#111827;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s">' +
-        '<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>' +
-        'Bank Transfer</button>' +
+        '<svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18"/><path stroke-linecap="round" stroke-linejoin="round" d="M7 6h10"/><path stroke-linecap="round" stroke-linejoin="round" d="M7 14h10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 18h6"/></svg>' +
+        'IBAN transfer</button>' +
         '<button type="button" class="pay-method-btn" data-pay-method="revolut" style="flex:1;padding:11px 8px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #e5e7eb;background:#f9fafb;color:#374151;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg>' +
         'Revolut</button>';
@@ -1613,8 +1701,13 @@
           });
           var infoText = infoCard.querySelector('[data-payment-info-text]');
           if (infoText) infoText.textContent = isIban ? ibanText : revText;
+          updatePaymentMethodPresentation();
+          updateSummary();
+          updateSuccessState();
         });
       });
+
+      updatePaymentMethodPresentation();
     })(); } catch (e) { console.warn('Payment method selector error:', e); }
 
     if (submitButton) {

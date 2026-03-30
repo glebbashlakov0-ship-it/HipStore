@@ -428,8 +428,12 @@
   // ─── Bids ────────────────────────────────────────────────────────────────────
 
   async function addStoredBid(bidData) {
-    var uid = await getUserId(); if (!uid) return false;
     var payload = bidData || {};
+    var authUser = window.AuctioAuth && typeof window.AuctioAuth.getCurrentUser === 'function'
+      ? window.AuctioAuth.getCurrentUser()
+      : null;
+    var uid = payload.userId || await getUserId() || (authUser && authUser.id);
+    if (!uid) return false;
     if (!payload.lotId) return false;
 
     var items = readStoredBids(uid).filter(function (item) {

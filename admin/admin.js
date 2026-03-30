@@ -11,12 +11,8 @@
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qc254eGl5Ym5pb2N0ZXFibmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTM5MzYsImV4cCI6MjA4ODkyOTkzNn0.xZhqA4ASoaHZ36mi3ZYXBTgG4Cvq89sVzXptJCs5mU4',
     supabaseServiceKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qc254eGl5Ym5pb2N0ZXFibmRwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzM1MzkzNiwiZXhwIjoyMDg4OTI5OTM2fQ.7ffBVd5GLmjzjAVQqjDkd9d7p2ibQrgzxXuwAaaLUrI',
 
-    emailjs: {
-      publicKey: 'Yu3OgnwUL8964F1mD',
-      serviceId: 'service_9kbka1i',
-      templateInvoice: 'template_fc9xbs3',
-      templateWinInvoice: 'template_fy9x6ps',
-      templateWinOnly: 'template_fy9x6ps', // используем тот же, но без реквизитов
+    resend: {
+      functionName: 'send-admin-email',
     },
 
     auctionHouse: {
@@ -30,6 +26,8 @@
   // ═══════════════════════════════════════════════════════════════════════
   var ADMIN_SESSION_KEY  = 'auctio_admin_session';
   var ADMIN_STATUSES_KEY = 'auctio_admin_statuses';
+  var ADMIN_CONFIRMATIONS_KEY = 'auctio_admin_confirmations';
+  var ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails';
 
   var STATUS_LABELS = {
     active:    'В работе',
@@ -62,6 +60,8 @@
     currentLead:    null,
     currentAction:  null, // 'invoice' | 'win-invoice' | 'win-only'
     adminStatuses:  {},
+    confirmations:  {},
+    sentEmails:     {},
     timers:         {},
   };
 
@@ -103,6 +103,69 @@
     try {
       localStorage.removeItem(ADMIN_STATUSES_KEY);
     } catch (e) {}
+  }
+
+  function loadConfirmationMap() {
+    try {
+      return JSON.parse(localStorage.getItem(ADMIN_CONFIRMATIONS_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveConfirmationMap() {
+    try {
+      localStorage.setItem(ADMIN_CONFIRMATIONS_KEY, JSON.stringify(state.confirmations || {}));
+    } catch (e) {}
+  }
+
+  function isConfirmationSent(bidId) {
+    return Boolean(state.confirmations && state.confirmations[bidId]);
+  }
+
+  function markConfirmationSent(bidId, sentAt) {
+    var timestamp = sentAt || new Date().toISOString();
+    state.confirmations[bidId] = timestamp;
+    var lead = state.leads.find(function (item) { return item.id === bidId; });
+    if (lead) {
+      lead.confirmationSent = true;
+      lead.confirmationSentAt = timestamp;
+    }
+    saveConfirmationMap();
+  }
+
+  function loadSentEmailMap() {
+    try {
+      return JSON.parse(localStorage.getItem(ADMIN_SENT_EMAILS_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveSentEmailMap() {
+    try {
+      localStorage.setItem(ADMIN_SENT_EMAILS_KEY, JSON.stringify(state.sentEmails || {}));
+    } catch (e) {}
+  }
+
+  function hasSentEmail(bidId, actionType) {
+    var entry = state.sentEmails && state.sentEmails[bidId];
+    return Boolean(entry && entry[actionType]);
+  }
+
+  function markEmailSent(bidId, actionType, sentAt) {
+    if (!bidId || !actionType) return;
+    var timestamp = sentAt || new Date().toISOString();
+    if (!state.sentEmails[bidId] || typeof state.sentEmails[bidId] !== 'object') {
+      state.sentEmails[bidId] = {};
+    }
+    state.sentEmails[bidId][actionType] = timestamp;
+    saveSentEmailMap();
+  }
+
+  function renderSentCheck(visible) {
+    if (!visible) return '';
+    return '<span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white/85 text-current text-[10px] font-bold leading-none">✓</span>';
   }
 
   function getLeadStatus(bidId, originalStatus) {
@@ -255,6 +318,8 @@
         postalCode: profile.postal_code || '',
         placedAt:      bid.created_at,
         paymentMethod: normalizePaymentMethod(bid.payment_method, bid.id),
+        confirmationSentAt: bid.confirmation_sent_at || state.confirmations[bid.id] || '',
+        confirmationSent: Boolean(bid.confirmation_sent_at || state.confirmations[bid.id]),
       };
     });
   }
@@ -369,6 +434,16 @@
       var geo         = getGeo(lead);
       var timerText   = lead.lotEndTime ? formatCountdown(lead.lotEndTime) : '—';
       var timerCls    = timerUrgencyClass(lead.lotEndTime);
+      var invoiceSent = hasSentEmail(lead.id, 'invoice');
+      var winInvoiceSent = hasSentEmail(lead.id, 'win-invoice');
+      var winOnlySent = hasSentEmail(lead.id, 'win-only');
+      var confirmationDisabled = lead.confirmationSent
+        ? ' disabled aria-disabled="true" style="opacity:0.55;cursor:not-allowed;pointer-events:none;"'
+        : '';
+      var confirmationTitle = lead.confirmationSent
+        ? 'Подтверждение уже отправлено'
+        : 'Отправить подтверждение';
+      var confirmationLabel = lead.confirmationSent ? 'Подтв.✓' : 'Подтв.';
 
       var imgHtml = lead.lotImage
         ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-10 h-10 object-cover rounded-lg shrink-0" loading="lazy" />'
@@ -423,16 +498,24 @@
         '      <button class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
         '        Инвойс',
+        '        ' + renderSentCheck(invoiceSent),
         '      </button>',
         // Btn 2: Win + Invoice
         '      <button class="lead-action-btn action-win-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        Победа+',
+        '        ' + renderSentCheck(winInvoiceSent),
         '      </button>',
         // Btn 3: Win only
         '      <button class="lead-action-btn action-win-only inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
         '        Победа',
+        '        ' + renderSentCheck(winOnlySent),
+        '      </button>',
+        // Btn 4: Confirmation
+        '      <button class="lead-action-btn action-confirmation inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
+        '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        '        ' + confirmationLabel,
         '      </button>',
         '    </div>',
         '  </td>',
@@ -481,10 +564,13 @@
       btn.addEventListener('click', function () {
         var lead = state.leads.find(function (l) { return l.id === btn.dataset.leadId; });
         if (!lead) return;
+        if (btn.disabled) return;
+        if (btn.classList.contains('action-confirmation') && lead.confirmationSent) return;
         state.currentLead = lead;
         if (btn.classList.contains('action-invoice'))     openBankModal('invoice');
         else if (btn.classList.contains('action-win-invoice')) openBankModal('win-invoice');
         else if (btn.classList.contains('action-win-only'))    openWinModal();
+        else if (btn.classList.contains('action-confirmation')) handleSendConfirmation(lead, btn);
       });
     });
   }
@@ -673,20 +759,34 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // EMAIL (EmailJS)
+  // EMAIL (Resend via Supabase Edge Function)
   // ═══════════════════════════════════════════════════════════════════════
-  function emailConfigured() {
-    return CONFIG.emailjs.publicKey && CONFIG.emailjs.serviceId;
+  function resendConfigured() {
+    return CONFIG.resend && CONFIG.resend.functionName;
   }
 
-  function sendEmail(templateId, params) {
-    if (!emailConfigured()) {
-      return Promise.reject(new Error('EmailJS не настроен. Заполни CONFIG.emailjs в admin.js'));
+  async function sendEmail(payload) {
+    if (!resendConfigured()) {
+      throw new Error('Resend не настроен. Заполни CONFIG.resend.functionName в admin.js');
     }
-    if (!templateId) {
-      return Promise.reject(new Error('Template ID не задан в CONFIG.emailjs'));
+    if (!sb) initSupabase();
+    var result = await sb.functions.invoke(CONFIG.resend.functionName, {
+      body: payload,
+    });
+    if (result.error) {
+      throw new Error(result.error.message || 'Не удалось вызвать функцию отправки письма.');
     }
-    return window.emailjs.send(CONFIG.emailjs.serviceId, templateId, params);
+    if (result.data && result.data.error) {
+      throw new Error(result.data.error);
+    }
+    return result.data || {};
+  }
+
+  function formatSendSuccessMessage(result, fallbackEmail) {
+    if (result && result.demo && result.to) {
+      return 'Письмо отправлено в demo-режиме → ' + result.to;
+    }
+    return 'Письмо отправлено → ' + (result && result.to ? result.to : fallbackEmail);
   }
 
   async function handleSendInvoice() {
@@ -697,14 +797,15 @@
     var ref    = val('bank-reference') || genInvoiceNumber();
     var pd     = collectPaymentDetails();
 
-    var templateId = state.currentAction === 'win-invoice'
-      ? CONFIG.emailjs.templateWinInvoice
-      : CONFIG.emailjs.templateInvoice;
+    var templateType = state.currentAction === 'win-invoice'
+      ? 'win-invoice'
+      : 'invoice';
 
     setBtnLoading('send-email-btn', 'send-email-btn-text', true, 'Отправка...');
 
     try {
-      await sendEmail(templateId, {
+      var result = await sendEmail({
+        template_type:   templateType,
         to_email:        lead.email,
         to_name:         getFullName(lead),
         lot_title:       lead.lotTitle,
@@ -717,9 +818,11 @@
         payment_details: formatPaymentBlock(pd, amount, ref),
         due_date:        getDueDate(14),
         from_name:       CONFIG.auctionHouse.name,
+        reply_to:        CONFIG.auctionHouse.email,
       });
 
-      showToast('Письмо отправлено → ' + lead.email, 'success');
+      markEmailSent(lead.id, templateType);
+      showToast(formatSendSuccessMessage(result, lead.email), 'success');
 
       if (state.currentAction === 'win-invoice') {
         setLeadStatus(lead.id, 'won');
@@ -741,7 +844,8 @@
     setBtnLoading('send-win-btn', 'send-win-btn-text', true, 'Отправка...');
 
     try {
-      await sendEmail(CONFIG.emailjs.templateWinOnly, {
+      var result = await sendEmail({
+        template_type:   'win-only',
         to_email:        lead.email,
         to_name:         getFullName(lead),
         lot_title:       lead.lotTitle,
@@ -754,9 +858,11 @@
         payment_details: 'Our team will contact you shortly with payment details.',
         due_date:        getDueDate(14),
         from_name:       CONFIG.auctionHouse.name,
+        reply_to:        CONFIG.auctionHouse.email,
       });
 
-      showToast('Уведомление отправлено → ' + lead.email, 'success');
+      markEmailSent(lead.id, 'win-only');
+      showToast(formatSendSuccessMessage(result, lead.email), 'success');
       setLeadStatus(lead.id, 'won');
       await persistLeadStatus(lead.id, 'won');
       closeWinModal();
@@ -765,6 +871,45 @@
       showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
     } finally {
       setBtnLoading('send-win-btn', 'send-win-btn-text', false, 'Отправить уведомление');
+    }
+  }
+
+  async function handleSendConfirmation(lead, triggerBtn) {
+    if (!lead) return;
+
+    var originalHtml = triggerBtn ? triggerBtn.innerHTML : '';
+    if (triggerBtn) {
+      triggerBtn.disabled = true;
+      triggerBtn.style.opacity = '0.7';
+      triggerBtn.innerHTML = 'Отправка...';
+    }
+
+    try {
+      var result = await sendEmail({
+        template_type:    'confirmation',
+        to_email:         lead.email,
+        to_name:          getFullName(lead),
+        lot_title:        lead.lotTitle,
+        lot_image:        lead.lotImage || '',
+        bid_amount:       formatCurrency(lead.bidAmount),
+        delivery_to:      getDeliveryTo(lead),
+        delivery_address: getDeliveryAddress(lead),
+        from_name:        CONFIG.auctionHouse.name,
+        reply_to:         CONFIG.auctionHouse.email,
+      });
+
+      markConfirmationSent(lead.id);
+      showToast(formatSendSuccessMessage(result, lead.email), 'success');
+      applyFilters();
+    } catch (e) {
+      showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
+    } finally {
+      if (triggerBtn && !lead.confirmationSent) {
+        triggerBtn.disabled = false;
+        triggerBtn.style.opacity = '1';
+        triggerBtn.innerHTML = originalHtml;
+      }
+      state.currentLead = null;
     }
   }
 
@@ -825,6 +970,8 @@
       }
       if (!sb) initSupabase();
       state.adminStatuses = {};
+      state.confirmations = loadConfirmationMap();
+      state.sentEmails = loadSentEmailMap();
       state.leads         = await loadLeads();
       await syncLegacyStatusesToDatabase();
       state.filteredLeads = state.leads.slice();
@@ -843,11 +990,8 @@
   // ═══════════════════════════════════════════════════════════════════════
   function init() {
     state.adminStatuses = {};
-
-    // Init EmailJS
-    if (CONFIG.emailjs.publicKey) {
-      window.emailjs && window.emailjs.init({ publicKey: CONFIG.emailjs.publicKey });
-    }
+    state.confirmations = loadConfirmationMap();
+    state.sentEmails = loadSentEmailMap();
 
     // ── Login ──────────────────────────────────────────────────────────
     var loginPass  = document.getElementById('admin-pass');
