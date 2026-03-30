@@ -28,8 +28,6 @@
   var ADMIN_STATUSES_KEY = 'auctio_admin_statuses';
   var ADMIN_CONFIRMATIONS_KEY = 'auctio_admin_confirmations';
   var ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails';
-  var ADMIN_AUTO_REFRESH_MS = 15000;
-
   var STATUS_LABELS = {
     active:    'В работе',
     pending:   'Ожидает',
@@ -65,7 +63,6 @@
     sentEmails:     {},
     timers:         {},
     loadInFlight:   false,
-    autoRefreshTimer: null,
   };
 
   var sb = null;
@@ -324,6 +321,11 @@
         confirmationSentAt: bid.confirmation_sent_at || state.confirmations[bid.id] || '',
         confirmationSent: Boolean(bid.confirmation_sent_at || state.confirmations[bid.id]),
       };
+    }).sort(function (a, b) {
+      var timeA = a.placedAt ? new Date(a.placedAt).getTime() : 0;
+      var timeB = b.placedAt ? new Date(b.placedAt).getTime() : 0;
+      if (timeA !== timeB) return timeB - timeA;
+      return String(b.id || '').localeCompare(String(a.id || ''));
     });
   }
 
@@ -982,7 +984,6 @@
 
   function showAdmin() {
     resetFilters();
-    startAutoRefresh();
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-ui').style.display     = 'block';
   }
@@ -1004,24 +1005,6 @@
     if (options && options.rerender && state.leads.length) {
       applyFilters();
     }
-  }
-
-  function stopAutoRefresh() {
-    if (state.autoRefreshTimer) {
-      clearInterval(state.autoRefreshTimer);
-      state.autoRefreshTimer = null;
-    }
-  }
-
-  function refreshIfVisible() {
-    if (!isAuthenticated()) return;
-    if (document.visibilityState && document.visibilityState !== 'visible') return;
-    loadAndRender({ silent: true });
-  }
-
-  function startAutoRefresh() {
-    stopAutoRefresh();
-    state.autoRefreshTimer = setInterval(refreshIfVisible, ADMIN_AUTO_REFRESH_MS);
   }
 
   async function loadAndRender(options) {
@@ -1099,11 +1082,6 @@
     // ── Logout / Refresh ───────────────────────────────────────────────
     on('logout-btn',  'click', logout);
     on('refresh-btn', 'click', loadAndRender);
-    window.addEventListener('focus', refreshIfVisible);
-    document.addEventListener('visibilitychange', refreshIfVisible);
-    window.addEventListener('pageshow', function () {
-      resetFilters({ rerender: true });
-    });
 
     // ── Search ─────────────────────────────────────────────────────────
     var searchEl = document.getElementById('search-input');
@@ -1152,9 +1130,6 @@
     if (isAuthenticated()) {
       showAdmin();
       loadAndRender();
-      setTimeout(function () {
-        resetFilters({ rerender: true });
-      }, 50);
     } else {
       showLogin();
     }
