@@ -1088,6 +1088,16 @@
     var selectedPaymentMethod = 'iban';
     var isSubmitting = false;
 
+    var legacyPaymentSummaryCard = paymentMethodTitleNode && paymentMethodTitleNode.closest(".rounded-xl");
+    if (legacyPaymentSummaryCard) {
+      legacyPaymentSummaryCard.remove();
+      paymentMethodTitleNode = null;
+      paymentMethodSubtitleNode = null;
+      paymentMethodDescriptionNode = null;
+      paymentMethodBadgeNode = null;
+      invoiceAmountNode = null;
+    }
+
     function getFieldValue(name) {
       var field = document.querySelector('[data-field="' + name + '"]');
       return field ? String(field.value || "").trim() : "";
