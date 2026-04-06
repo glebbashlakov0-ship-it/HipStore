@@ -35,6 +35,39 @@
     return "EUR " + Number(value || 0).toLocaleString("en-US");
   }
 
+  function hashString(value) {
+    var input = String(value || "");
+    var hash = 0;
+    for (var i = 0; i < input.length; i += 1) {
+      hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+    }
+    return hash;
+  }
+
+  function refreshActiveEndTime(item) {
+    var status = String((item && item.status) || "").toLowerCase();
+    if (status && status !== "active") return item && item.endTime;
+
+    var rawEndTime = item && item.endTime;
+    var rawDiff = new Date(rawEndTime).getTime() - Date.now();
+    if (Number.isFinite(rawDiff) && rawDiff > 0) return rawEndTime;
+
+    var hash = hashString((item && (item.slug || item.id || item.title)) || "");
+    var days = 1 + (hash % 10);
+    var minutes = Math.floor(hash / 10) % 1440;
+    return new Date(Date.now() + days * 86400000 + minutes * 60000).toISOString();
+  }
+
+  function normalizeCatalogItems(items) {
+    return (Array.isArray(items) ? items : []).map(function (item) {
+      if (!item) return item;
+      var status = String(item.status || "").toLowerCase();
+      if (status && status !== "active") return item;
+      var nextEndTime = refreshActiveEndTime(item);
+      return nextEndTime !== item.endTime ? Object.assign({}, item, { endTime: nextEndTime }) : item;
+    });
+  }
+
   function getLotHref(item) {
     return "lot/index.html?slug=" + encodeURIComponent(item.slug || "");
   }
@@ -711,7 +744,7 @@
           return { slug: category.slug, name: category.name };
         });
 
-      var visibleCount = state.category === "all" && state.status === "active" ? meta.total : filteredItems.length;
+      var visibleCount = filteredItems.length;
 
       controlsSection.innerHTML =
         '<div class="container mx-auto px-4 lg:px-8 py-6">' +
@@ -881,10 +914,14 @@
         console.error("Remote landing fetch failed:", error);
       }
 
-      renderFeatured(results[0], results[1]);
-      renderLandingCategorySections(results[1], remoteSources);
-      renderCollectionLandingSections(results[1], remoteSources);
-      renderShopAll(results[1], results[2], results[3]);
+      var featuredItems = normalizeCatalogItems(results[0]);
+      var shopItems = normalizeCatalogItems(results[1]);
+      var shopMeta = Object.assign({}, results[2], { total: filterActiveItems(shopItems).length });
+
+      renderFeatured(featuredItems, shopItems);
+      renderLandingCategorySections(shopItems, remoteSources);
+      renderCollectionLandingSections(shopItems, remoteSources);
+      renderShopAll(shopItems, shopMeta, results[3]);
       setInterval(function () {
         updateCountdowns(document);
       }, 1000);
