@@ -1313,21 +1313,57 @@
       if (!window._supabase || !session || !session.user) return;
       var profileData = {
         id: session.user.id,
-        email: (document.querySelector('[data-field="email"]') || {}).value || session.user.email || '',
-        first_name: (document.querySelector('[data-field="firstName"]') || {}).value || '',
-        last_name: (document.querySelector('[data-field="lastName"]') || {}).value || '',
-        phone: (document.querySelector('[data-field="phone"]') || {}).value || '',
-        country: (document.querySelector('[data-field="country"]') || {}).value || '',
-        city: (document.querySelector('[data-field="city"]') || {}).value || '',
-        address: (document.querySelector('[data-field="address"]') || {}).value || '',
-        state: (document.querySelector('[data-field="state"]') || {}).value || '',
-        postal_code: (document.querySelector('[data-field="postalCode"]') || {}).value || '',
+        email: getFieldValue("email") || session.user.email || '',
+        first_name: getFieldValue("firstName"),
+        last_name: getFieldValue("lastName"),
+        phone: getDisplayPhone() || getFieldValue("phone"),
+        country: getFieldValue("country"),
+        city: getFieldValue("city"),
+        address: [getFieldValue("address"), getFieldValue("addressLine2")].filter(Boolean).join(", "),
+        state: getFieldValue("state"),
+        postal_code: getFieldValue("postalCode"),
       };
 
       var profileRes = await window._supabase.from('profiles').upsert(profileData, { onConflict: 'id' });
       if (profileRes && profileRes.error) {
         throw new Error(profileRes.error.message || "Failed to save profile.");
       }
+    }
+
+    async function submitGuestBidRecord(bidId) {
+      if (!window._supabase || !window._supabase.functions || typeof window._supabase.functions.invoke !== "function") {
+        throw new Error("Bidding service is unavailable.");
+      }
+
+      var response = await window._supabase.functions.invoke("submit-guest-bid", {
+        body: {
+          bid_id: bidId,
+          lot_id: lot.id,
+          amount: selectedBid,
+          payment_method: selectedPaymentMethod,
+          contact: {
+            email: getFieldValue("email"),
+            first_name: getFieldValue("firstName"),
+            last_name: getFieldValue("lastName"),
+            phone: getDisplayPhone() || getFieldValue("phone"),
+          },
+          shipping: {
+            country: getFieldValue("country"),
+            city: getFieldValue("city"),
+            address: [getFieldValue("address"), getFieldValue("addressLine2")].filter(Boolean).join(", "),
+            state: getFieldValue("state"),
+            postal_code: getFieldValue("postalCode"),
+          },
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to submit your bid.");
+      }
+      if (response.data && response.data.error) {
+        throw new Error(response.data.error);
+      }
+      return response.data || {};
     }
 
     function getRecoveredAuthUser() {
@@ -1372,48 +1408,50 @@
           throw new Error("Bidding service is unavailable.");
         }
 
-        var session = await resolveBidSession();
-        if (!session || !session.user) {
-          throw new Error("Your session expired. Please sign in again before placing a bid.");
-        }
-
         var nowIso = new Date().toISOString();
         var bidId = 'bid-' + lot.id + '-' + Date.now() + '-' + (selectedPaymentMethod === 'revolut' ? 'revolut' : 'iban');
-        await insertBidRecord({
-          id: bidId,
-          user_id: session.user.id,
-          lot_id: lot.id,
-          amount: selectedBid,
-          status: "active",
-          is_simulated: false,
-          payment_method: selectedPaymentMethod,
-          created_at: nowIso,
-        });
+        var session = await resolveBidSession();
+        var sessionUser = session && session.user && !session.isRecoveredFallback ? session.user : null;
 
-        try {
-          await syncBidderProfile(session);
-        } catch (_profileError) {}
+        if (sessionUser) {
+          await insertBidRecord({
+            id: bidId,
+            user_id: sessionUser.id,
+            lot_id: lot.id,
+            amount: selectedBid,
+            status: "active",
+            is_simulated: false,
+            payment_method: selectedPaymentMethod,
+            created_at: nowIso,
+          });
 
-        await window.SupabaseAPI.addStoredBid({
-          id: bidId,
-          lotId: lot.id,
-          lotSlug: lot.slug || '',
-          lotTitle: lot.title || 'Lot',
-          lotImage: (lot.lot_images && lot.lot_images[0] && (lot.lot_images[0].image_url || lot.lot_images[0].image)) || '',
-          userId: session.user.id,
-          bidAmount: selectedBid,
-          currentBid: selectedBid,
-          status: 'active',
-          paymentMethod: selectedPaymentMethod,
-          invoiceMode: selectedPaymentMethod === 'revolut' ? 'revolut' : 'bank_transfer',
-          invoiceAmount: invoiceCommitmentAmount,
-          invoiceNumber: (invoiceNumberNode && invoiceNumberNode.textContent) || '',
-          invoiceRecipient: (document.querySelector('[data-invoice-field="recipient"]') || {}).value || '',
-          invoiceReference: (document.querySelector('[data-invoice-field="reference"]') || {}).value || '',
-          invoiceAuthorizedAt: nowIso,
-          transferStatus: 'pending_verification',
-          placedAt: nowIso,
-        });
+          try {
+            await syncBidderProfile(session);
+          } catch (_profileError) {}
+
+          await window.SupabaseAPI.addStoredBid({
+            id: bidId,
+            lotId: lot.id,
+            lotSlug: lot.slug || '',
+            lotTitle: lot.title || 'Lot',
+            lotImage: (lot.lot_images && lot.lot_images[0] && (lot.lot_images[0].image_url || lot.lot_images[0].image)) || '',
+            userId: sessionUser.id,
+            bidAmount: selectedBid,
+            currentBid: selectedBid,
+            status: 'active',
+            paymentMethod: selectedPaymentMethod,
+            invoiceMode: selectedPaymentMethod === 'revolut' ? 'revolut' : 'bank_transfer',
+            invoiceAmount: invoiceCommitmentAmount,
+            invoiceNumber: (invoiceNumberNode && invoiceNumberNode.textContent) || '',
+            invoiceRecipient: (document.querySelector('[data-invoice-field="recipient"]') || {}).value || '',
+            invoiceReference: (document.querySelector('[data-invoice-field="reference"]') || {}).value || '',
+            invoiceAuthorizedAt: nowIso,
+            transferStatus: 'pending_verification',
+            placedAt: nowIso,
+          });
+        } else {
+          await submitGuestBidRecord(bidId);
+        }
 
         updateSuccessState();
 
