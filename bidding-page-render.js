@@ -721,6 +721,51 @@
     return match ? match.value : "";
   }
 
+  function findPhoneCountryValueByIso(countryCode) {
+    var normalized = String(countryCode || "").trim().toUpperCase();
+    if (!normalized) return "";
+    var match = PHONE_COUNTRIES.find(function (entry) {
+      return String(entry.iso || "").toUpperCase() === normalized;
+    });
+    return match ? match.value : "";
+  }
+
+  function normalizeIpCountry(data) {
+    if (!data || data.success === false) return null;
+    var countryCode = data.country_code || data.countryCode || data.country || "";
+    var countryName = data.country_name || data.countryName || "";
+    if (countryCode && String(countryCode).trim().length > 2) {
+      countryName = countryName || countryCode;
+      countryCode = "";
+    }
+    return countryCode || countryName ? {
+      countryCode: String(countryCode || "").trim().toUpperCase(),
+      countryName: String(countryName || "").trim()
+    } : null;
+  }
+
+  function fetchIpCountry() {
+    if (typeof fetch !== "function") return Promise.resolve(null);
+
+    function request(url) {
+      return fetch(url, { cache: "no-store" }).then(function (response) {
+        if (!response.ok) throw new Error("IP country lookup failed");
+        return response.json();
+      }).then(normalizeIpCountry);
+    }
+
+    return request("https://ipwho.is/").then(function (location) {
+      if (location) return location;
+      return request("https://ipapi.co/json/").catch(function () {
+        return null;
+      });
+    }).catch(function () {
+      return request("https://ipapi.co/json/").catch(function () {
+        return null;
+      });
+    });
+  }
+
   function splitStoredPhoneValue(rawPhone, countryHint) {
     var value = String(rawPhone || "").trim();
     if (!value) return { phoneCountryValue: "", localNumber: "" };
@@ -1162,6 +1207,27 @@
         }
       }
       phoneCountryField.title = parts.country || "";
+    }
+
+    function applyIpPhoneCountryFallback() {
+      var phoneCountryField = document.querySelector('[data-field="phoneCountry"]');
+      if (!phoneCountryField || phoneCountryField.dataset.ipLookupStarted === "true") return;
+      phoneCountryField.dataset.ipLookupStarted = "true";
+
+      fetchIpCountry().then(function (location) {
+        if (!location || !phoneCountryField.isConnected) return;
+        if (phoneCountryField.dataset.userChanged === "true" || phoneCountryField.dataset.profileSet === "true") return;
+
+        var phoneField = document.querySelector('[data-field="phone"]');
+        if (phoneField && String(phoneField.value || "").trim()) return;
+
+        var phoneCountryValue = findPhoneCountryValueByIso(location.countryCode) || findPhoneCountryValueByName(location.countryName);
+        if (!phoneCountryValue || phoneCountryField.value === phoneCountryValue) return;
+
+        phoneCountryField.value = phoneCountryValue;
+        syncPhoneCountryDisplay();
+        updateDetailsSummary();
+      }).catch(function () {});
     }
 
 
@@ -1607,7 +1673,8 @@
     });
 
     document.querySelector('[data-field="country"]')?.addEventListener("change", syncCountryLabel);
-    document.querySelector('[data-field="phoneCountry"]')?.addEventListener("change", function () {
+    document.querySelector('[data-field="phoneCountry"]')?.addEventListener("change", function (event) {
+      if (event.currentTarget) event.currentTarget.dataset.userChanged = "true";
       syncPhoneCountryDisplay();
       updateDetailsSummary();
     });
@@ -1656,7 +1723,10 @@
         var phoneCountryField = document.querySelector('[data-field="phoneCountry"]');
         if (phoneCountryField) {
           var phoneCountryValue = phoneParts.phoneCountryValue || findPhoneCountryValueByName(profile.country || "");
-          if (phoneCountryValue) phoneCountryField.value = phoneCountryValue;
+          if (phoneCountryValue) {
+            phoneCountryField.value = phoneCountryValue;
+            phoneCountryField.dataset.profileSet = "true";
+          }
         }
         var emailField = document.querySelector('[data-field="email"]');
         if (emailField) {
@@ -1668,7 +1738,11 @@
         syncPhoneCountryDisplay();
         updateDetailsSummary();
         syncEditableSections();
-      }).catch(function () {});
+      }).catch(function () {}).then(function () {
+        applyIpPhoneCountryFallback();
+      });
+    } else {
+      applyIpPhoneCountryFallback();
     }
 
     updateSummary();
