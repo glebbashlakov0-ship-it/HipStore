@@ -910,6 +910,8 @@
       "@media (min-width:640px){.bidding-success-panel{padding:1.4rem;}.bidding-success-head{flex-direction:row;gap:1rem;}.bidding-success-title{font-size:2.15rem;}.bidding-success-meta{grid-template-columns:repeat(2,minmax(0,1fr));}.bidding-success-actions{flex-direction:row;}}"+
       ".bidding-error{color:#dc2626;font-size:12px;margin-top:6px;}" +
       ".bidding-field.invalid{border-color:#dc2626;}" +
+      ".PhoneInput:has(.PhoneInputInput.invalid){border-color:#dc2626;}" +
+      ".bidding-country-wrap:has(.bidding-country-native.invalid) button{border-color:#dc2626;}" +
       ".bidding-muted-input{background:#f3f4f6;}" +
       ".PhoneInput{align-items:center;display:flex;}" +
       ".PhoneInputCountry{position:relative;border-right:1px solid hsl(var(--border));align-items:center;margin-right:.5rem;padding-right:.75rem;display:flex;min-width:4.75rem;gap:.35rem;}" +
@@ -1570,37 +1572,73 @@
       return true;
     }
 
+    function getFieldErrorNode(field) {
+      var wrapper = field && field.parentElement;
+      var error = null;
+      while (wrapper && !error) {
+        error = wrapper.querySelector(".bidding-error");
+        wrapper = wrapper.parentElement;
+      }
+      return error;
+    }
+
+    function clearFieldError(field) {
+      if (!field) return;
+      field.classList.remove("invalid");
+      var error = getFieldErrorNode(field);
+      if (error) error.classList.add("hidden");
+    }
+
+    function setFieldError(field, message) {
+      if (!field) return;
+      field.classList.add("invalid");
+      var error = getFieldErrorNode(field);
+      if (error) {
+        error.textContent = message;
+        error.classList.remove("hidden");
+      }
+    }
+
+    function validateDetailsField(field) {
+      if (!field) return true;
+      var value = String(field.value || "").trim();
+      clearFieldError(field);
+
+      if (field.hasAttribute("data-required") && !value) {
+        setFieldError(field, strings.validation.required);
+        return false;
+      }
+
+      if (value && field.hasAttribute("data-email") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        setFieldError(field, strings.validation.invalidEmail);
+        return false;
+      }
+
+      return true;
+    }
+
+    function validateSectionFields(section) {
+      var valid = true;
+      var firstInvalid = null;
+      (SECTION_REQUIRED_FIELDS[section] || []).forEach(function (fieldName) {
+        var field = document.querySelector('[data-field="' + fieldName + '"]');
+        if (!validateDetailsField(field)) {
+          valid = false;
+          if (!firstInvalid) firstInvalid = field;
+        }
+      });
+      if (!valid) {
+        openSection(section);
+        setSectionEditButtonState(section, true);
+        if (firstInvalid) firstInvalid.focus({ preventScroll: true });
+      }
+      return valid;
+    }
+
     function validateStep2() {
       var valid = true;
       document.querySelectorAll("[data-required]").forEach(function (field) {
-        var wrapper = field.parentElement;
-        var error = null;
-        var value = String(field.value || "").trim();
-        field.classList.remove("invalid");
-        while (wrapper && !error) {
-          error = wrapper.querySelector(".bidding-error");
-          wrapper = wrapper.parentElement;
-        }
-        if (error) error.classList.add("hidden");
-
-        if (!value) {
-          valid = false;
-          field.classList.add("invalid");
-          if (error) {
-            error.textContent = strings.validation.required;
-            error.classList.remove("hidden");
-          }
-          return;
-        }
-
-        if (field.hasAttribute("data-email") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          valid = false;
-          field.classList.add("invalid");
-          if (error) {
-            error.textContent = strings.validation.invalidEmail;
-            error.classList.remove("hidden");
-          }
-        }
+        if (!validateDetailsField(field)) valid = false;
       });
       if (!valid) {
         var contactFields = ['firstName', 'lastName', 'email', 'phone'];
@@ -1700,14 +1738,21 @@
     document.querySelectorAll('[data-bid-save-section]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var section = btn.getAttribute('data-bid-save-section');
+        if (!validateSectionFields(section)) return;
         updateDetailsSummary();
         syncSectionState(section);
       });
     });
 
     document.querySelectorAll("[data-field]").forEach(function (field) {
-      field.addEventListener("input", updateDetailsSummary);
-      field.addEventListener("change", updateDetailsSummary);
+      field.addEventListener("input", function () {
+        updateDetailsSummary();
+        if (field.classList.contains("invalid")) validateDetailsField(field);
+      });
+      field.addEventListener("change", function () {
+        updateDetailsSummary();
+        if (field.classList.contains("invalid")) validateDetailsField(field);
+      });
     });
 
     document.querySelector('[data-field="country"]')?.addEventListener("change", syncCountryLabel);
