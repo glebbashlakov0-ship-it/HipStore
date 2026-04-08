@@ -899,6 +899,7 @@
       validation: {
         required: pick(["validation", "required"], "Required"),
         invalidEmail: pick(["validation", "invalidEmail"], "Invalid email"),
+        digitsOnly: pick(["validation", "digitsOnly"], "Digits only"),
         lotInfoMissing: pick(["validation", "lotInfoMissing"], "Lot information is missing. Reload the page."),
       },
       common: {
@@ -1047,7 +1048,7 @@
               </div>
               <div>
                 <label data-slot="label" class="flex items-center gap-2 font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-xs" for="postalCode">${escapeHtml(strings.bidding.postalCode)} *</label>
-                <input id="postalCode" data-required data-field="postalCode" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
+                <input id="postalCode" data-required data-digits-only data-field="postalCode" inputmode="numeric" pattern="[0-9]*" class="bidding-field border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-9 text-sm" value="">
                 <div class="bidding-error hidden"></div>
               </div>
             </div>
@@ -1667,6 +1668,11 @@
         return false;
       }
 
+      if (value && field.hasAttribute("data-digits-only") && !/^\d+$/.test(value)) {
+        setFieldError(field, strings.validation.digitsOnly);
+        return false;
+      }
+
       return true;
     }
 
@@ -1799,6 +1805,9 @@
 
     document.querySelectorAll("[data-field]").forEach(function (field) {
       field.addEventListener("input", function () {
+        if (field.hasAttribute("data-digits-only")) {
+          field.value = String(field.value || "").replace(/\D+/g, "");
+        }
         updateDetailsSummary();
         if (field.classList.contains("invalid")) validateDetailsField(field);
       });
