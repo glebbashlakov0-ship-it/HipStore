@@ -721,6 +721,22 @@
     return match ? match.value : "";
   }
 
+  function findCountryValueByName(countryName) {
+    var normalized = normalizeCountryKey(countryName);
+    if (!normalized) return "";
+    return COUNTRIES.find(function (country) {
+      return normalizeCountryKey(country) === normalized;
+    }) || "";
+  }
+
+  function findCountryValueByIso(countryCode) {
+    var normalized = String(countryCode || "").trim().toUpperCase();
+    if (!normalized) return "";
+    return COUNTRIES.find(function (country) {
+      return String(COUNTRY_ISO_BY_NAME[country] || "").toUpperCase() === normalized;
+    }) || "";
+  }
+
   function findPhoneCountryValueByIso(countryCode) {
     var normalized = String(countryCode || "").trim().toUpperCase();
     if (!normalized) return "";
@@ -764,6 +780,17 @@
         return null;
       });
     });
+  }
+
+  var ipCountryLookupPromise = null;
+
+  function getIpCountry() {
+    if (!ipCountryLookupPromise) {
+      ipCountryLookupPromise = fetchIpCountry().catch(function () {
+        return null;
+      });
+    }
+    return ipCountryLookupPromise;
   }
 
   function splitStoredPhoneValue(rawPhone, countryHint) {
@@ -1216,7 +1243,7 @@
       if (!phoneCountryField || phoneCountryField.dataset.ipLookupStarted === "true") return;
       phoneCountryField.dataset.ipLookupStarted = "true";
 
-      fetchIpCountry().then(function (location) {
+      getIpCountry().then(function (location) {
         if (!location || !phoneCountryField.isConnected) return;
         if (phoneCountryField.dataset.userChanged === "true" || phoneCountryField.dataset.profileSet === "true") return;
 
@@ -1230,6 +1257,32 @@
         syncPhoneCountryDisplay();
         updateDetailsSummary();
       }).catch(function () {});
+    }
+
+    function applyIpShippingCountryFallback() {
+      var countryField = document.querySelector('[data-field="country"]');
+      if (!countryField || countryField.dataset.ipLookupStarted === "true") return;
+      countryField.dataset.ipLookupStarted = "true";
+
+      getIpCountry().then(function (location) {
+        if (!location || !countryField.isConnected) return;
+        if (countryField.dataset.userChanged === "true" || countryField.dataset.profileSet === "true") return;
+        if (String(countryField.value || "").trim()) return;
+
+        var countryValue = findCountryValueByIso(location.countryCode) || findCountryValueByName(location.countryName);
+        if (!countryValue || countryField.value === countryValue) return;
+
+        countryField.value = countryValue;
+        syncCountryLabel();
+        updateDetailsSummary();
+        syncSectionState("shipping");
+        if (countryField.classList.contains("invalid")) validateDetailsField(countryField);
+      }).catch(function () {});
+    }
+
+    function applyIpLocationFallbacks() {
+      applyIpPhoneCountryFallback();
+      applyIpShippingCountryFallback();
     }
 
 
@@ -1755,7 +1808,10 @@
       });
     });
 
-    document.querySelector('[data-field="country"]')?.addEventListener("change", syncCountryLabel);
+    document.querySelector('[data-field="country"]')?.addEventListener("change", function (event) {
+      if (event.currentTarget) event.currentTarget.dataset.userChanged = "true";
+      syncCountryLabel();
+    });
     document.querySelector('[data-field="phoneCountry"]')?.addEventListener("change", function (event) {
       if (event.currentTarget) event.currentTarget.dataset.userChanged = "true";
       syncPhoneCountryDisplay();
@@ -1801,7 +1857,10 @@
         Object.keys(fields).forEach(function (key) {
           if (!fields[key]) return;
           var el = document.querySelector('[data-field="' + key + '"]');
-          if (el) el.value = fields[key];
+          if (el) {
+            el.value = fields[key];
+            if (key === "country") el.dataset.profileSet = "true";
+          }
         });
         var phoneCountryField = document.querySelector('[data-field="phoneCountry"]');
         if (phoneCountryField) {
@@ -1822,10 +1881,10 @@
         updateDetailsSummary();
         syncEditableSections();
       }).catch(function () {}).then(function () {
-        applyIpPhoneCountryFallback();
+        applyIpLocationFallbacks();
       });
     } else {
-      applyIpPhoneCountryFallback();
+      applyIpLocationFallbacks();
     }
 
     updateSummary();
