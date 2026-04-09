@@ -31,6 +31,34 @@
       });
   }
 
+  var _lotCountdownInterval = null;
+
+  function ensureLotCountdowns(main) {
+    updateCountdowns(main);
+    if (_lotCountdownInterval) return;
+    _lotCountdownInterval = setInterval(function () {
+      updateCountdowns(main);
+    }, 1000);
+  }
+
+  function recordLotView(bundle) {
+    if (!bundle || !bundle.rawLot || !bundle.rawLot.id || !window.SupabaseAPI) return;
+    window.SupabaseAPI.recordView({
+      lotId: bundle.rawLot.id,
+      lotSlug: bundle.rawLot.slug || "",
+      lotTitle: bundle.lot.title || bundle.rawLot.title || "Lot",
+      lotImage: getPrimaryImage(bundle.lot.lot_images || bundle.rawLot.lot_images || []),
+      currentBid: bundle.lot.current_bid || bundle.rawLot.current_bid || bundle.rawLot.starting_bid || 0,
+    }).catch(function () {});
+  }
+
+  function buildInitialLotResults(bundle, language) {
+    return {
+      bids: buildFallbackBids(bundle && bundle.lot),
+      relatedLots: buildFallbackRelatedLots(bundle && bundle.rawLot, bundle && bundle.fallbackItems || [], language),
+    };
+  }
+
   function requestSupabase(path) {
     return fetch(SUPABASE_URL + path, {
       headers: {
@@ -1307,51 +1335,56 @@
     if (!main) return;
 
     loadLotEndTimes(); // preload in background so resolveEndTime can use it
+    var language = getLanguage();
+    var slug = getQueryParam("slug");
 
-    loadJson(BASE_PATH + "data/site-translations.json")
-      .then(function (translations) {
-        var language = getLanguage();
+    if (!slug) {
+      renderNotFound(main);
+      return;
+    }
+
+    main.innerHTML =
+      '<section class="py-16 sm:py-24"><div class="container mx-auto px-4 sm:px-6 lg:px-8"><div class="text-center text-muted-foreground">Loading lot details...</div></div></section>';
+
+    Promise.all([
+      loadJson(BASE_PATH + "data/site-translations.json"),
+      loadLotBundle(slug, language),
+    ])
+      .then(function (results) {
+        var translations = results[0];
+        var bundle = results[1];
         var strings = mapStrings(translations, language);
-        var slug = getQueryParam("slug");
 
-        if (!slug) {
-          renderNotFound(main);
-          return;
+        if (!bundle || !bundle.rawLot || !bundle.lot) {
+          renderNotFound(main, strings.validation.lotInfoMissing);
+          return null;
         }
 
-        main.innerHTML =
-          '<section class="py-16 sm:py-24"><div class="container mx-auto px-4 sm:px-6 lg:px-8"><div class="text-center text-muted-foreground">' +
-          escapeHtml(strings.common.loadingLotDetails) +
-          "</div></div></section>";
+        var initialResults = buildInitialLotResults(bundle, language);
+        renderLot(main, bundle.lot, initialResults.relatedLots, initialResults.bids, strings);
+        ensureLotCountdowns(main);
+        recordLotView(bundle);
 
-        return loadLotBundle(slug, language)
-          .then(function (bundle) {
-            if (!bundle || !bundle.rawLot || !bundle.lot) {
-              renderNotFound(main);
-              return null;
-            }
-
-            return hydrateLotFromRemote(bundle, language).then(function (hydratedBundle) {
-              return loadRelatedAndBids(hydratedBundle.rawLot, language, hydratedBundle.fallbackItems).then(function (results) {
-                renderLot(main, hydratedBundle.lot, results.relatedLots, results.bids, strings);
-                setInterval(function () {
-                  updateCountdowns(main);
-                }, 1000);
-                if (window.SupabaseAPI && hydratedBundle.rawLot.id) {
-                  window.SupabaseAPI.recordView({
-                    lotId: hydratedBundle.rawLot.id,
-                    lotSlug: hydratedBundle.rawLot.slug || "",
-                    lotTitle: hydratedBundle.lot.title || hydratedBundle.rawLot.title || "Lot",
-                    lotImage: getPrimaryImage(hydratedBundle.lot.lot_images || hydratedBundle.rawLot.lot_images || []),
-                    currentBid: hydratedBundle.lot.current_bid || hydratedBundle.rawLot.current_bid || hydratedBundle.rawLot.starting_bid || 0,
-                  }).catch(function () {});
-                }
-              });
-            });
-          })
+        return hydrateLotFromRemote(bundle, language)
           .catch(function () {
-            renderNotFound(main);
-            return null;
+            return bundle;
+          })
+          .then(function (hydratedBundle) {
+            return loadRelatedAndBids(hydratedBundle.rawLot, language, hydratedBundle.fallbackItems)
+              .catch(function () {
+                return initialResults;
+              })
+              .then(function (resultsData) {
+                var relatedLots = Array.isArray(resultsData.relatedLots) && resultsData.relatedLots.length
+                  ? resultsData.relatedLots
+                  : initialResults.relatedLots;
+                var bids = Array.isArray(resultsData.bids) && resultsData.bids.length
+                  ? resultsData.bids
+                  : initialResults.bids;
+
+                renderLot(main, hydratedBundle.lot, relatedLots, bids, strings);
+                ensureLotCountdowns(main);
+              });
           });
       })
       .catch(function () {
