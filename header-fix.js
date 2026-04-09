@@ -2098,7 +2098,11 @@
     if (typeof window === "undefined" || typeof document === "undefined" || shouldShowExpandedTawk()) {
       return;
     }
-    const nodes = Array.from(document.querySelectorAll("iframe, div, button"));
+    const nodes = Array.from(
+      document.querySelectorAll(
+        'iframe[src*="tawk"], iframe[title*="chat" i], iframe[name*="tawk" i], [id*="tawk" i], [class*="tawk" i]'
+      )
+    );
     nodes.forEach(function (node) {
       if (!isLikelyTawkNode(node)) {
         return;
@@ -2139,7 +2143,7 @@
   }
 
   function scheduleTawkDisplayRefresh() {
-    [0, 250, 900, 1800].forEach(function (delay) {
+    [0, 250, 900, 1800, 3200].forEach(function (delay) {
       window.setTimeout(applyTawkDisplayMode, delay);
     });
   }
@@ -2180,17 +2184,6 @@
     };
     existingApi.__auctioDisplayConfigured = true;
     window.Tawk_API = existingApi;
-    const observer = new MutationObserver(function () {
-      if (!shouldShowExpandedTawk()) {
-        pruneTawkOverlays();
-      }
-    });
-    observer.observe(document.documentElement || document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["style", "class", "src", "title", "name", "id"]
-    });
     window.addEventListener("pageshow", scheduleTawkDisplayRefresh);
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden) {
