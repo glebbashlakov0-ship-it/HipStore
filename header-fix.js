@@ -2069,7 +2069,6 @@
     embedScript.async = true;
     embedScript.src = TAWK_EMBED_SRC;
     embedScript.charset = "UTF-8";
-    embedScript.setAttribute("crossorigin", "*");
     firstScript.parentNode.insertBefore(embedScript, firstScript);
   }
 
