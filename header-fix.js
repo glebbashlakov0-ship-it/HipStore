@@ -1,7 +1,6 @@
-  (() => {
+(() => {
   const LOGO_FILE = "logo1.svg";
   const TAWK_EMBED_SRC = "https://embed.tawk.to/69c04d8cd88c2b1c3430783d/1jkbitra2";
-  const TAWK_LAUNCHER_ID = "auctio-tawk-launcher";
   const LANGUAGES = [
     { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
     { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
@@ -2078,86 +2077,45 @@
     return isHomePage();
   }
 
-  function getTawkLauncher() {
-    return document.getElementById(TAWK_LAUNCHER_ID);
+  function isLikelyTawkNode(node) {
+    if (!node || typeof node.getAttribute !== "function") {
+      return false;
+    }
+    const id = String(node.id || "").toLowerCase();
+    const className = String(node.className || "").toLowerCase();
+    const title = String(node.getAttribute("title") || "").toLowerCase();
+    const name = String(node.getAttribute("name") || "").toLowerCase();
+    const src = String(node.getAttribute("src") || "").toLowerCase();
+    return (
+      id.includes("tawk") ||
+      className.includes("tawk") ||
+      title.includes("chat") ||
+      name.includes("tawk") ||
+      src.includes("tawk")
+    );
   }
 
-  function setTawkLauncherVisible(visible) {
-    const launcher = getTawkLauncher();
-    if (!launcher) {
+  function pruneTawkOverlays() {
+    if (typeof window === "undefined" || typeof document === "undefined" || shouldShowExpandedTawk()) {
       return;
     }
-    launcher.style.display = visible ? "inline-flex" : "none";
-  }
-
-  function openTawkFromLauncher() {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const api = window.Tawk_API;
-    if (!api) {
-      return;
-    }
-    setTawkLauncherVisible(false);
-    if (typeof api.showWidget === "function") {
-      try {
-        api.showWidget();
-      } catch (_error) {}
-    }
-    [80, 220, 500].forEach(function (delay) {
-      window.setTimeout(function () {
-        if (typeof api.maximize === "function") {
-          try {
-            api.maximize();
-          } catch (_error) {}
-        } else if (typeof api.toggle === "function") {
-          try {
-            api.toggle();
-          } catch (_error) {}
-        }
-      }, delay);
-    });
-  }
-
-  function ensureTawkLauncher() {
-    if (typeof document === "undefined") {
-      return;
-    }
-    let launcher = getTawkLauncher();
-    if (shouldShowExpandedTawk()) {
-      if (launcher) {
-        launcher.remove();
+    const nodes = Array.from(document.querySelectorAll("iframe, div, button"));
+    nodes.forEach(function (node) {
+      if (!isLikelyTawkNode(node)) {
+        return;
       }
-      return;
-    }
-    if (!launcher) {
-      launcher = document.createElement("button");
-      launcher.id = TAWK_LAUNCHER_ID;
-      launcher.type = "button";
-      launcher.setAttribute("aria-label", "Open chat");
-      launcher.innerHTML =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>';
-      launcher.style.cssText = [
-        "position:fixed",
-        "right:18px",
-        "bottom:18px",
-        "width:56px",
-        "height:56px",
-        "border:none",
-        "border-radius:999px",
-        "display:inline-flex",
-        "align-items:center",
-        "justify-content:center",
-        "background:#0f172a",
-        "color:#fff",
-        "box-shadow:0 12px 32px rgba(15,23,42,0.24)",
-        "cursor:pointer",
-        "z-index:2147483000"
-      ].join(";");
-      launcher.addEventListener("click", openTawkFromLauncher);
-      document.body.appendChild(launcher);
-    }
-    setTawkLauncherVisible(true);
+      const style = window.getComputedStyle(node);
+      if (style.position !== "fixed") {
+        return;
+      }
+      const rect = node.getBoundingClientRect();
+      const isLargeOverlay = rect.width > 100 || rect.height > 100;
+      if (!isLargeOverlay) {
+        node.style.removeProperty("display");
+        return;
+      }
+      node.style.setProperty("display", "none", "important");
+    });
   }
 
   function applyTawkDisplayMode() {
@@ -2165,29 +2123,20 @@
       return;
     }
     const api = window.Tawk_API;
-    ensureTawkLauncher();
     if (!api) {
       return;
     }
-    if (shouldShowExpandedTawk()) {
-      setTawkLauncherVisible(false);
-      if (typeof api.showWidget === "function") {
-        try {
-          api.showWidget();
-        } catch (_error) {}
-      }
-      return;
-    }
-    if (typeof api.hideWidget === "function") {
+    if (typeof api.showWidget === "function") {
       try {
-        api.hideWidget();
+        api.showWidget();
       } catch (_error) {}
-    } else if (typeof api.minimize === "function") {
+    }
+    if (!shouldShowExpandedTawk() && typeof api.minimize === "function") {
       try {
         api.minimize();
       } catch (_error) {}
     }
-    setTawkLauncherVisible(true);
+    pruneTawkOverlays();
   }
 
   function scheduleTawkDisplayRefresh() {
@@ -2232,6 +2181,17 @@
     };
     existingApi.__auctioDisplayConfigured = true;
     window.Tawk_API = existingApi;
+    const observer = new MutationObserver(function () {
+      if (!shouldShowExpandedTawk()) {
+        pruneTawkOverlays();
+      }
+    });
+    observer.observe(document.documentElement || document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class", "src", "title", "name", "id"]
+    });
     window.addEventListener("pageshow", scheduleTawkDisplayRefresh);
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden) {
