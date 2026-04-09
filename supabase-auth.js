@@ -26,6 +26,20 @@
   var bootstrapStarted = false;
   window._supabase = supabase;
 
+  function getEmailRedirectUrl() {
+    try {
+      var currentUrl = new URL(window.location.href);
+      var path = String(currentUrl.pathname || '/');
+      var targetPath = path.replace(/[^/]*$/, '') + 'account.html';
+      currentUrl.pathname = targetPath;
+      currentUrl.search = '';
+      currentUrl.hash = '';
+      return currentUrl.toString();
+    } catch (_error) {
+      return undefined;
+    }
+  }
+
   function readJSON(key, fallback) {
     try {
       var raw = window.localStorage.getItem(key);
@@ -399,6 +413,7 @@
             email: email,
             password: password,
             options: {
+              emailRedirectTo: getEmailRedirectUrl(),
               data: {
                 first_name: String(payload.firstName || '').trim(),
                 last_name: String(payload.lastName || '').trim(),
