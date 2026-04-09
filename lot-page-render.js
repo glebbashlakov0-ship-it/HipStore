@@ -32,6 +32,30 @@
   }
 
   var _lotCountdownInterval = null;
+  var _lotInitialScrollUserMoved = false;
+
+  function lockLotInitialScrollTop() {
+    if (typeof window === "undefined") return;
+    if (window.history && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    function scrollTopNow() {
+      window.scrollTo(0, 0);
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    }
+
+    scrollTopNow();
+    requestAnimationFrame(function () {
+      if (_lotInitialScrollUserMoved) return;
+      scrollTopNow();
+    });
+  }
+
+  function markLotInitialScrollActivity() {
+    _lotInitialScrollUserMoved = true;
+  }
 
   function ensureLotCountdowns(main) {
     updateCountdowns(main);
@@ -1334,6 +1358,12 @@
     var main = document.querySelector("main");
     if (!main) return;
 
+    _lotInitialScrollUserMoved = false;
+    window.addEventListener("scroll", markLotInitialScrollActivity, { passive: true, once: true });
+    window.addEventListener("wheel", markLotInitialScrollActivity, { passive: true, once: true });
+    window.addEventListener("touchstart", markLotInitialScrollActivity, { passive: true, once: true });
+    lockLotInitialScrollTop();
+
     loadLotEndTimes(); // preload in background so resolveEndTime can use it
     var language = getLanguage();
     var slug = getQueryParam("slug");
@@ -1364,6 +1394,7 @@
         renderLot(main, bundle.lot, initialResults.relatedLots, initialResults.bids, strings);
         ensureLotCountdowns(main);
         recordLotView(bundle);
+        if (!_lotInitialScrollUserMoved) lockLotInitialScrollTop();
 
         return hydrateLotFromRemote(bundle, language)
           .catch(function () {
