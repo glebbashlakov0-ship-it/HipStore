@@ -1,6 +1,7 @@
-(() => {
+  (() => {
   const LOGO_FILE = "logo1.svg";
   const TAWK_EMBED_SRC = "https://embed.tawk.to/69c04d8cd88c2b1c3430783d/1jkbitra2";
+  const TAWK_LAUNCHER_ID = "auctio-tawk-launcher";
   const LANGUAGES = [
     { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
     { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
@@ -2077,7 +2078,19 @@
     return isHomePage();
   }
 
-  function applyTawkDisplayMode() {
+  function getTawkLauncher() {
+    return document.getElementById(TAWK_LAUNCHER_ID);
+  }
+
+  function setTawkLauncherVisible(visible) {
+    const launcher = getTawkLauncher();
+    if (!launcher) {
+      return;
+    }
+    launcher.style.display = visible ? "inline-flex" : "none";
+  }
+
+  function openTawkFromLauncher() {
     if (typeof window === "undefined") {
       return;
     }
@@ -2085,16 +2098,96 @@
     if (!api) {
       return;
     }
+    setTawkLauncherVisible(false);
     if (typeof api.showWidget === "function") {
       try {
         api.showWidget();
       } catch (_error) {}
     }
-    if (!shouldShowExpandedTawk() && typeof api.minimize === "function") {
+    [80, 220, 500].forEach(function (delay) {
+      window.setTimeout(function () {
+        if (typeof api.maximize === "function") {
+          try {
+            api.maximize();
+          } catch (_error) {}
+        } else if (typeof api.toggle === "function") {
+          try {
+            api.toggle();
+          } catch (_error) {}
+        }
+      }, delay);
+    });
+  }
+
+  function ensureTawkLauncher() {
+    if (typeof document === "undefined") {
+      return;
+    }
+    let launcher = getTawkLauncher();
+    if (shouldShowExpandedTawk()) {
+      if (launcher) {
+        launcher.remove();
+      }
+      return;
+    }
+    if (!launcher) {
+      launcher = document.createElement("button");
+      launcher.id = TAWK_LAUNCHER_ID;
+      launcher.type = "button";
+      launcher.setAttribute("aria-label", "Open chat");
+      launcher.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg>';
+      launcher.style.cssText = [
+        "position:fixed",
+        "right:18px",
+        "bottom:18px",
+        "width:56px",
+        "height:56px",
+        "border:none",
+        "border-radius:999px",
+        "display:inline-flex",
+        "align-items:center",
+        "justify-content:center",
+        "background:#0f172a",
+        "color:#fff",
+        "box-shadow:0 12px 32px rgba(15,23,42,0.24)",
+        "cursor:pointer",
+        "z-index:2147483000"
+      ].join(";");
+      launcher.addEventListener("click", openTawkFromLauncher);
+      document.body.appendChild(launcher);
+    }
+    setTawkLauncherVisible(true);
+  }
+
+  function applyTawkDisplayMode() {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const api = window.Tawk_API;
+    ensureTawkLauncher();
+    if (!api) {
+      return;
+    }
+    if (shouldShowExpandedTawk()) {
+      setTawkLauncherVisible(false);
+      if (typeof api.showWidget === "function") {
+        try {
+          api.showWidget();
+        } catch (_error) {}
+      }
+      return;
+    }
+    if (typeof api.hideWidget === "function") {
+      try {
+        api.hideWidget();
+      } catch (_error) {}
+    } else if (typeof api.minimize === "function") {
       try {
         api.minimize();
       } catch (_error) {}
     }
+    setTawkLauncherVisible(true);
   }
 
   function scheduleTawkDisplayRefresh() {
@@ -2113,11 +2206,29 @@
       return;
     }
     const previousOnLoad = typeof existingApi.onLoad === "function" ? existingApi.onLoad : null;
+    const previousOnChatMinimized = typeof existingApi.onChatMinimized === "function" ? existingApi.onChatMinimized : null;
+    const previousOnChatHidden = typeof existingApi.onChatHidden === "function" ? existingApi.onChatHidden : null;
     existingApi.onLoad = function () {
       if (previousOnLoad) {
         previousOnLoad.apply(this, arguments);
       }
       scheduleTawkDisplayRefresh();
+    };
+    existingApi.onChatMinimized = function () {
+      if (previousOnChatMinimized) {
+        previousOnChatMinimized.apply(this, arguments);
+      }
+      if (!shouldShowExpandedTawk()) {
+        scheduleTawkDisplayRefresh();
+      }
+    };
+    existingApi.onChatHidden = function () {
+      if (previousOnChatHidden) {
+        previousOnChatHidden.apply(this, arguments);
+      }
+      if (!shouldShowExpandedTawk()) {
+        scheduleTawkDisplayRefresh();
+      }
     };
     existingApi.__auctioDisplayConfigured = true;
     window.Tawk_API = existingApi;
