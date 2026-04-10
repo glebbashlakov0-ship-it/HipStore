@@ -27,7 +27,9 @@
   var ADMIN_SESSION_KEY  = 'auctio_admin_session';
   var ADMIN_STATUSES_KEY = 'auctio_admin_statuses';
   var ADMIN_CONFIRMATIONS_KEY = 'auctio_admin_confirmations';
-  var ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails';
+  var ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails_v2';
+  var LEGACY_ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails';
+  var SENT_EMAIL_ACTIONS = ['invoice', 'win-invoice', 'win-only'];
 
   var STATUS_LABELS = {
     active:    'В работе',
@@ -136,7 +138,7 @@
 
   function loadSentEmailMap() {
     try {
-      return JSON.parse(localStorage.getItem(ADMIN_SENT_EMAILS_KEY)) || {};
+      return normalizeSentEmailMap(JSON.parse(localStorage.getItem(ADMIN_SENT_EMAILS_KEY)) || {});
     } catch (e) {
       return {};
     }
@@ -144,22 +146,55 @@
 
   function saveSentEmailMap() {
     try {
-      localStorage.setItem(ADMIN_SENT_EMAILS_KEY, JSON.stringify(state.sentEmails || {}));
+      localStorage.setItem(ADMIN_SENT_EMAILS_KEY, JSON.stringify(normalizeSentEmailMap(state.sentEmails || {})));
+    } catch (e) {}
+  }
+
+  function getSentEmailKey(bidId, actionType) {
+    return String(bidId || '') + '::' + String(actionType || '');
+  }
+
+  function normalizeSentEmailMap(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+
+    Object.keys(raw).forEach(function (key) {
+      var value = raw[key];
+
+      if (key.indexOf('::') !== -1) {
+        var parts = key.split('::');
+        var actionType = parts[1];
+        if (SENT_EMAIL_ACTIONS.indexOf(actionType) !== -1 && value) {
+          out[getSentEmailKey(parts[0], actionType)] = String(value);
+        }
+        return;
+      }
+
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+      SENT_EMAIL_ACTIONS.forEach(function (actionType) {
+        if (value[actionType]) {
+          out[getSentEmailKey(key, actionType)] = String(value[actionType]);
+        }
+      });
+    });
+
+    return out;
+  }
+
+  function resetLegacySentEmailMap() {
+    try {
+      localStorage.removeItem(LEGACY_ADMIN_SENT_EMAILS_KEY);
     } catch (e) {}
   }
 
   function hasSentEmail(bidId, actionType) {
-    var entry = state.sentEmails && state.sentEmails[bidId];
-    return Boolean(entry && entry[actionType]);
+    return Boolean(state.sentEmails && state.sentEmails[getSentEmailKey(bidId, actionType)]);
   }
 
   function markEmailSent(bidId, actionType, sentAt) {
     if (!bidId || !actionType) return;
     var timestamp = sentAt || new Date().toISOString();
-    if (!state.sentEmails[bidId] || typeof state.sentEmails[bidId] !== 'object') {
-      state.sentEmails[bidId] = {};
-    }
-    state.sentEmails[bidId][actionType] = timestamp;
+    state.sentEmails[getSentEmailKey(bidId, actionType)] = timestamp;
     saveSentEmailMap();
   }
 
@@ -518,25 +553,25 @@
         '  <td class="px-4 py-3">',
         '    <div class="flex items-center gap-1.5 flex-nowrap">',
         // Btn 1: Invoice
-        '      <button class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
+        '      <button type="button" class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
         '        Инвойс',
         '        ' + renderSentCheck(invoiceSent),
         '      </button>',
         // Btn 2: Win + Invoice
-        '      <button class="lead-action-btn action-win-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
+        '      <button type="button" class="lead-action-btn action-win-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        Победа+',
         '        ' + renderSentCheck(winInvoiceSent),
         '      </button>',
         // Btn 3: Win only
-        '      <button class="lead-action-btn action-win-only inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
+        '      <button type="button" class="lead-action-btn action-win-only inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
         '        Победа',
         '        ' + renderSentCheck(winOnlySent),
         '      </button>',
         // Btn 4: Confirmation
-        '      <button class="lead-action-btn action-confirmation inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
+        '      <button type="button" class="lead-action-btn action-confirmation inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
         '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
         '        ' + confirmationLabel,
         '      </button>',
@@ -994,6 +1029,7 @@
       if (!sb) initSupabase();
       state.adminStatuses = {};
       state.confirmations = loadConfirmationMap();
+      resetLegacySentEmailMap();
       state.sentEmails = loadSentEmailMap();
       state.leads         = await loadLeads();
       await syncLegacyStatusesToDatabase();
@@ -1014,6 +1050,7 @@
   function init() {
     state.adminStatuses = {};
     state.confirmations = loadConfirmationMap();
+    resetLegacySentEmailMap();
     state.sentEmails = loadSentEmailMap();
 
     // ── Login ──────────────────────────────────────────────────────────
