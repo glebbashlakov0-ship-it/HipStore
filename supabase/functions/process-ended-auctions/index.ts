@@ -91,6 +91,20 @@ function isLotEnded(lot: LotItem, nowTs: number) {
   return Number.isFinite(endTs) && endTs <= nowTs;
 }
 
+function hasStaleActiveEndTime(group: WinnerGroup, nowTs: number) {
+  const status = normalizeStatus(group.lot.status);
+  if (status !== "active") return false;
+
+  const endTs = new Date(String(group.lot.endTime || "")).getTime();
+  if (!Number.isFinite(endTs) || endTs > nowTs) return false;
+
+  const driftBufferMs = 60 * 1000;
+  return group.bids.some((bid) => {
+    const bidTs = new Date(String(bid.created_at || "")).getTime();
+    return Number.isFinite(bidTs) && bidTs > endTs + driftBufferMs;
+  });
+}
+
 function isAlreadyProcessedStatus(status: unknown) {
   const normalized = normalizeStatus(status);
   return normalized === "won" || normalized === "paid";
@@ -313,8 +327,6 @@ Deno.serve(async (req) => {
       const lotId = String(bid.lot_id || "");
       const userId = String(bid.user_id || "");
       if (!lotId || !userId) continue;
-      const lot = lotsById.get(lotId);
-      if (!lot || !isLotEnded(lot, nowTs)) continue;
       const rows = grouped.get(`${lotId}::${userId}`) || [];
       rows.push(bid);
       grouped.set(`${lotId}::${userId}`, rows);
@@ -330,6 +342,10 @@ Deno.serve(async (req) => {
         bids: rows,
         lot: lotsById.get(String(highestBid.lot_id)) || {},
       } as WinnerGroup;
+    }).filter((group) => {
+      if (!group.lot || !group.lot.id) return false;
+      if (!isLotEnded(group.lot, nowTs)) return false;
+      return !hasStaleActiveEndTime(group, nowTs);
     });
 
     if (!groups.length) {

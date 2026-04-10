@@ -278,7 +278,7 @@
         slug: item.slug || '',
         title: item.title || item.name || '',
         current_bid: item.currentBid || item.current_bid || 0,
-        end_time: item.end_time || item.endTime || null,
+        end_time: resolveLotEndTime(item),
         lot_images: item.lot_images || [{ image_url: item.image || '', is_primary: true }],
       };
     });
@@ -335,6 +335,29 @@
   // ═══════════════════════════════════════════════════════════════════════
   function uniqueArr(arr) {
     return arr.filter(function (v, i, a) { return a.indexOf(v) === i; });
+  }
+
+  function hashString(value) {
+    var input = String(value || '');
+    var hash = 0;
+    for (var i = 0; i < input.length; i += 1) {
+      hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+    }
+    return hash;
+  }
+
+  function resolveLotEndTime(item) {
+    var status = String((item && item.status) || '').toLowerCase();
+    var rawEndTime = item && (item.end_time || item.endTime) || null;
+    if (status && status !== 'active') return rawEndTime;
+
+    var rawDiff = new Date(rawEndTime).getTime() - Date.now();
+    if (Number.isFinite(rawDiff) && rawDiff > 0) return rawEndTime;
+
+    var hash = hashString((item && (item.id || item.slug || item.title)) || '');
+    var days = 1 + (hash % 10);
+    var minutes = Math.floor(hash / 10) % 1440;
+    return new Date(Date.now() + days * 86400000 + minutes * 60000).toISOString();
   }
 
   function escapeHtml(str) {
