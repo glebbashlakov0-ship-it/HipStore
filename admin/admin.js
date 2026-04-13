@@ -427,6 +427,11 @@
     return 'text-gray-500';
   }
 
+  function isCompletedLeadStatus(status) {
+    var normalized = String(status || '').toLowerCase();
+    return normalized === 'won' || normalized === 'paid';
+  }
+
   function getFullName(lead) {
     return [lead.firstName, lead.lastName].filter(Boolean).join(' ') || '—';
   }
@@ -490,8 +495,9 @@
       var statusCls   = STATUS_CLASSES[status] || 'bg-gray-100 text-gray-600';
       var name        = getFullName(lead);
       var geo         = getGeo(lead);
-      var timerText   = lead.lotEndTime ? formatCountdown(lead.lotEndTime) : '—';
-      var timerCls    = timerUrgencyClass(lead.lotEndTime);
+      var forceCompleted = isCompletedLeadStatus(status);
+      var timerText   = forceCompleted ? 'Завершён' : (lead.lotEndTime ? formatCountdown(lead.lotEndTime) : '—');
+      var timerCls    = forceCompleted ? 'text-gray-400' : timerUrgencyClass(lead.lotEndTime);
       var invoiceSent = hasSentEmail(lead.id, 'invoice');
       var winInvoiceSent = hasSentEmail(lead.id, 'win-invoice');
       var winOnlySent = hasSentEmail(lead.id, 'win-only');
@@ -583,6 +589,8 @@
 
     // Start countdowns
     state.filteredLeads.forEach(function (lead) {
+      var currentStatus = getLeadStatus(lead.id, lead.status);
+      if (isCompletedLeadStatus(currentStatus)) return;
       if (!lead.lotEndTime) return;
       var el = document.getElementById('timer-' + lead.id);
       if (!el) return;
