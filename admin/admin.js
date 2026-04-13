@@ -1006,10 +1006,13 @@
     var errorDiv = document.getElementById('leads-error');
     var errorTxt = document.getElementById('leads-error-text');
     var wrapper  = document.getElementById('leads-table-wrapper');
+    var searchEl = document.getElementById('search-input');
 
     if (loading)  loading.style.display  = 'flex';
     if (wrapper)  wrapper.style.display  = 'none';
     if (errorDiv) errorDiv.style.display = 'none';
+    state.searchQuery = '';
+    if (searchEl) searchEl.value = '';
 
     try {
       if (!window.supabase || !window.supabase.createClient) {
@@ -1069,6 +1072,7 @@
     // ── Search ─────────────────────────────────────────────────────────
     var searchEl = document.getElementById('search-input');
     if (searchEl) {
+      searchEl.value = '';
       searchEl.addEventListener('input', function () {
         state.searchQuery = searchEl.value;
         applyFilters();
