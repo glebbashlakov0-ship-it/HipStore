@@ -741,9 +741,9 @@
     var note = document.getElementById('payment-method-note');
     if (!note) return;
     note.textContent = paymentType === 'revolut'
-      ? 'Клиент выбрал Revolut. При необходимости способ оплаты можно изменить вручную.'
+      ? 'Клиент выбрал Revolut.'
       : paymentType === 'iban'
-        ? 'Клиент выбрал IBAN. При необходимости способ оплаты можно изменить вручную.'
+        ? 'Клиент выбрал IBAN.'
         : 'Способ оплаты клиента не сохранился. Выбери нужный вариант вручную.';
   }
 

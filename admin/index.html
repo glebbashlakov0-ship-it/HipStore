@@ -218,7 +218,7 @@
               IBAN
             </button>
           </div>
-          <p id="payment-method-note" class="mt-2 text-xs text-gray-500">По умолчанию выбран способ оплаты клиента. При необходимости его можно изменить вручную.</p>
+          <p id="payment-method-note" class="mt-2 text-xs text-gray-500">По умолчанию выбран способ оплаты клиента.</p>
         </div>
 
         <!-- Revolut fields -->
@@ -348,7 +348,7 @@
       if (!path.endsWith('/')) path += '/';
 
       var adminScript = document.createElement('script');
-      adminScript.src = path + 'admin.js?v=20260413a';
+      adminScript.src = path + 'admin.js?v=20260413b';
       document.body.appendChild(adminScript);
     })();
   </script>
