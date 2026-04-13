@@ -207,18 +207,18 @@
         <div>
           <label class="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-2">Способ оплаты</label>
           <div class="flex gap-2">
-            <button data-payment-type="revolut"
+            <button type="button" data-payment-type="revolut"
               class="flex-1 tab-active text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4 0-.85-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg>
               Revolut
             </button>
-            <button data-payment-type="iban"
+            <button type="button" data-payment-type="iban"
               class="flex-1 tab-inactive text-sm font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
               IBAN
             </button>
           </div>
-          <p id="payment-method-note" class="mt-2 text-xs text-gray-500">Способ оплаты зафиксирован по выбору клиента.</p>
+          <p id="payment-method-note" class="mt-2 text-xs text-gray-500">По умолчанию выбран способ оплаты клиента. При необходимости его можно изменить вручную.</p>
         </div>
 
         <!-- Revolut fields -->
@@ -348,7 +348,7 @@
       if (!path.endsWith('/')) path += '/';
 
       var adminScript = document.createElement('script');
-      adminScript.src = path + 'admin.js?v=20260410b';
+      adminScript.src = path + 'admin.js?v=20260413a';
       document.body.appendChild(adminScript);
     })();
   </script>

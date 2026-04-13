@@ -675,13 +675,13 @@
     var refEl = document.getElementById('bank-reference');
     if (refEl) refEl.value = genInvoiceNumber();
 
-    // Lock payment method to the option the client selected on the site.
+    enablePaymentTypeSelection();
     if (paymentMethod) {
       switchPaymentType(paymentMethod);
-      setPaymentTypeReadOnly(paymentMethod);
+      updatePaymentMethodNote(paymentMethod);
     } else {
       switchPaymentType('iban');
-      setPaymentTypeEditable();
+      updatePaymentMethodNote('');
     }
 
     showEl('modal-bank');
@@ -736,26 +736,18 @@
     });
   }
 
-  function setPaymentTypeReadOnly(type) {
+  function updatePaymentMethodNote(type) {
     var paymentType = normalizePaymentMethod(type);
     var note = document.getElementById('payment-method-note');
-    document.querySelectorAll('[data-payment-type]').forEach(function (btn) {
-      var isActive = btn.dataset.paymentType === paymentType;
-      btn.disabled = true;
-      btn.setAttribute('aria-disabled', 'true');
-      btn.style.cursor = 'not-allowed';
-      btn.style.pointerEvents = 'none';
-      btn.style.opacity = isActive ? '1' : '0.55';
-    });
-    if (note) {
-      note.textContent = paymentType === 'revolut'
-        ? 'Клиент выбрал Revolut. Этот способ оплаты зафиксирован.'
-        : 'Клиент выбрал IBAN. Этот способ оплаты зафиксирован.';
-    }
+    if (!note) return;
+    note.textContent = paymentType === 'revolut'
+      ? 'Клиент выбрал Revolut. При необходимости способ оплаты можно изменить вручную.'
+      : paymentType === 'iban'
+        ? 'Клиент выбрал IBAN. При необходимости способ оплаты можно изменить вручную.'
+        : 'Способ оплаты клиента не сохранился. Выбери нужный вариант вручную.';
   }
 
-  function setPaymentTypeEditable() {
-    var note = document.getElementById('payment-method-note');
+  function enablePaymentTypeSelection() {
     document.querySelectorAll('[data-payment-type]').forEach(function (btn) {
       btn.disabled = false;
       btn.setAttribute('aria-disabled', 'false');
@@ -763,9 +755,6 @@
       btn.style.pointerEvents = '';
       btn.style.opacity = '1';
     });
-    if (note) {
-      note.textContent = 'Для этой старой заявки способ оплаты не сохранился. Выбери вручную один раз.';
-    }
   }
 
   function getPaymentType() {
