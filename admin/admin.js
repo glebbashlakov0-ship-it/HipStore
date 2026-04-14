@@ -61,6 +61,7 @@
     searchQuery:    '',
     currentLead:    null,
     currentAction:  null, // 'invoice' | 'win-invoice' | 'win-only'
+    currentDraft:   null,
     adminStatuses:  {},
     confirmations:  {},
     sentEmails:     {},
@@ -820,16 +821,16 @@
     return CONFIG.resend && CONFIG.resend.functionName;
   }
 
-  async function sendEmail(payload) {
+  async function getEmailDraft(payload) {
     if (!resendConfigured()) {
       throw new Error('Resend не настроен. Заполни CONFIG.resend.functionName в admin.js');
     }
     if (!sb) initSupabase();
     var result = await sb.functions.invoke(CONFIG.resend.functionName, {
-      body: payload,
+      body: Object.assign({}, payload, { preview_only: true }),
     });
     if (result.error) {
-      throw new Error(result.error.message || 'Не удалось вызвать функцию отправки письма.');
+      throw new Error(result.error.message || 'Не удалось подготовить шаблон письма.');
     }
     if (result.data && result.data.error) {
       throw new Error(result.data.error);
@@ -837,11 +838,83 @@
     return result.data || {};
   }
 
-  function formatSendSuccessMessage(result, fallbackEmail) {
-    if (result && result.demo && result.to) {
-      return 'Письмо отправлено в demo-режиме → ' + result.to;
+  function setFieldValue(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.value = value || '';
+  }
+
+  function buildCopyPackage(draft) {
+    return [
+      'To: ' + String(draft && draft.to || ''),
+      'Reply-To: ' + String(draft && draft.reply_to || ''),
+      'Subject: ' + String(draft && draft.subject || ''),
+      '',
+      'HTML:',
+      String(draft && draft.html || ''),
+    ].join('\n');
+  }
+
+  async function copyPlainText(text) {
+    var value = String(text || '');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
     }
-    return 'Письмо отправлено → ' + (result && result.to ? result.to : fallbackEmail);
+    var helper = document.createElement('textarea');
+    helper.value = value;
+    helper.setAttribute('readonly', '');
+    helper.style.position = 'fixed';
+    helper.style.opacity = '0';
+    document.body.appendChild(helper);
+    helper.select();
+    document.execCommand('copy');
+    helper.remove();
+  }
+
+  function openDraftModal(draft, title) {
+    state.currentDraft = draft || null;
+    setText('draft-modal-title', title || 'Готовое письмо');
+    setFieldValue('draft-to', draft && draft.to);
+    setFieldValue('draft-reply-to', draft && draft.reply_to);
+    setFieldValue('draft-subject', draft && draft.subject);
+    setFieldValue('draft-html', draft && draft.html);
+    setFieldValue('draft-text', draft && draft.text);
+    showEl('modal-draft');
+  }
+
+  function closeDraftModal() {
+    hideEl('modal-draft');
+    state.currentDraft = null;
+    setFieldValue('draft-to', '');
+    setFieldValue('draft-reply-to', '');
+    setFieldValue('draft-subject', '');
+    setFieldValue('draft-html', '');
+    setFieldValue('draft-text', '');
+  }
+
+  async function copyDraftAll() {
+    if (!state.currentDraft) return;
+    await copyPlainText(buildCopyPackage(state.currentDraft));
+    showToast('Черновик письма скопирован', 'success');
+  }
+
+  async function copyDraftHtml() {
+    if (!state.currentDraft) return;
+    var html = String(state.currentDraft.html || '');
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([html], { type: 'text/plain' }),
+          }),
+        ]);
+        showToast('HTML письма скопирован', 'success');
+        return;
+      } catch (e) {}
+    }
+    await copyPlainText(html);
+    showToast('HTML письма скопирован', 'success');
   }
 
   async function handleSendInvoice() {
@@ -856,10 +929,10 @@
       ? 'win-invoice'
       : 'invoice';
 
-    setBtnLoading('send-email-btn', 'send-email-btn-text', true, 'Отправка...');
+    setBtnLoading('send-email-btn', 'send-email-btn-text', true, 'Подготовка...');
 
     try {
-      var result = await sendEmail({
+      var draft = await getEmailDraft({
         template_type:   templateType,
         to_email:        lead.email,
         to_name:         getFullName(lead),
@@ -876,19 +949,12 @@
         reply_to:        CONFIG.auctionHouse.email,
       });
 
-      markEmailSent(lead.id, templateType);
-      showToast(formatSendSuccessMessage(result, lead.email), 'success');
-
-      if (state.currentAction === 'win-invoice') {
-        setLeadStatus(lead.id, 'won');
-        await persistLeadStatus(lead.id, 'won');
-      }
       closeBankModal();
-      applyFilters();
+      openDraftModal(draft, templateType === 'win-invoice' ? 'Черновик: Победа + Инвойс' : 'Черновик: Инвойс');
     } catch (e) {
       showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
     } finally {
-      setBtnLoading('send-email-btn', 'send-email-btn-text', false, 'Отправить письмо');
+      setBtnLoading('send-email-btn', 'send-email-btn-text', false, 'Подготовить письмо');
     }
   }
 
@@ -896,10 +962,10 @@
     var lead = state.currentLead;
     if (!lead) return;
 
-    setBtnLoading('send-win-btn', 'send-win-btn-text', true, 'Отправка...');
+    setBtnLoading('send-win-btn', 'send-win-btn-text', true, 'Подготовка...');
 
     try {
-      var result = await sendEmail({
+      var draft = await getEmailDraft({
         template_type:   'win-only',
         to_email:        lead.email,
         to_name:         getFullName(lead),
@@ -916,16 +982,12 @@
         reply_to:        CONFIG.auctionHouse.email,
       });
 
-      markEmailSent(lead.id, 'win-only');
-      showToast(formatSendSuccessMessage(result, lead.email), 'success');
-      setLeadStatus(lead.id, 'won');
-      await persistLeadStatus(lead.id, 'won');
       closeWinModal();
-      applyFilters();
+      openDraftModal(draft, 'Черновик: Уведомление о победе');
     } catch (e) {
       showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
     } finally {
-      setBtnLoading('send-win-btn', 'send-win-btn-text', false, 'Отправить уведомление');
+      setBtnLoading('send-win-btn', 'send-win-btn-text', false, 'Подготовить письмо');
     }
   }
 
@@ -936,11 +998,11 @@
     if (triggerBtn) {
       triggerBtn.disabled = true;
       triggerBtn.style.opacity = '0.7';
-      triggerBtn.innerHTML = 'Отправка...';
+      triggerBtn.innerHTML = 'Подготовка...';
     }
 
     try {
-      var result = await sendEmail({
+      var draft = await getEmailDraft({
         template_type:    'confirmation',
         to_email:         lead.email,
         to_name:          getFullName(lead),
@@ -953,13 +1015,11 @@
         reply_to:         CONFIG.auctionHouse.email,
       });
 
-      markConfirmationSent(lead.id);
-      showToast(formatSendSuccessMessage(result, lead.email), 'success');
-      applyFilters();
+      openDraftModal(draft, 'Черновик: Подтверждение');
     } catch (e) {
       showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
     } finally {
-      if (triggerBtn && !lead.confirmationSent) {
+      if (triggerBtn) {
         triggerBtn.disabled = false;
         triggerBtn.style.opacity = '1';
         triggerBtn.innerHTML = originalHtml;
@@ -1114,6 +1174,10 @@
     on('close-win-modal',   'click', closeWinModal);
     on('close-win-modal-2', 'click', closeWinModal);
     on('send-win-btn',      'click', handleSendWinOnly);
+    on('close-draft-modal',   'click', closeDraftModal);
+    on('close-draft-modal-2', 'click', closeDraftModal);
+    on('copy-draft-all-btn',  'click', copyDraftAll);
+    on('copy-draft-html-btn', 'click', copyDraftHtml);
 
     // Close modals on backdrop click
     document.getElementById('modal-bank').addEventListener('click', function (e) {
@@ -1121,6 +1185,9 @@
     });
     document.getElementById('modal-win').addEventListener('click', function (e) {
       if (e.target === this) closeWinModal();
+    });
+    document.getElementById('modal-draft').addEventListener('click', function (e) {
+      if (e.target === this) closeDraftModal();
     });
 
     // ── Auth check ─────────────────────────────────────────────────────

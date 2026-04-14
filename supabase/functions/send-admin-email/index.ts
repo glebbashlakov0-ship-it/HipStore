@@ -13,6 +13,7 @@ const corsHeaders = {
 
 type EmailPayload = {
   template_type?: string;
+  preview_only?: boolean;
   to_email?: string;
   to_name?: string;
   lot_title?: string;
@@ -569,11 +570,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed." }, 405);
   }
 
-  const resendApiKey = Deno.env.get("RESEND_API_KEY");
-  if (!resendApiKey) {
-    return jsonResponse({ error: "RESEND_API_KEY is not configured." }, 500);
-  }
-
   let payload: EmailPayload;
   try {
     payload = await req.json();
@@ -586,11 +582,34 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Recipient email is required." }, 400);
   }
 
+  const previewOnly = payload.preview_only === true || String(payload.preview_only || "").toLowerCase() === "true";
   const demoTo = String(Deno.env.get("RESEND_DEMO_TO") || "").trim();
-  const toEmail = demoTo || requestedTo;
   const fromEmail = String(Deno.env.get("RESEND_FROM") || "").trim() || "onboarding@resend.dev";
   const fromName = String(payload.from_name || "").trim() || "Auction House";
   const replyTo = String(payload.reply_to || "").trim();
+
+  if (previewOnly) {
+    const subject = buildSubject(payload, false);
+    const html = renderEmailHtml(payload, "");
+    const text = renderText(payload, false, requestedTo, requestedTo);
+    return jsonResponse({
+      success: true,
+      preview: true,
+      to: requestedTo,
+      from: `${fromName} <${fromEmail}>`,
+      reply_to: replyTo || null,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) {
+    return jsonResponse({ error: "RESEND_API_KEY is not configured." }, 500);
+  }
+
+  const toEmail = demoTo || requestedTo;
   const subject = buildSubject(payload, Boolean(demoTo));
   const demoBannerHtml = demoTo ? renderDemoBanner(requestedTo, demoTo) : "";
   const html = renderEmailHtml(payload, demoBannerHtml);
