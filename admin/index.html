@@ -376,8 +376,12 @@
           class="border border-gray-200 text-gray-700 font-medium rounded-lg py-2.5 px-4 text-sm hover:bg-gray-50 transition-colors">
           Закрыть
         </button>
-        <button id="copy-draft-all-btn"
+        <button id="open-draft-mail-btn"
           class="bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg py-2.5 px-4 text-sm transition-colors">
+          Открыть в почте
+        </button>
+        <button id="copy-draft-all-btn"
+          class="border border-gray-200 text-gray-700 font-medium rounded-lg py-2.5 px-4 text-sm hover:bg-gray-50 transition-colors">
           Скопировать всё
         </button>
         <button id="copy-draft-html-btn"
@@ -400,7 +404,7 @@
       if (!path.endsWith('/')) path += '/';
 
       var adminScript = document.createElement('script');
-      adminScript.src = path + 'admin.js?v=20260414a';
+      adminScript.src = path + 'admin.js?v=20260414b';
       document.body.appendChild(adminScript);
     })();
   </script>

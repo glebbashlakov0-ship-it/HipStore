@@ -854,6 +854,21 @@
     ].join('\n');
   }
 
+  function buildMailtoHref(draft) {
+    var to = String(draft && draft.to || '').trim();
+    var subject = String(draft && draft.subject || '').trim();
+    var body = String(draft && draft.text || '').trim();
+
+    if (!to) {
+      throw new Error('Не указан получатель письма.');
+    }
+
+    var query = [];
+    if (subject) query.push('subject=' + encodeURIComponent(subject));
+    if (body) query.push('body=' + encodeURIComponent(body));
+    return 'mailto:' + encodeURIComponent(to) + (query.length ? '?' + query.join('&') : '');
+  }
+
   async function copyPlainText(text) {
     var value = String(text || '');
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -915,6 +930,17 @@
     }
     await copyPlainText(html);
     showToast('HTML письма скопирован', 'success');
+  }
+
+  function openDraftInMailApp() {
+    if (!state.currentDraft) return;
+
+    try {
+      var href = buildMailtoHref(state.currentDraft);
+      window.location.href = href;
+    } catch (error) {
+      showToast(error.message || 'Не удалось открыть почтовое приложение', 'error');
+    }
   }
 
   async function handleSendInvoice() {
@@ -1176,6 +1202,7 @@
     on('send-win-btn',      'click', handleSendWinOnly);
     on('close-draft-modal',   'click', closeDraftModal);
     on('close-draft-modal-2', 'click', closeDraftModal);
+    on('open-draft-mail-btn', 'click', openDraftInMailApp);
     on('copy-draft-all-btn',  'click', copyDraftAll);
     on('copy-draft-html-btn', 'click', copyDraftHtml);
 
