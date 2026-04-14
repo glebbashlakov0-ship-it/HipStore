@@ -869,6 +869,66 @@
     return 'mailto:' + encodeURIComponent(to) + (query.length ? '?' + query.join('&') : '');
   }
 
+  function toBase64Utf8(value) {
+    var text = String(value || '');
+    var bytes = new TextEncoder().encode(text);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  function encodeMimeWord(value) {
+    var text = String(value || '').trim();
+    if (!text) return '';
+    return '=?UTF-8?B?' + toBase64Utf8(text) + '?=';
+  }
+
+  function sanitizeFileName(value) {
+    return String(value || 'email-draft')
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 120) || 'email-draft';
+  }
+
+  function buildEmlContent(draft) {
+    var to = String(draft && draft.to || '').trim();
+    var replyTo = String(draft && draft.reply_to || '').trim();
+    var subject = String(draft && draft.subject || '').trim();
+    var text = String(draft && draft.text || '').trim();
+    var html = String(draft && draft.html || '').trim();
+    var boundary = 'auctio-boundary-' + Date.now();
+    var fromHeader = CONFIG.auctionHouse.name + ' <' + CONFIG.auctionHouse.email + '>';
+    var lines = [
+      'To: ' + to,
+      'From: ' + fromHeader,
+      'Subject: ' + encodeMimeWord(subject),
+      'Date: ' + new Date().toUTCString(),
+      'MIME-Version: 1.0',
+      'X-Unsent: 1',
+      'Content-Type: multipart/alternative; boundary="' + boundary + '"',
+      '',
+      '--' + boundary,
+      'Content-Type: text/plain; charset="UTF-8"',
+      'Content-Transfer-Encoding: base64',
+      '',
+      toBase64Utf8(text),
+      '',
+      '--' + boundary,
+      'Content-Type: text/html; charset="UTF-8"',
+      'Content-Transfer-Encoding: base64',
+      '',
+      toBase64Utf8(html),
+      '',
+      '--' + boundary + '--',
+      '',
+    ];
+    if (replyTo) lines.splice(2, 0, 'Reply-To: ' + replyTo);
+    return lines.join('\r\n');
+  }
+
   async function copyPlainText(text) {
     var value = String(text || '');
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -940,6 +1000,27 @@
       window.location.href = href;
     } catch (error) {
       showToast(error.message || 'Не удалось открыть почтовое приложение', 'error');
+    }
+  }
+
+  function downloadDraftEml() {
+    if (!state.currentDraft) return;
+
+    try {
+      var eml = buildEmlContent(state.currentDraft);
+      var fileName = sanitizeFileName(state.currentDraft.subject || 'email-draft') + '.eml';
+      var blob = new Blob([eml], { type: 'message/rfc822' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      showToast('HTML письмо сохранено как .eml', 'success');
+    } catch (error) {
+      showToast(error.message || 'Не удалось подготовить .eml', 'error');
     }
   }
 
@@ -1203,6 +1284,7 @@
     on('close-draft-modal',   'click', closeDraftModal);
     on('close-draft-modal-2', 'click', closeDraftModal);
     on('open-draft-mail-btn', 'click', openDraftInMailApp);
+    on('download-draft-eml-btn', 'click', downloadDraftEml);
     on('copy-draft-all-btn',  'click', copyDraftAll);
     on('copy-draft-html-btn', 'click', copyDraftHtml);
 
