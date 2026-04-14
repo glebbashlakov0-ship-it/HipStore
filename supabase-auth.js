@@ -8,6 +8,7 @@
   var AUCTIO_AUTH_OUTAGE_KEY = 'auctio_auth_outage_until';
   var LEGACY_AUTH_USERS_KEY = 'auctio-auth-users';
   var LEGACY_AUTH_SESSION_KEY = 'auctio-auth-session';
+  var REGISTER_FUNCTION_NAME = 'register-user';
 
   if (!window.supabase) {
     console.error('[supabase-auth] Supabase SDK not loaded.');
@@ -293,14 +294,6 @@
     return new Error(message);
   }
 
-  function createConfirmEmailError(email) {
-    var error = new Error(
-      'Your account was created for ' + String(email || '').trim().toLowerCase() + '. Please confirm your email or sign in again to start bidding.'
-    );
-    error.isConfirmEmail = true;
-    return error;
-  }
-
   function shouldRetryAuth(error) {
     var message = String((error && error.message) || '');
     return (
@@ -346,6 +339,26 @@
     } catch (_error) {
       return null;
     }
+  }
+
+  async function registerViaServer(payload) {
+    var result = await supabase.functions.invoke(REGISTER_FUNCTION_NAME, {
+      body: {
+        email: String(payload.email || '').trim().toLowerCase(),
+        password: String(payload.password || ''),
+        first_name: String(payload.firstName || '').trim(),
+        last_name: String(payload.lastName || '').trim(),
+        phone: String(payload.phone || '').trim()
+      }
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message || 'Unable to create account.');
+    }
+    if (result.data && result.data.error) {
+      throw new Error(result.data.error);
+    }
+    return result.data || {};
   }
 
   async function finalizeAuthenticatedUser(user, payload) {
@@ -409,19 +422,7 @@
       var result;
       try {
         result = await retryAuthCall(async function () {
-          var signUpResult = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-              emailRedirectTo: getEmailRedirectUrl(),
-              data: {
-                first_name: String(payload.firstName || '').trim(),
-                last_name: String(payload.lastName || '').trim(),
-                phone: String(payload.phone || '').trim()
-              }
-            }
-          });
-          if (signUpResult.error) throw signUpResult.error;
+          var signUpResult = await registerViaServer(payload);
           clearAuthOutage();
           return signUpResult;
         }, 'Unable to create account.');
@@ -438,44 +439,24 @@
         throw normalized;
       }
 
-      if (!result.data || !result.data.user) throw new Error('Registration failed. Please try again.');
-
-      var identities = result.data.user.identities;
-      if (identities && identities.length === 0) {
-        throw new Error('An account with this email already exists.');
+      if (!result || result.error) {
+        throw new Error((result && result.error) || 'Registration failed. Please try again.');
       }
 
-      var sessionUser = result.data.session && result.data.session.user ? result.data.session.user : null;
-      if (!sessionUser) {
-        try {
-          var loginAfterSignUp = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-          });
-          if (!loginAfterSignUp.error && loginAfterSignUp.data && loginAfterSignUp.data.user && loginAfterSignUp.data.session) {
-            clearAuthOutage();
-            sessionUser = loginAfterSignUp.data.user;
-          } else {
-            clearCurrentUser();
-            dispatchAuth();
-            throw createConfirmEmailError(email);
-          }
-        } catch (signInError) {
-          var signInMessage = String((signInError && signInError.message) || '');
-          clearCurrentUser();
-          dispatchAuth();
-          if (
-            signInError && signInError.isConfirmEmail ||
-            signInMessage.indexOf('Email not confirmed') !== -1 ||
-            signInMessage.indexOf('confirm') !== -1
-          ) {
-            throw createConfirmEmailError(email);
-          }
-          throw normalizeError(signInError, 'Unable to complete registration.');
+      try {
+        var loginAfterSignUp = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+        if (!loginAfterSignUp.error && loginAfterSignUp.data && loginAfterSignUp.data.user && loginAfterSignUp.data.session) {
+          clearAuthOutage();
+          return finalizeAuthenticatedUser(loginAfterSignUp.data.user, payload);
         }
+      } catch (signInError) {
+        throw normalizeError(signInError, 'Unable to complete registration.');
       }
 
-      return finalizeAuthenticatedUser(sessionUser, payload);
+      throw new Error('Account created, but automatic sign-in failed. Please sign in manually.');
     };
 
     window.AuctioAuth.login = async function (email, password) {
