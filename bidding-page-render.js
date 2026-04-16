@@ -1387,39 +1387,82 @@
     }
 
     async function submitGuestBidRecord(bidId) {
-      if (!window._supabase || !window._supabase.functions || typeof window._supabase.functions.invoke !== "function") {
-        throw new Error("Bidding service is unavailable.");
-      }
-
-      var response = await window._supabase.functions.invoke("submit-guest-bid", {
-        body: {
-          bid_id: bidId,
-          lot_id: lot.id,
-          amount: selectedBid,
-          payment_method: selectedPaymentMethod,
-          contact: {
-            email: getFieldValue("email"),
-            first_name: getFieldValue("firstName"),
-            last_name: getFieldValue("lastName"),
-            phone: getDisplayPhone() || getFieldValue("phone"),
-          },
-          shipping: {
-            country: getFieldValue("country"),
-            city: getFieldValue("city"),
-            address: [getFieldValue("address"), getFieldValue("addressLine2")].filter(Boolean).join(", "),
-            state: getFieldValue("state"),
-            postal_code: getFieldValue("postalCode"),
-          },
+      var requestBody = {
+        bid_id: bidId,
+        lot_id: lot.id,
+        amount: selectedBid,
+        payment_method: selectedPaymentMethod,
+        contact: {
+          email: getFieldValue("email"),
+          first_name: getFieldValue("firstName"),
+          last_name: getFieldValue("lastName"),
+          phone: getDisplayPhone() || getFieldValue("phone"),
         },
-      });
+        shipping: {
+          country: getFieldValue("country"),
+          city: getFieldValue("city"),
+          address: [getFieldValue("address"), getFieldValue("addressLine2")].filter(Boolean).join(", "),
+          state: getFieldValue("state"),
+          postal_code: getFieldValue("postalCode"),
+        },
+      };
 
-      if (response.error) {
-        throw new Error(response.error.message || "Failed to submit your bid.");
+      async function submitGuestBidDirect() {
+        var rawResponse = await fetch(SUPABASE_URL + "/functions/v1/submit-guest-bid", {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: "Bearer " + SUPABASE_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+        var responseText = await rawResponse.text();
+        var responseData = null;
+        try {
+          responseData = responseText ? JSON.parse(responseText) : null;
+        } catch (_parseError) {
+          responseData = { error: responseText || "Failed to submit your bid." };
+        }
+
+        if (!rawResponse.ok || (responseData && responseData.error)) {
+          throw new Error((responseData && responseData.error) || "Failed to submit your bid.");
+        }
+
+        return responseData || {};
       }
-      if (response.data && response.data.error) {
-        throw new Error(response.data.error);
+
+      if (!window._supabase || !window._supabase.functions || typeof window._supabase.functions.invoke !== "function") {
+        return submitGuestBidDirect();
       }
-      return response.data || {};
+
+      try {
+        var response = await window._supabase.functions.invoke("submit-guest-bid", {
+          body: requestBody,
+        });
+
+        if (response.error) {
+          throw response.error;
+        }
+        if (response.data && response.data.error) {
+          throw new Error(response.data.error);
+        }
+        return response.data || {};
+      } catch (error) {
+        var message = String((error && error.message) || error || "");
+        var shouldRetryDirect = !message ||
+          message.indexOf("Failed to send a request to the Edge Function") !== -1 ||
+          message.indexOf("TypeError") !== -1 ||
+          message.indexOf("fetch") !== -1 ||
+          message.indexOf("network") !== -1 ||
+          message.indexOf("Network") !== -1;
+
+        if (!shouldRetryDirect) {
+          throw new Error(message || "Failed to submit your bid.");
+        }
+
+        return submitGuestBidDirect();
+      }
     }
 
     function getRecoveredAuthUser() {
