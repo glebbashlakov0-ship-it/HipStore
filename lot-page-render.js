@@ -100,7 +100,6 @@
     return fetch(REMOTE_GALLERY_SUPABASE_URL + path, {
       headers: {
         apikey: REMOTE_GALLERY_SUPABASE_KEY,
-        Authorization: "Bearer " + REMOTE_GALLERY_SUPABASE_KEY,
       },
       cache: "no-store",
     }).then(function (response) {

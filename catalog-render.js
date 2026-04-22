@@ -14,7 +14,6 @@
     return fetch(REMOTE_SUPABASE_URL + path, {
       headers: {
         apikey: REMOTE_SUPABASE_KEY,
-        Authorization: "Bearer " + REMOTE_SUPABASE_KEY,
       },
     }).then(function (response) {
       if (!response.ok) throw new Error("Remote request failed: " + response.status);
@@ -70,6 +69,98 @@
 
   function getLotHref(item) {
     return "lot/index.html?slug=" + encodeURIComponent(item.slug || "");
+  }
+
+  function normalizeTitleKey(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function getItemTimeValue(item) {
+    var value = new Date(item && (item.endTime || item.end_time) || "").getTime();
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  function choosePreferredItem(current, candidate) {
+    if (!current) return candidate || null;
+    if (!candidate) return current;
+
+    var currentStatus = getStatus(current);
+    var candidateStatus = getStatus(candidate);
+
+    if (currentStatus === "closed" && candidateStatus !== "closed") return candidate;
+    if (candidateStatus === "closed" && currentStatus !== "closed") return current;
+
+    var currentTime = getItemTimeValue(current);
+    var candidateTime = getItemTimeValue(candidate);
+    if (candidateTime > currentTime) return candidate;
+    if (currentTime > candidateTime) return current;
+
+    var currentBid = Number(current.currentBid || current.current_bid || 0);
+    var candidateBid = Number(candidate.currentBid || candidate.current_bid || 0);
+    if (candidateBid > currentBid) return candidate;
+    if (currentBid > candidateBid) return current;
+
+    return current;
+  }
+
+  function findBestCatalogMatch(item, catalogItems) {
+    var sourceItems = Array.isArray(catalogItems) ? catalogItems : [];
+    var wantedSlug = String((item && item.slug) || "");
+    var wantedTitleKey = normalizeTitleKey(item && item.title);
+    var bestBySlug = null;
+    var bestByTitle = null;
+
+    sourceItems.forEach(function (candidate) {
+      if (!candidate) return;
+      if (wantedSlug && String(candidate.slug || "") === wantedSlug) {
+        bestBySlug = choosePreferredItem(bestBySlug, candidate);
+      }
+      if (wantedTitleKey && normalizeTitleKey(candidate.title) === wantedTitleKey) {
+        bestByTitle = choosePreferredItem(bestByTitle, candidate);
+      }
+    });
+
+    return bestBySlug || bestByTitle || null;
+  }
+
+  function fetchRemoteLotBySlug(slug) {
+    var cleanSlug = String(slug || "").trim();
+    if (!cleanSlug) return Promise.resolve(null);
+    return requestRemoteSupabase(
+      "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status&slug=eq." + encodeURIComponent(cleanSlug) + "&limit=1"
+    ).then(function (rows) {
+      return Array.isArray(rows) && rows[0] ? rows[0] : null;
+    }).catch(function () {
+      return null;
+    });
+  }
+
+  function hydrateFeaturedItems(featuredItems, catalogItems) {
+    var items = Array.isArray(featuredItems) ? featuredItems : [];
+    return Promise.all(items.map(function (item) {
+      var bestLocal = findBestCatalogMatch(item, catalogItems);
+      var merged = Object.assign({}, item, bestLocal ? {
+        image: bestLocal.image || item.image,
+        currentBid: Number(bestLocal.currentBid || bestLocal.current_bid || item.currentBid || 0),
+        endTime: bestLocal.endTime || bestLocal.end_time || item.endTime,
+        category: bestLocal.category || item.category,
+        status: bestLocal.status || item.status,
+      } : null);
+
+      return fetchRemoteLotBySlug(merged.slug || item.slug).then(function (remoteLot) {
+        if (!remoteLot) return merged;
+        return Object.assign({}, merged, {
+          title: remoteLot.title || merged.title,
+          currentBid: Number(remoteLot.current_bid || merged.currentBid || 0),
+          endTime: remoteLot.end_time || merged.endTime,
+          status: remoteLot.status || merged.status,
+        });
+      });
+    }));
   }
 
   function getCountdown(endTime) {
@@ -917,8 +1008,9 @@
       var featuredItems = normalizeCatalogItems(results[0]);
       var shopItems = normalizeCatalogItems(results[1]);
       var shopMeta = Object.assign({}, results[2], { total: filterActiveItems(shopItems).length });
+      var hydratedFeaturedItems = await hydrateFeaturedItems(featuredItems, shopItems);
 
-      renderFeatured(featuredItems, shopItems);
+      renderFeatured(hydratedFeaturedItems, shopItems);
       renderLandingCategorySections(shopItems, remoteSources);
       renderCollectionLandingSections(shopItems, remoteSources);
       renderShopAll(shopItems, shopMeta, results[3]);
