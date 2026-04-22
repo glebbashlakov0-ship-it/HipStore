@@ -139,6 +139,106 @@
     });
   }
 
+  var _remoteLotCacheBySlug = new Map();
+
+  function chunkArray(items, size) {
+    var chunks = [];
+    for (var index = 0; index < items.length; index += size) {
+      chunks.push(items.slice(index, index + size));
+    }
+    return chunks;
+  }
+
+  function buildRemoteSlugMap(slugs) {
+    var map = new Map();
+    (Array.isArray(slugs) ? slugs : []).forEach(function (slug) {
+      if (_remoteLotCacheBySlug.has(slug)) {
+        map.set(slug, _remoteLotCacheBySlug.get(slug));
+      }
+    });
+    return map;
+  }
+
+  function fetchRemoteLotsBySlugs(slugs) {
+    var cleanSlugs = Array.from(
+      new Set(
+        (Array.isArray(slugs) ? slugs : [])
+          .map(function (slug) { return String(slug || "").trim(); })
+          .filter(Boolean)
+      )
+    );
+
+    if (!cleanSlugs.length) return Promise.resolve(new Map());
+
+    var missingSlugs = cleanSlugs.filter(function (slug) {
+      return !_remoteLotCacheBySlug.has(slug);
+    });
+
+    if (!missingSlugs.length) {
+      return Promise.resolve(buildRemoteSlugMap(cleanSlugs));
+    }
+
+    var slugBatches = chunkArray(missingSlugs, 20);
+
+    return Promise.allSettled(
+      slugBatches.map(function (batch) {
+        var batchFilter = "(" + batch.map(function (slug) {
+          return '"' + slug.replace(/"/g, "") + '"';
+        }).join(",") + ")";
+
+        return requestRemoteSupabase(
+          "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status&slug=in." + encodeURIComponent(batchFilter)
+        );
+      })
+    ).then(function (results) {
+      results.forEach(function (result) {
+        if (result.status !== "fulfilled" || !Array.isArray(result.value)) return;
+        result.value.forEach(function (lot) {
+          var lotSlug = String(lot && lot.slug || "").trim();
+          if (!lotSlug) return;
+          _remoteLotCacheBySlug.set(lotSlug, lot);
+        });
+      });
+
+      missingSlugs.forEach(function (slug) {
+        if (!_remoteLotCacheBySlug.has(slug)) {
+          _remoteLotCacheBySlug.set(slug, null);
+        }
+      });
+
+      return buildRemoteSlugMap(cleanSlugs);
+    }).catch(function () {
+      return buildRemoteSlugMap(cleanSlugs);
+    });
+  }
+
+  function mergeRemoteDataIntoItem(item, remoteLot) {
+    if (!item || !remoteLot) return item;
+
+    return Object.assign({}, item, {
+      title: remoteLot.title || item.title,
+      currentBid: remoteLot.current_bid != null ? Number(remoteLot.current_bid) : Number(item.currentBid || 0),
+      endTime: remoteLot.end_time || item.endTime,
+      status: remoteLot.status || item.status,
+    });
+  }
+
+  function hydrateItemsWithRemoteData(items) {
+    var sourceItems = Array.isArray(items) ? items.slice() : [];
+    var slugs = sourceItems.map(function (item) {
+      return item && item.slug;
+    });
+
+    return fetchRemoteLotsBySlugs(slugs).then(function (remoteLotsBySlug) {
+      return sourceItems.map(function (item) {
+        var itemSlug = String(item && item.slug || "").trim();
+        return mergeRemoteDataIntoItem(item, remoteLotsBySlug.get(itemSlug));
+      });
+    }).catch(function () {
+      return sourceItems;
+    });
+  }
+
   function hydrateFeaturedItems(featuredItems, catalogItems) {
     var items = Array.isArray(featuredItems) ? featuredItems : [];
     return Promise.all(items.map(function (item) {
@@ -381,7 +481,7 @@
 
   function renderFeatured(items, fallbackItems) {
     var main = document.querySelector("main.flex-1");
-    if (!main) return;
+    if (!main) return Promise.resolve();
     var featuredItems = takeUnique(filterWatchItems(filterActiveItems(items)), 8);
     var fallbackFeaturedItems = takeUnique(
       featuredItems.concat(sortItemsByEndTime(filterWatchItems(filterActiveItems(fallbackItems)))),
@@ -392,7 +492,7 @@
       return node.textContent.trim() === "How It Works";
     });
     var howItWorksSection = howItWorksHeading && howItWorksHeading.closest("section");
-    if (!howItWorksSection) return;
+    if (!howItWorksSection) return Promise.resolve();
 
     var existingHeading = Array.from(main.querySelectorAll("h2")).find(function (node) {
       return node.textContent.trim() === "Featured Auctions";
@@ -423,22 +523,24 @@
     var row =
       existingSection &&
       existingSection.querySelector('.flex.gap-3.sm\\:gap-4.overflow-x-auto.pb-4.scrollbar-hide.snap-x.snap-mandatory');
-    if (!row) return;
+    if (!row) return Promise.resolve();
 
     if (!fallbackFeaturedItems.length) {
       existingSection.style.display = "none";
-      return;
+      return Promise.resolve();
     }
 
     existingSection.style.display = "";
 
-    row.innerHTML = fallbackFeaturedItems
-      .map(function (item) {
-        return '<div class="flex-shrink-0 w-[240px] md:w-[260px] snap-start">' + renderCard(item) + "</div>";
-      })
-      .join("");
+    return hydrateItemsWithRemoteData(fallbackFeaturedItems).then(function (hydratedItems) {
+      row.innerHTML = hydratedItems
+        .map(function (item) {
+          return '<div class="flex-shrink-0 w-[240px] md:w-[260px] snap-start">' + renderCard(item) + "</div>";
+        })
+        .join("");
 
-    updateCountdowns(row);
+      updateCountdowns(row);
+    });
   }
 
   function takeUnique(items, limit) {
@@ -521,10 +623,10 @@
   function renderLandingCategorySections(items, remoteSources) {
     var headings = Array.from(document.querySelectorAll("h2"));
 
-    headings.forEach(function (heading) {
+    return Promise.all(headings.map(function (heading) {
       var headingText = heading.textContent.trim();
       var sectionItems = pickLandingSectionItems(items, headingText, remoteSources);
-      if (!sectionItems.length) return;
+      if (!sectionItems.length) return Promise.resolve();
 
       var section = heading.closest("section");
       var subtitle = section && section.querySelector("p");
@@ -532,15 +634,17 @@
         section &&
         section.querySelector('.flex.gap-3.sm\\:gap-4.overflow-x-auto.pb-4.scrollbar-hide.snap-x.snap-mandatory');
 
-      if (!section || !row || !subtitle) return;
-      if (subtitle.textContent.trim() !== "Explore our curated collections") return;
+      if (!section || !row || !subtitle) return Promise.resolve();
+      if (subtitle.textContent.trim() !== "Explore our curated collections") return Promise.resolve();
 
-      row.innerHTML = sectionItems
-        .map(function (item) {
-          return '<div class="flex-shrink-0 w-[240px] md:w-[260px] snap-start">' + renderCard(item) + "</div>";
-        })
-        .join("");
-    });
+      return hydrateItemsWithRemoteData(sectionItems).then(function (hydratedItems) {
+        row.innerHTML = hydratedItems
+          .map(function (item) {
+            return '<div class="flex-shrink-0 w-[240px] md:w-[260px] snap-start">' + renderCard(item) + "</div>";
+          })
+          .join("");
+      });
+    })).then(function () {});
   }
 
   function fetchRemoteClosedLotIds() {
@@ -732,7 +836,7 @@
   function renderCollectionLandingSections(items, remoteSources) {
     var sections = Array.from(document.querySelectorAll("section"));
 
-    sections.forEach(function (section) {
+    return Promise.all(sections.map(function (section) {
       var heading = section.querySelector("h2");
       var headingText = heading ? heading.textContent.trim() : "";
       var viewAllLink = section.querySelector('a[href$="collections/the-great-whiskey-collection.html"], a[href$="collections/the-winter-edit-icons-of-luxury.html"]');
@@ -746,10 +850,10 @@
         }
       }
 
-      if (!sectionItems.length) return;
+      if (!sectionItems.length) return Promise.resolve();
 
       var stack = section && section.querySelector(".space-y-8");
-      if (!section || !stack) return;
+      if (!section || !stack) return Promise.resolve();
 
       var existingRow = stack.querySelector("[data-home-collection-row]");
       if (!existingRow) {
@@ -765,16 +869,18 @@
       }
 
       var row = existingRow && existingRow.querySelector(".flex.gap-3.min-w-max");
-      if (!row) return;
+      if (!row) return Promise.resolve();
 
-      row.innerHTML = sectionItems
-        .map(function (item) {
-          return '<div class="w-[200px] sm:w-[220px] flex-shrink-0">' + renderCard(item) + "</div>";
-        })
-        .join("");
+      return hydrateItemsWithRemoteData(sectionItems).then(function (hydratedItems) {
+        row.innerHTML = hydratedItems
+          .map(function (item) {
+            return '<div class="w-[200px] sm:w-[220px] flex-shrink-0">' + renderCard(item) + "</div>";
+          })
+          .join("");
 
-      updateCountdowns(row);
-    });
+        updateCountdowns(row);
+      });
+    })).then(function () {});
   }
 
   function renderShopAll(items, meta, categoriesData) {
@@ -796,6 +902,7 @@
       page: 1,
       perPage: 24,
     };
+    var shopRenderToken = 0;
 
     function getFilteredItems() {
       var filtered = items.slice();
@@ -904,11 +1011,20 @@
       var startIndex = (state.page - 1) * state.perPage;
       var pageItems = filteredItems.slice(startIndex, startIndex + state.perPage);
       var endIndex = Math.min(startIndex + state.perPage, filteredItems.length);
+      var currentRenderToken = ++shopRenderToken;
 
       resultsSection.innerHTML =
         '<div class="container mx-auto px-4 lg:px-8">' +
+        '<div class="text-center text-sm text-muted-foreground py-10">Loading auctions...</div>' +
+        "</div>";
+
+      return hydrateItemsWithRemoteData(pageItems).then(function (hydratedPageItems) {
+        if (currentRenderToken !== shopRenderToken) return;
+
+        resultsSection.innerHTML =
+          '<div class="container mx-auto px-4 lg:px-8">' +
         '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">' +
-        pageItems.map(renderCard).join("") +
+        hydratedPageItems.map(renderCard).join("") +
         "</div>" +
         '<div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-8 border-t">' +
         '<p class="text-sm text-muted-foreground">Showing ' +
@@ -928,24 +1044,69 @@
         '<button id="shop-next" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-transparent h-9 px-3 disabled:opacity-40 disabled:pointer-events-none">Next</button>' +
         "</div></div></div>";
 
-      resultsSection.querySelector("#shop-prev").disabled = state.page <= 1;
-      resultsSection.querySelector("#shop-next").disabled = state.page >= totalPages;
+        resultsSection.querySelector("#shop-prev").disabled = state.page <= 1;
+        resultsSection.querySelector("#shop-next").disabled = state.page >= totalPages;
 
-      resultsSection.querySelector("#shop-prev").addEventListener("click", function () {
-        if (state.page > 1) {
-          state.page -= 1;
-          render();
-        }
+        resultsSection.querySelector("#shop-prev").addEventListener("click", function () {
+          if (state.page > 1) {
+            state.page -= 1;
+            render();
+          }
+        });
+
+        resultsSection.querySelector("#shop-next").addEventListener("click", function () {
+          if (state.page < totalPages) {
+            state.page += 1;
+            render();
+          }
+        });
+
+        updateCountdowns(resultsSection);
+      }).catch(function () {
+        if (currentRenderToken !== shopRenderToken) return;
+
+        resultsSection.innerHTML =
+          '<div class="container mx-auto px-4 lg:px-8">' +
+          '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">' +
+          pageItems.map(renderCard).join("") +
+          "</div>" +
+          '<div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-8 border-t">' +
+          '<p class="text-sm text-muted-foreground">Showing ' +
+          (filteredItems.length ? startIndex + 1 : 0) +
+          "-" +
+          endIndex +
+          " of " +
+          filteredItems.length +
+          "</p>" +
+          '<div class="flex items-center gap-2">' +
+          '<button id="shop-prev" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-transparent h-9 px-3 disabled:opacity-40 disabled:pointer-events-none">Previous</button>' +
+          '<span class="text-sm text-muted-foreground min-w-[100px] text-center">Page ' +
+          state.page +
+          " of " +
+          totalPages +
+          "</span>" +
+          '<button id="shop-next" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-transparent h-9 px-3 disabled:opacity-40 disabled:pointer-events-none">Next</button>' +
+          "</div></div></div>";
+
+        resultsSection.querySelector("#shop-prev").disabled = state.page <= 1;
+        resultsSection.querySelector("#shop-next").disabled = state.page >= totalPages;
+
+        resultsSection.querySelector("#shop-prev").addEventListener("click", function () {
+          if (state.page > 1) {
+            state.page -= 1;
+            render();
+          }
+        });
+
+        resultsSection.querySelector("#shop-next").addEventListener("click", function () {
+          if (state.page < totalPages) {
+            state.page += 1;
+            render();
+          }
+        });
+
+        updateCountdowns(resultsSection);
       });
-
-      resultsSection.querySelector("#shop-next").addEventListener("click", function () {
-        if (state.page < totalPages) {
-          state.page += 1;
-          render();
-        }
-      });
-
-      updateCountdowns(resultsSection);
     }
 
     function render() {
@@ -953,7 +1114,7 @@
       var totalPages = Math.max(1, Math.ceil(filteredItems.length / state.perPage));
       if (state.page > totalPages) state.page = totalPages;
       renderControls(filteredItems, totalPages);
-      renderResults(filteredItems, totalPages);
+      return renderResults(filteredItems, totalPages);
     }
 
     render();
@@ -1010,9 +1171,9 @@
       var shopMeta = Object.assign({}, results[2], { total: filterActiveItems(shopItems).length });
       var hydratedFeaturedItems = await hydrateFeaturedItems(featuredItems, shopItems);
 
-      renderFeatured(hydratedFeaturedItems, shopItems);
-      renderLandingCategorySections(shopItems, remoteSources);
-      renderCollectionLandingSections(shopItems, remoteSources);
+      await renderFeatured(hydratedFeaturedItems, shopItems);
+      await renderLandingCategorySections(shopItems, remoteSources);
+      await renderCollectionLandingSections(shopItems, remoteSources);
       renderShopAll(shopItems, shopMeta, results[3]);
       setInterval(function () {
         updateCountdowns(document);
