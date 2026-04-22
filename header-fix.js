@@ -1,6 +1,9 @@
 (() => {
   const LOGO_FILE = "logo1.svg";
   const TAWK_EMBED_SRC = "https://embed.tawk.to/69c04d8cd88c2b1c3430783d/1jkbitra2";
+  const REMOTE_SUPABASE_URL = "https://pwihhhbomwxzznekueok.supabase.co";
+  const REMOTE_SUPABASE_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3aWhoaGJvbXd4enpuZWt1ZW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NTgzNjMsImV4cCI6MjA4MTAzNDM2M30.S1aJOnJIdZY8WGVUUAbvMStxR4C5o2-3AkO6GgmkKYY";
   const LANGUAGES = [
     { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
     { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
@@ -530,6 +533,7 @@
   let searchState = {
     query: "",
     page: 0,
+    total: 0,
     hasMore: false,
     loading: false,
     loadingMore: false,
@@ -537,6 +541,7 @@
     results: [],
     randomPicks: [],
   };
+  const SEARCH_REMOTE_LOT_CACHE = new Map();
   const ORIGINAL_TEXT_NODES = new WeakMap();
   const ORIGINAL_ELEMENT_ATTRS = new WeakMap();
   const MEGA_MENU = [
@@ -1540,6 +1545,125 @@
     };
   }
 
+  function requestRemoteSupabase(path) {
+    return fetch(REMOTE_SUPABASE_URL + path, {
+      headers: {
+        apikey: REMOTE_SUPABASE_KEY,
+      },
+    }).then(function (response) {
+      if (!response.ok) throw new Error("Remote request failed: " + response.status);
+      return response.json();
+    });
+  }
+
+  function chunkArray(items, size) {
+    const chunks = [];
+    for (let index = 0; index < items.length; index += size) {
+      chunks.push(items.slice(index, index + size));
+    }
+    return chunks;
+  }
+
+  function buildRemoteSearchLotMap(slugs) {
+    const map = new Map();
+    (Array.isArray(slugs) ? slugs : []).forEach(function (slug) {
+      if (SEARCH_REMOTE_LOT_CACHE.has(slug)) {
+        map.set(slug, SEARCH_REMOTE_LOT_CACHE.get(slug));
+      }
+    });
+    return map;
+  }
+
+  function fetchRemoteSearchLotsBySlugs(slugs) {
+    const cleanSlugs = Array.from(
+      new Set(
+        (Array.isArray(slugs) ? slugs : [])
+          .map(function (slug) {
+            return String(slug || "").trim();
+          })
+          .filter(Boolean)
+      )
+    );
+
+    if (!cleanSlugs.length) return Promise.resolve(new Map());
+
+    const missingSlugs = cleanSlugs.filter(function (slug) {
+      return !SEARCH_REMOTE_LOT_CACHE.has(slug);
+    });
+
+    if (!missingSlugs.length) {
+      return Promise.resolve(buildRemoteSearchLotMap(cleanSlugs));
+    }
+
+    return Promise.allSettled(
+      chunkArray(missingSlugs, 20).map(function (batch) {
+        const batchFilter =
+          "(" +
+          batch
+            .map(function (slug) {
+              return '"' + slug.replace(/"/g, "") + '"';
+            })
+            .join(",") +
+          ")";
+
+        return requestRemoteSupabase(
+          "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status&slug=in." + encodeURIComponent(batchFilter)
+        );
+      })
+    )
+      .then(function (results) {
+        results.forEach(function (result) {
+          if (result.status !== "fulfilled" || !Array.isArray(result.value)) return;
+          result.value.forEach(function (lot) {
+            const lotSlug = String((lot && lot.slug) || "").trim();
+            if (!lotSlug) return;
+            SEARCH_REMOTE_LOT_CACHE.set(lotSlug, lot);
+          });
+        });
+
+        missingSlugs.forEach(function (slug) {
+          if (!SEARCH_REMOTE_LOT_CACHE.has(slug)) {
+            SEARCH_REMOTE_LOT_CACHE.set(slug, null);
+          }
+        });
+
+        return buildRemoteSearchLotMap(cleanSlugs);
+      })
+      .catch(function () {
+        return buildRemoteSearchLotMap(cleanSlugs);
+      });
+  }
+
+  function mergeRemoteDataIntoSearchLot(lot, remoteLot) {
+    if (!lot || !remoteLot) return lot;
+
+    return Object.assign({}, lot, {
+      title: remoteLot.title || lot.title,
+      currentBid:
+        remoteLot.current_bid != null ? Number(remoteLot.current_bid) : Number(lot.currentBid || lot.current_bid || lot.startingBid || 0),
+      endTime: remoteLot.end_time || lot.endTime || lot.end_time,
+      status: remoteLot.status || lot.status,
+    });
+  }
+
+  function hydrateSearchLots(lots) {
+    const sourceLots = Array.isArray(lots) ? lots.slice() : [];
+    const slugs = sourceLots.map(function (lot) {
+      return lot && lot.slug;
+    });
+
+    return fetchRemoteSearchLotsBySlugs(slugs)
+      .then(function (remoteLotsBySlug) {
+        return sourceLots.map(function (lot) {
+          const slug = String((lot && lot.slug) || "").trim();
+          return mergeRemoteDataIntoSearchLot(lot, remoteLotsBySlug.get(slug));
+        });
+      })
+      .catch(function () {
+        return sourceLots;
+      });
+  }
+
   function getSearchImage(lot, basePath) {
     const candidate =
       lot.image ||
@@ -1551,7 +1675,7 @@
   }
 
   function buildSearchCard(lot, basePath) {
-    const bidValue = Number(lot.currentBid || lot.current_bid || lot.startingBid || lot.starting_bid || 0).toLocaleString("en-US");
+    const bidValue = Math.round(Number(lot.currentBid || lot.current_bid || lot.startingBid || lot.starting_bid || 0)).toLocaleString("en-US");
     const href = `${basePath}lot/index.html?slug=${encodeURIComponent(lot.slug || "")}`;
     return `
       <a href="${href}" class="group flex flex-col gap-2 overflow-hidden rounded-lg border border-border transition-all hover:border-primary/50">
@@ -1623,9 +1747,8 @@
       randomState.classList.add("hidden");
       emptyState.classList.toggle("hidden", searchState.loading || results.length > 0);
 
-      const resultLabel = results.length === 1 ? strings.resultWord : strings.resultsWord;
       if (querySummaryNode) {
-        querySummaryNode.textContent = `${results.length} ${resultLabel} ${strings.resultsFoundWord}`;
+        querySummaryNode.textContent = `${searchState.total || results.length} ${strings.resultsFoundWord}`;
       }
 
       if (searchState.loading && !results.length) {
@@ -1675,10 +1798,10 @@
         return Math.random() - 0.5;
       })
       .slice(0, 8);
-    searchState.randomPicks = shuffled;
+    searchState.randomPicks = await hydrateSearchLots(shuffled);
     searchState.randomLoading = false;
     renderSearchResults(basePath);
-    return shuffled;
+    return searchState.randomPicks;
   }
 
   async function runSearch(basePath, query, append) {
@@ -1691,19 +1814,22 @@
       searchState.loading = true;
       searchState.results = [];
       searchState.page = 0;
+      searchState.total = 0;
       searchState.hasMore = false;
     }
     searchState.query = query;
     renderSearchResults(basePath);
 
     const outcome = searchLots(lots, query, offset, 20);
+    const hydratedResults = await hydrateSearchLots(outcome.results);
     if (append) {
-      searchState.results = searchState.results.concat(outcome.results);
+      searchState.results = searchState.results.concat(hydratedResults);
       searchState.page = nextPage;
     } else {
-      searchState.results = outcome.results;
+      searchState.results = hydratedResults;
       searchState.page = 0;
     }
+    searchState.total = outcome.total;
     searchState.hasMore = outcome.hasMore;
     searchState.loading = false;
     searchState.loadingMore = false;
