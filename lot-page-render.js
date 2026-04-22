@@ -621,6 +621,11 @@
     };
   }
 
+  function getLotShippingSummary(lot, strings) {
+    var customSummary = lot && typeof lot.shipping_info === "string" ? lot.shipping_info.trim() : "";
+    return customSummary || strings.productPage.worldwideShipping;
+  }
+
   function renderRelatedCard(item, strings) {
     var title = item.title || "Untitled Lot";
     var bid = item.current_bid || item.starting_bid || 0;
@@ -977,6 +982,7 @@
     var conditionStarsHtml = renderConditionStars(lot.extra && lot.extra.condition_score);
     var closed = getStatusLabel(lot, strings) === strings.bid.auctionEnded;
     var bidCount = Array.isArray(bids) && bids.length ? bids.length : buildFallbackBids(lot).length;
+    var shippingSummary = getLotShippingSummary(lot, strings);
     var safeImages = images.length ? images : [{ image_url: primaryImage }];
     var categorySlug = (lot.categories && lot.categories.slug) || "";
     var categoryHref = categorySlug ? "../category/" + encodeURIComponent(categorySlug) + ".html" : "../auctions.html";
@@ -1059,7 +1065,7 @@
       '<div><h2 class="font-serif text-2xl mb-4">' + escapeHtml(strings.productPage.conditionReport) + '</h2>' + conditionStarsHtml + '<div class="text-muted-foreground leading-relaxed">' + escapeHtml(conditionText || "Like new") + "</div></div>" +
       additionalDetailsHtml +
       (provenance ? '<div><h2 class="font-serif text-2xl mb-4">' + escapeHtml(strings.productPage.provenance) + '</h2><div class="text-muted-foreground leading-relaxed prose prose-sm max-w-none">' + provenance + '</div></div>' : "") +
-      '<div><h2 class="font-serif text-2xl mb-4">' + escapeHtml(strings.productPage.shipping) + '</h2><p class="text-muted-foreground leading-relaxed">' + escapeHtml(strings.productPage.worldwideShipping) + "</p></div>" +
+      '<div><h2 class="font-serif text-2xl mb-4">' + escapeHtml(strings.productPage.shipping) + '</h2><p class="text-muted-foreground leading-relaxed">' + escapeHtml(shippingSummary) + "</p></div>" +
       "</div>" +
       "</div>" +
       '<div class="mt-12 space-y-4"><div class="flex items-center justify-between"><h2 class="font-serif text-2xl md:text-3xl">Related Items</h2><a class="text-sm text-primary hover:underline" href="' + escapeHtml(brandHref) + '">View All</a></div><div class="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0"><div class="flex gap-4 pb-4 min-w-min">' + relatedHtml + "</div></div></div></div>" +
@@ -1079,7 +1085,7 @@
       '<div role="dialog" aria-modal="true" data-state="open" data-slot="dialog-content" class="bg-background fixed top-[50%] left-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg max-w-md" style="pointer-events:auto;">' +
       '<div data-slot="dialog-header" class="flex flex-col gap-2 text-center sm:text-left"><h2 data-slot="dialog-title" class="text-lg leading-none font-semibold">' + escapeHtml(strings.productPage.shippingInfo) + '</h2></div>' +
       '<div class="space-y-4 py-4">' +
-      '<div class="flex items-start gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-truck h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg><div><h3 class="font-medium mb-1">' + escapeHtml(strings.productPage.expressDeliveryIncluded) + '</h3><p class="text-sm text-muted-foreground leading-relaxed">' + escapeHtml(strings.productPage.shippingDesc) + '</p></div></div>' +
+      '<div class="flex items-start gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-truck h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg><div><h3 class="font-medium mb-1">' + escapeHtml(strings.productPage.expressDeliveryIncluded) + '</h3><p class="text-sm text-muted-foreground leading-relaxed">' + escapeHtml(shippingSummary) + '</p></div></div>' +
       '<div class="flex items-start gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><div><h3 class="font-medium mb-1">' + escapeHtml(strings.productPage.fullyInsured) + '</h3><p class="text-sm text-muted-foreground leading-relaxed">' + escapeHtml(strings.productPage.shippingInsurance) + '</p></div></div>' +
       '<div class="flex items-start gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg><div><h3 class="font-medium mb-1">' + escapeHtml(strings.productPage.securePackaging) + '</h3><p class="text-sm text-muted-foreground leading-relaxed">' + escapeHtml(strings.productPage.shippingPackaging) + '</p></div></div>' +
       '</div>' +
@@ -1099,7 +1105,7 @@
     updateCountdowns(main);
     wireGallery(main);
     wireBidHistoryModal(main);
-    wireShippingInfoModal(main, strings);
+    wireShippingInfoModal(main, lot, strings);
     wireStickyLotBar(main);
     wireWatchlistButton(main, lot);
   }
@@ -1210,8 +1216,9 @@
     });
   }
 
-  function wireShippingInfoModal(scope, strings) {
+  function wireShippingInfoModal(scope, lot, strings) {
     var buttons = scope.querySelectorAll("[data-open-shipping-info]");
+    var shippingSummary = getLotShippingSummary(lot, strings);
 
     function closeModal() {
       var modal = document.getElementById("lot-shipping-info-runtime");
@@ -1237,7 +1244,7 @@
         '<div data-shipping-runtime-dialog role="dialog" aria-modal="true" style="position:relative;width:min(100%,32rem);background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.18);color:#111827;">' +
         '<div style="display:flex;flex-direction:column;gap:8px;text-align:left;"><h2 style="margin:0;font-size:18px;line-height:1.2;font-weight:600;">' + escapeHtml(strings.productPage.shippingInfo) + '</h2></div>' +
         '<div style="display:flex;flex-direction:column;gap:16px;padding:16px 0;">' +
-        '<div style="display:flex;align-items:flex-start;gap:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="height:20px;width:20px;color:#6b7280;margin-top:2px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg><div><h3 style="margin:0 0 4px 0;font-size:16px;font-weight:500;">' + escapeHtml(strings.productPage.expressDeliveryIncluded) + '</h3><p style="margin:0;font-size:14px;line-height:1.6;color:#6b7280;">' + escapeHtml(strings.productPage.shippingDesc) + '</p></div></div>' +
+        '<div style="display:flex;align-items:flex-start;gap:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="height:20px;width:20px;color:#6b7280;margin-top:2px;flex-shrink:0;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg><div><h3 style="margin:0 0 4px 0;font-size:16px;font-weight:500;">' + escapeHtml(strings.productPage.expressDeliveryIncluded) + '</h3><p style="margin:0;font-size:14px;line-height:1.6;color:#6b7280;">' + escapeHtml(shippingSummary) + '</p></div></div>' +
         '<div style="display:flex;align-items:flex-start;gap:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="height:20px;width:20px;color:#6b7280;margin-top:2px;flex-shrink:0;"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><div><h3 style="margin:0 0 4px 0;font-size:16px;font-weight:500;">' + escapeHtml(strings.productPage.fullyInsured) + '</h3><p style="margin:0;font-size:14px;line-height:1.6;color:#6b7280;">' + escapeHtml(strings.productPage.shippingInsurance) + '</p></div></div>' +
         '<div style="display:flex;align-items:flex-start;gap:12px;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="height:20px;width:20px;color:#6b7280;margin-top:2px;flex-shrink:0;"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg><div><h3 style="margin:0 0 4px 0;font-size:16px;font-weight:500;">' + escapeHtml(strings.productPage.securePackaging) + '</h3><p style="margin:0;font-size:14px;line-height:1.6;color:#6b7280;">' + escapeHtml(strings.productPage.shippingPackaging) + '</p></div></div>' +
         '</div>' +

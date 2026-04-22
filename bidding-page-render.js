@@ -2,12 +2,27 @@
   var BASE_PATH = "../";
   var SUPABASE_URL = "https://njsnxxiybniocteqbndp.supabase.co";
   var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qc254eGl5Ym5pb2N0ZXFibmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTM5MzYsImV4cCI6MjA4ODkyOTkzNn0.xZhqA4ASoaHZ36mi3ZYXBTgG4Cvq89sVzXptJCs5mU4";
+  var REMOTE_GALLERY_SUPABASE_URL = "https://pwihhhbomwxzznekueok.supabase.co";
+  var REMOTE_GALLERY_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3aWhoaGJvbXd4enpuZWt1ZW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NTgzNjMsImV4cCI6MjA4MTAzNDM2M30.S1aJOnJIdZY8WGVUUAbvMStxR4C5o2-3AkO6GgmkKYY";
 
   function requestSupabase(path) {
     return fetch(SUPABASE_URL + path, {
       headers: {
         apikey: SUPABASE_KEY,
         Authorization: "Bearer " + SUPABASE_KEY,
+      },
+      cache: "no-store",
+    }).then(function (response) {
+      if (!response.ok) throw new Error("Failed to load " + path);
+      return response.json();
+    });
+  }
+
+  function requestRemoteGallerySupabase(path) {
+    return fetch(REMOTE_GALLERY_SUPABASE_URL + path, {
+      headers: {
+        apikey: REMOTE_GALLERY_SUPABASE_KEY,
+        Authorization: "Bearer " + REMOTE_GALLERY_SUPABASE_KEY,
       },
       cache: "no-store",
     }).then(function (response) {
@@ -81,6 +96,7 @@
       slug: item.slug,
       title: translation.title || item.title,
       description: translation.description || item.description,
+      shipping_info: translation.shipping_info || item.shipping_info,
       current_bid: item.current_bid,
       starting_bid: item.starting_bid,
       minimum_increment: item.minimum_increment,
@@ -103,6 +119,7 @@
       slug: item.slug,
       title: item.title || "Auction Lot",
       description: item.description || item.title || "",
+      shipping_info: item.shipping_info || "",
       current_bid: currentBid,
       starting_bid: startingBid,
       minimum_increment: Number(item.minimum_increment || Math.max(25, Math.round(Math.max(currentBid, startingBid) * 0.05))),
@@ -115,24 +132,42 @@
     };
   }
 
-  function loadLotBundle(slug, language) {
-    return loadFallbackLots().then(function (items) {
-      var fallbackItem = items.find(function (entry) {
-        return entry && entry.slug === slug;
+  function fetchRemoteLotData(slug, language) {
+    if (!slug) return Promise.resolve(null);
+    var select = encodeURIComponent("id,slug,title,description,shipping_info,current_bid,starting_bid,minimum_increment,estimated_value_min,estimated_value_max,lot_images(*),categories(name,slug),lot_translations(*)");
+    var filter = encodeURIComponent("eq." + slug);
+    return requestRemoteGallerySupabase("/rest/v1/lots?select=" + select + "&slug=" + filter + "&limit=1")
+      .then(function (results) {
+        var rawLot = (results || [])[0];
+        return rawLot ? normalizeLotTranslation(rawLot, language) : null;
+      })
+      .catch(function () {
+        return null;
       });
-      if (fallbackItem) {
-        return normalizeLotTranslation(normalizeFallbackLot(fallbackItem), language);
-      }
+  }
 
-      return requestSupabase("/rest/v1/lots?select=id,slug,title,description,current_bid,starting_bid,minimum_increment,estimated_value_min,estimated_value_max,lot_images(*),categories(name,slug),lot_translations(*)&slug=eq." + encodeURIComponent(slug) + "&limit=1")
-        .then(function (results) {
-          var rawLot = (results || [])[0];
-          return rawLot ? normalizeLotTranslation(rawLot, language) : null;
-        })
-        .catch(function () {
-          return null;
+  function loadLotBundle(slug, language) {
+    return fetchRemoteLotData(slug, language)
+      .then(function (remoteLot) {
+        if (remoteLot) return remoteLot;
+        return requestSupabase("/rest/v1/lots?select=id,slug,title,description,shipping_info,current_bid,starting_bid,minimum_increment,estimated_value_min,estimated_value_max,lot_images(*),categories(name,slug),lot_translations(*)&slug=eq." + encodeURIComponent(slug) + "&limit=1")
+          .then(function (results) {
+            var rawLot = (results || [])[0];
+            return rawLot ? normalizeLotTranslation(rawLot, language) : null;
+          })
+          .catch(function () {
+            return null;
+          });
+      })
+      .then(function (lot) {
+        if (lot) return lot;
+        return loadFallbackLots().then(function (items) {
+          var fallbackItem = items.find(function (entry) {
+            return entry && entry.slug === slug;
+          });
+          return fallbackItem ? normalizeLotTranslation(normalizeFallbackLot(fallbackItem), language) : null;
         });
-    });
+      });
   }
 
   var COUNTRIES = [
@@ -840,6 +875,11 @@
     }
 
     return {
+      productPage: {
+        shipping: pick(["productPage", "shipping"], "Shipping"),
+        freeExpressDelivery: pick(["productPage", "freeExpressDelivery"], "Free express delivery"),
+        worldwideShipping: pick(["productPage", "worldwideShipping"], "Worldwide shipping available. Fully insured and tracked delivery."),
+      },
       bidding: {
         title: pick(["bidding", "title"], "Place Your Bid"),
         subtitle: pick(["bidding", "subtitle"], "Complete your bid in just a few steps"),
@@ -908,6 +948,11 @@
     };
   }
 
+  function getLotShippingSummary(lot, strings) {
+    var customSummary = lot && typeof lot.shipping_info === "string" ? lot.shipping_info.trim() : "";
+    return customSummary || strings.productPage.worldwideShipping;
+  }
+
   function injectStyles() {
     if (document.getElementById("bidding-page-styles")) return;
     var style = document.createElement("style");
@@ -956,6 +1001,18 @@
       ".bidding-choice.active{border-color:hsl(var(--foreground));}" +
       "@media (min-width:1024px){.bidding-desktop-layout{display:grid;grid-template-columns:minmax(0,1fr) 430px;align-items:start;gap:.35rem;}.bidding-main-col{grid-column:1;grid-row:1;width:auto;min-width:0;order:0 !important;align-self:start;}.bidding-side-col{grid-column:2;grid-row:1;width:auto;position:static;top:auto;order:0 !important;align-self:start;}}";
     document.head.appendChild(style);
+  }
+
+  function renderShippingSummary(lot, strings) {
+    return (
+      '<div class="rounded-xl border border-border bg-muted/20 p-4">' +
+      '<div class="flex items-start justify-between gap-3">' +
+      '<div class="min-w-0"><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-1">' + escapeHtml(strings.productPage.shipping) + '</p><p class="text-sm md:text-base font-semibold leading-snug">' + escapeHtml(strings.productPage.freeExpressDelivery) + '</p></div>' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-muted-foreground flex-shrink-0"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>' +
+      '</div>' +
+      '<p class="mt-3 text-xs md:text-sm text-muted-foreground leading-relaxed">' + escapeHtml(getLotShippingSummary(lot, strings)) + '</p>' +
+      '</div>'
+    );
   }
 
   function renderContactCard(strings) {
@@ -1115,7 +1172,7 @@
       '</div>' +
       '<div class="bidding-desktop-layout">' +
       '<div class="bidding-side-col"><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"><div data-slot="card-content" class="p-4"><h3 class="font-serif text-base md:text-lg mb-3">' + escapeHtml(strings.bidding.bidSummary) + '</h3><div class="space-y-3"><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-2">' + escapeHtml(strings.bidding.itemDetails) + '</p><div class="flex gap-2.5"><img alt="' + escapeHtml(lot.title) + '" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-sm flex-shrink-0" src="' + escapeHtml(image) + '"><div class="min-w-0"><p class="font-medium text-xs md:text-sm line-clamp-2 leading-snug">' + escapeHtml(lot.title) + '</p><p class="text-[10px] md:text-xs text-muted-foreground mt-1">' + escapeHtml(strings.bidding.currentBid) + ': ' + formatCurrency(lot.current_bid || 0) + '</p></div></div></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div class="space-y-1.5"><div class="flex justify-between text-xs md:text-sm"><span class="text-muted-foreground">' + escapeHtml(strings.bidding.yourBid) + '</span><span class="font-medium" data-summary-your-bid>—</span></div><div class="flex justify-between text-xs md:text-sm"><span class="text-muted-foreground">' + escapeHtml(strings.bidding.authorizationHold) + '</span><span class="font-medium" data-summary-hold>IBAN bank transfer</span></div><div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 h-px w-full"></div><div class="flex justify-between"><span class="font-medium text-sm md:text-base">' + escapeHtml(strings.bidding.dueNow) + '</span><span class="font-semibold text-base md:text-lg" data-summary-due>' + formatCurrency(holdAmount) + '</span></div><p class="text-[10px] text-muted-foreground leading-relaxed">' + escapeHtml(strings.bidding.authHoldDescription) + '</p></div></div></div></div></div>' +
-      '<div class="bidding-main-col"><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="1"><div data-slot="card-content" class="p-4 md:p-6"><h2 class="font-serif text-lg md:text-xl mb-4">' + escapeHtml(strings.bidding.selectBidAmount) + '</h2><div class="space-y-4"><div class="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg"><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5">' + escapeHtml(strings.bidding.currentBid) + '</p><p class="text-base md:text-lg font-semibold">' + formatCurrency(lot.current_bid || 0) + '</p></div><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5">' + escapeHtml(strings.bidding.minimumBid) + '</p><p class="text-base md:text-lg font-semibold">' + formatCurrency(minimumBid) + '</p></div></div><div><p class="text-xs md:text-sm text-muted-foreground mb-3">' + escapeHtml(strings.bidding.selectPreset) + '</p><div class="grid grid-cols-2 md:grid-cols-3 gap-2">' +
+      '<div class="bidding-main-col"><div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm" data-bid-step="1"><div data-slot="card-content" class="p-4 md:p-6"><h2 class="font-serif text-lg md:text-xl mb-4">' + escapeHtml(strings.bidding.selectBidAmount) + '</h2><div class="space-y-4"><div class="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg"><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5">' + escapeHtml(strings.bidding.currentBid) + '</p><p class="text-base md:text-lg font-semibold">' + formatCurrency(lot.current_bid || 0) + '</p></div><div><p class="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider mb-0.5">' + escapeHtml(strings.bidding.minimumBid) + '</p><p class="text-base md:text-lg font-semibold">' + formatCurrency(minimumBid) + '</p></div></div>' + renderShippingSummary(lot, strings) + '<div><p class="text-xs md:text-sm text-muted-foreground mb-3">' + escapeHtml(strings.bidding.selectPreset) + '</p><div class="grid grid-cols-2 md:grid-cols-3 gap-2">' +
       choices.map(function (amount, index) {
         return '<button type="button" class="bidding-choice p-3 rounded-lg border-2 transition-all text-left border-border hover:border-foreground/50' + (index === 0 ? ' active' : '') + '" data-bid-choice="' + amount + '"><p class="text-sm md:text-base font-semibold">' + formatCurrency(amount) + '</p><p class="text-[10px] md:text-xs text-muted-foreground">+' + formatCurrency(amount - minimumBid) + '</p></button>';
       }).join("") +
