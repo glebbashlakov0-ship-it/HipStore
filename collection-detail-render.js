@@ -1,4 +1,9 @@
 (function () {
+  var REMOTE_SUPABASE_URL = "https://pwihhhbomwxzznekueok.supabase.co";
+  var REMOTE_SUPABASE_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3aWhoaGJvbXd4enpuZWt1ZW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NTgzNjMsImV4cCI6MjA4MTAzNDM2M30.S1aJOnJIdZY8WGVUUAbvMStxR4C5o2-3AkO6GgmkKYY";
+  var _remoteLotCacheBySlug = new Map();
+
   var MEGA_MENU = [
     {
       title: "Watches",
@@ -91,6 +96,119 @@
     });
   }
 
+  function requestRemoteSupabase(path) {
+    return fetch(REMOTE_SUPABASE_URL + path, {
+      headers: {
+        apikey: REMOTE_SUPABASE_KEY,
+      },
+    }).then(function (response) {
+      if (!response.ok) throw new Error("Remote request failed: " + response.status);
+      return response.json();
+    });
+  }
+
+  function chunkArray(items, size) {
+    var chunks = [];
+    for (var index = 0; index < items.length; index += size) {
+      chunks.push(items.slice(index, index + size));
+    }
+    return chunks;
+  }
+
+  function buildRemoteSlugMap(slugs) {
+    var map = new Map();
+    (Array.isArray(slugs) ? slugs : []).forEach(function (slug) {
+      if (_remoteLotCacheBySlug.has(slug)) {
+        map.set(slug, _remoteLotCacheBySlug.get(slug));
+      }
+    });
+    return map;
+  }
+
+  function fetchRemoteLotsBySlugs(slugs) {
+    var cleanSlugs = Array.from(
+      new Set(
+        (Array.isArray(slugs) ? slugs : [])
+          .map(function (slug) {
+            return String(slug || "").trim();
+          })
+          .filter(Boolean)
+      )
+    );
+
+    if (!cleanSlugs.length) return Promise.resolve(new Map());
+
+    var missingSlugs = cleanSlugs.filter(function (slug) {
+      return !_remoteLotCacheBySlug.has(slug);
+    });
+
+    if (!missingSlugs.length) {
+      return Promise.resolve(buildRemoteSlugMap(cleanSlugs));
+    }
+
+    return Promise.allSettled(
+      chunkArray(missingSlugs, 20).map(function (batch) {
+        var batchFilter = "(" +
+          batch
+            .map(function (slug) {
+              return '"' + slug.replace(/"/g, "") + '"';
+            })
+            .join(",") +
+          ")";
+
+        return requestRemoteSupabase(
+          "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status&slug=in." + encodeURIComponent(batchFilter)
+        );
+      })
+    ).then(function (results) {
+      results.forEach(function (result) {
+        if (result.status !== "fulfilled" || !Array.isArray(result.value)) return;
+        result.value.forEach(function (lot) {
+          var lotSlug = String((lot && lot.slug) || "").trim();
+          if (!lotSlug) return;
+          _remoteLotCacheBySlug.set(lotSlug, lot);
+        });
+      });
+
+      missingSlugs.forEach(function (slug) {
+        if (!_remoteLotCacheBySlug.has(slug)) {
+          _remoteLotCacheBySlug.set(slug, null);
+        }
+      });
+
+      return buildRemoteSlugMap(cleanSlugs);
+    }).catch(function () {
+      return buildRemoteSlugMap(cleanSlugs);
+    });
+  }
+
+  function mergeRemoteDataIntoItem(item, remoteLot) {
+    if (!item || !remoteLot) return item;
+
+    return Object.assign({}, item, {
+      title: remoteLot.title || item.title,
+      currentBid: remoteLot.current_bid != null ? Number(remoteLot.current_bid) : Number(item.currentBid || item.current_bid || 0),
+      endTime: remoteLot.end_time || item.endTime || item.end_time,
+      status: remoteLot.status || item.status,
+    });
+  }
+
+  function hydrateItemsWithRemoteData(items) {
+    var sourceItems = Array.isArray(items) ? items.slice() : [];
+    var slugs = sourceItems.map(function (item) {
+      return item && item.slug;
+    });
+
+    return fetchRemoteLotsBySlugs(slugs).then(function (remoteLotsBySlug) {
+      return sourceItems.map(function (item) {
+        var itemSlug = String((item && item.slug) || "").trim();
+        return mergeRemoteDataIntoItem(item, remoteLotsBySlug.get(itemSlug));
+      });
+    }).catch(function () {
+      return sourceItems;
+    });
+  }
+
   function escapeHtml(value) {
     return String(value || "")
       .replaceAll("&", "&amp;")
@@ -172,7 +290,7 @@
   }
 
   function formatCurrency(value) {
-    return "EUR " + Number(value || 0).toLocaleString("en-US");
+    return "EUR " + Math.round(Number(value || 0)).toLocaleString("en-US");
   }
 
   function getCountdown(endTime) {
@@ -455,7 +573,9 @@
       };
       var matcher = getMatcher(slug);
       var filtered = items.filter(matcher).slice(0, 20);
-      renderPage(config, buildSections(filtered, slug));
+      return hydrateItemsWithRemoteData(filtered).then(function (hydratedItems) {
+        renderPage(config, buildSections(hydratedItems, slug));
+      });
     })
     .catch(function (error) {
       console.error("Collection detail render failed:", error);
