@@ -264,15 +264,6 @@
     return new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
   }
 
-  function isLotOpen(item) {
-    if (!item) return false;
-    var status = String(item.status || "").toLowerCase();
-    if (status === "closed" || status === "sold" || status === "ended") return false;
-    var endTime = item.end_time || item.endTime || "";
-    var diff = new Date(endTime).getTime() - Date.now();
-    return Number.isFinite(diff) && diff > 0;
-  }
-
   function normalizeLotTranslation(item, language) {
     var translation = (item.lot_translations || []).find(function (entry) {
       return entry.language === language;
@@ -336,19 +327,6 @@
       .catch(function () {
         return null;
       });
-  }
-
-  function hydrateLotFromRemote(bundle, language) {
-    if (!bundle || !bundle.lot) return Promise.resolve(bundle);
-    return fetchRemoteLotData(bundle.rawLot && bundle.rawLot.slug || bundle.lot.slug, language).then(function (remoteLot) {
-      if (!remoteLot) return bundle;
-      if (bundle.fallbackItems && bundle.fallbackItems.length && isLotOpen(bundle.lot) && !isLotOpen(remoteLot)) {
-        return bundle;
-      }
-      bundle.rawLot = Object.assign({}, bundle.rawLot || {}, remoteLot.raw || remoteLot);
-      bundle.lot = Object.assign({}, bundle.lot, remoteLot);
-      return bundle;
-    });
   }
 
   function slugToLabel(slug) {
@@ -429,26 +407,38 @@
   function loadLotBundle(slug, language) {
     var lotSelect = encodeURIComponent("*,lot_images(*),categories(name,slug),lot_translations(*)");
     var lotFilter = encodeURIComponent("eq." + slug);
-    return loadLotFromFallback(slug, language).then(function (fallbackBundle) {
-      if (fallbackBundle && fallbackBundle.rawLot && fallbackBundle.lot) {
-        return fallbackBundle;
-      }
-      return requestSupabase("/rest/v1/lots?select=" + lotSelect + "&slug=" + lotFilter + "&limit=1")
-        .then(function (lots) {
-          var rawLot = lots && lots[0];
-          if (rawLot) {
-            return {
-              rawLot: rawLot,
-              lot: normalizeLotTranslation(rawLot, language),
-              fallbackItems: null,
-            };
-          }
-          return null;
-        })
-        .catch(function () {
-          return null;
-        });
-    });
+    return fetchRemoteLotData(slug, language)
+      .then(function (remoteLot) {
+        if (remoteLot) {
+          return {
+            rawLot: remoteLot.raw || remoteLot,
+            lot: remoteLot,
+            fallbackItems: null,
+          };
+        }
+
+        return requestSupabase("/rest/v1/lots?select=" + lotSelect + "&slug=" + lotFilter + "&limit=1")
+          .then(function (lots) {
+            var rawLot = lots && lots[0];
+            if (rawLot) {
+              return {
+                rawLot: rawLot,
+                lot: normalizeLotTranslation(rawLot, language),
+                fallbackItems: null,
+              };
+            }
+            return null;
+          })
+          .catch(function () {
+            return null;
+          });
+      })
+      .then(function (bundle) {
+        if (bundle && bundle.rawLot && bundle.lot) {
+          return bundle;
+        }
+        return loadLotFromFallback(slug, language);
+      });
   }
 
   function loadRelatedAndBids(rawLot, language, fallbackItems) {
@@ -1389,32 +1379,24 @@
           return null;
         }
 
-        var initialResults = buildInitialLotResults(bundle, language);
-        renderLot(main, bundle.lot, initialResults.relatedLots, initialResults.bids, strings);
-        ensureLotCountdowns(main);
-        recordLotView(bundle);
-        if (!_lotInitialScrollUserMoved) lockLotInitialScrollTop();
+        var fallbackResults = buildInitialLotResults(bundle, language);
 
-        return hydrateLotFromRemote(bundle, language)
+        return loadRelatedAndBids(bundle.rawLot, language, bundle.fallbackItems)
           .catch(function () {
-            return bundle;
+            return fallbackResults;
           })
-          .then(function (hydratedBundle) {
-            return loadRelatedAndBids(hydratedBundle.rawLot, language, hydratedBundle.fallbackItems)
-              .catch(function () {
-                return initialResults;
-              })
-              .then(function (resultsData) {
-                var relatedLots = Array.isArray(resultsData.relatedLots) && resultsData.relatedLots.length
-                  ? resultsData.relatedLots
-                  : initialResults.relatedLots;
-                var bids = Array.isArray(resultsData.bids) && resultsData.bids.length
-                  ? resultsData.bids
-                  : initialResults.bids;
+          .then(function (resultsData) {
+            var relatedLots = Array.isArray(resultsData.relatedLots) && resultsData.relatedLots.length
+              ? resultsData.relatedLots
+              : fallbackResults.relatedLots;
+            var bids = Array.isArray(resultsData.bids) && resultsData.bids.length
+              ? resultsData.bids
+              : fallbackResults.bids;
 
-                renderLot(main, hydratedBundle.lot, relatedLots, bids, strings);
-                ensureLotCountdowns(main);
-              });
+            renderLot(main, bundle.lot, relatedLots, bids, strings);
+            ensureLotCountdowns(main);
+            recordLotView(bundle);
+            if (!_lotInitialScrollUserMoved) lockLotInitialScrollTop();
           });
       })
       .catch(function () {
