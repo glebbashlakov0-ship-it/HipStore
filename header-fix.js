@@ -1,758 +1,321 @@
 (() => {
-  const LOGO_FILE = "logo1.svg";
-  const TAWK_EMBED_SRC = "https://embed.tawk.to/69c04d8cd88c2b1c3430783d/1jkbitra2";
-  const REMOTE_SUPABASE_URL = "https://pwihhhbomwxzznekueok.supabase.co";
-  const REMOTE_SUPABASE_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3aWhoaGJvbXd4enpuZWt1ZW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NTgzNjMsImV4cCI6MjA4MTAzNDM2M30.S1aJOnJIdZY8WGVUUAbvMStxR4C5o2-3AkO6GgmkKYY";
-  const LANGUAGES = [
-    { code: "en", name: "English", nativeName: "English", flag: "🇬🇧" },
-    { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
-    { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸" },
-    { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷" },
-    { code: "it", name: "Italian", nativeName: "Italiano", flag: "🇮🇹" },
-    { code: "pt", name: "Portuguese", nativeName: "Português", flag: "🇵🇹" },
-    { code: "nl", name: "Dutch", nativeName: "Nederlands", flag: "🇳🇱" },
-    { code: "pl", name: "Polish", nativeName: "Polski", flag: "🇵🇱" },
-    { code: "tr", name: "Turkish", nativeName: "Türkçe", flag: "🇹🇷" },
-    { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇸🇦", rtl: true },
-    { code: "zh", name: "Chinese", nativeName: "中文", flag: "🇨🇳" },
-    { code: "sv", name: "Swedish", nativeName: "Svenska", flag: "🇸🇪" },
-    { code: "da", name: "Danish", nativeName: "Dansk", flag: "🇩🇰" },
-    { code: "no", name: "Norwegian", nativeName: "Norsk", flag: "🇳🇴" },
-    { code: "cs", name: "Czech", nativeName: "Čeština", flag: "🇨🇿" },
-    { code: "ro", name: "Romanian", nativeName: "Română", flag: "🇷🇴" },
-  ];
-  const UI_TRANSLATIONS = {
-    en: {
-      shopAll: "Shop All",
-      lastChance: "Last Chance",
-      categories: "Categories",
-      collections: "Collections",
-      about: "About",
-      contact: "Contact",
-      login: "Login",
-      register: "Register",
-      language: "Language",
-      chooseLanguage: "Choose your preferred language",
-      search: "Search",
-      searchSubtitle: "Find the perfect lot",
-      searchPlaceholder: "Search lots, categories, or artists...",
-      viewAllResults: "View All Results",
-      youMightLike: "You might like",
-      featuredAuctions: "Featured Auctions",
-      curatedSelection: "Curated Selection of Exceptional Pieces",
-      howItWorks: "How It Works",
-      startBidding: "Start bidding in three simple steps",
-      trustedWorldwide: "Trusted by Collectors Worldwide",
-      trustedWorldwideCopy: "Join thousands of collectors who trust us with their most valuable acquisitions",
-      stayInformed: "Stay Informed",
-      stayInformedCopy: "Subscribe to our newsletter for exclusive auction updates",
-      winterEditTitle: "The Winter Edit: Icons of Luxury",
-      winterEditCopy: "Handbags · Fine Jewelry · Watches\nA curated selection of iconic handbags, fine jewelry and luxury watches. Final lots close 28 February.",
-      viewAll: "View All",
-      browseAuctions: "Browse Auctions",
-      subscribe: "Subscribe",
-      learnMore: "Learn More",
-    },
-    de: {
-      shopAll: "Alle Auktionen",
-      lastChance: "Letzte Chance",
-      categories: "Kategorien",
-      collections: "Kollektionen",
-      about: "Über uns",
-      contact: "Kontakt",
-      login: "Anmelden",
-      register: "Registrieren",
-      language: "Sprache",
-      chooseLanguage: "Bevorzugte Sprache wählen",
-      search: "Suche",
-      searchSubtitle: "Das perfekte Los finden",
-      searchPlaceholder: "Lose, Kategorien oder Künstler suchen...",
-      viewAllResults: "Alle Ergebnisse",
-      youMightLike: "Empfehlungen",
-      featuredAuctions: "Ausgewählte Auktionen",
-      curatedSelection: "Kuratiere Auswahl außergewöhnlicher Stücke",
-      howItWorks: "So funktioniert es",
-      startBidding: "In drei einfachen Schritten mitbieten",
-      trustedWorldwide: "Weltweit von Sammlern geschätzt",
-      trustedWorldwideCopy: "Tausende Sammler vertrauen uns ihre wertvollsten Käufe an",
-      stayInformed: "Informiert bleiben",
-      stayInformedCopy: "Abonniere unseren Newsletter für exklusive Auktions-Updates",
-      winterEditTitle: "Die Winterauswahl: Ikonen des Luxus",
-      winterEditCopy: "Handtaschen · Edler Schmuck · Uhren\nEine kuratierte Auswahl ikonischer Handtaschen, edlen Schmucks und Luxusuhren. Die letzten Lose enden am 28. Februar.",
-      viewAll: "Alle anzeigen",
-      browseAuctions: "Auktionen durchsuchen",
-      subscribe: "Abonnieren",
-      learnMore: "Mehr erfahren",
-    },
-    es: {
-      shopAll: "Ver todo",
-      lastChance: "Última oportunidad",
-      categories: "Categorías",
-      collections: "Colecciones",
-      about: "Acerca de",
-      contact: "Contacto",
-      login: "Iniciar sesión",
-      register: "Registrarse",
-      language: "Idioma",
-      chooseLanguage: "Elige tu idioma",
-      search: "Buscar",
-      searchSubtitle: "Encuentra el lote perfecto",
-      searchPlaceholder: "Buscar lotes, categorías o artistas...",
-      viewAllResults: "Ver todos los resultados",
-      youMightLike: "Te puede gustar",
-      featuredAuctions: "Subastas destacadas",
-      curatedSelection: "Selección curada de piezas excepcionales",
-      howItWorks: "Cómo funciona",
-      startBidding: "Empieza a pujar en tres pasos",
-      trustedWorldwide: "Coleccionistas de todo el mundo confían en nosotros",
-      trustedWorldwideCopy: "Miles de coleccionistas confían en nosotros sus adquisiciones más valiosas",
-      stayInformed: "Mantente informado",
-      stayInformedCopy: "Suscríbete para recibir actualizaciones exclusivas",
-      winterEditTitle: "La selección de invierno: iconos del lujo",
-      winterEditCopy: "Bolsos · Joyería fina · Relojes\nUna selección curada de bolsos icónicos, joyería fina y relojes de lujo. Los últimos lotes cierran el 28 de febrero.",
-      viewAll: "Ver todo",
-      browseAuctions: "Explorar subastas",
-      subscribe: "Suscribirse",
-      learnMore: "Más información",
-    },
-    fr: {
-      shopAll: "Tout voir",
-      lastChance: "Dernière chance",
-      categories: "Catégories",
-      collections: "Collections",
-      about: "À propos",
-      contact: "Contact",
-      login: "Connexion",
-      register: "S'inscrire",
-      language: "Langue",
-      chooseLanguage: "Choisissez votre langue",
-      search: "Recherche",
-      searchSubtitle: "Trouvez le lot parfait",
-      searchPlaceholder: "Rechercher des lots, catégories ou artistes...",
-      viewAllResults: "Voir tous les résultats",
-      youMightLike: "Vous aimerez peut-être",
-      featuredAuctions: "Ventes en vedette",
-      curatedSelection: "Sélection soignée de pièces exceptionnelles",
-      howItWorks: "Comment ça marche",
-      startBidding: "Commencez à enchérir en trois étapes",
-      trustedWorldwide: "Approuvé par les collectionneurs du monde entier",
-      trustedWorldwideCopy: "Des milliers de collectionneurs nous confient leurs acquisitions les plus précieuses",
-      stayInformed: "Restez informé",
-      stayInformedCopy: "Abonnez-vous pour recevoir des mises à jour exclusives",
-      winterEditTitle: "La sélection d'hiver : icônes du luxe",
-      winterEditCopy: "Sacs à main · Haute joaillerie · Montres\nUne sélection soignée de sacs iconiques, de haute joaillerie et de montres de luxe. Les derniers lots se terminent le 28 février.",
-      viewAll: "Voir tout",
-      browseAuctions: "Parcourir les ventes",
-      subscribe: "S'abonner",
-      learnMore: "En savoir plus",
-    },
-    it: {
-      shopAll: "Vedi tutto",
-      lastChance: "Ultima occasione",
-      categories: "Categorie",
-      collections: "Collezioni",
-      about: "Chi siamo",
-      contact: "Contatti",
-      login: "Accedi",
-      register: "Registrati",
-      language: "Lingua",
-      chooseLanguage: "Scegli la tua lingua",
-      search: "Cerca",
-      searchSubtitle: "Trova il lotto perfetto",
-      searchPlaceholder: "Cerca lotti, categorie o artisti...",
-      viewAllResults: "Vedi tutti i risultati",
-      youMightLike: "Potrebbe interessarti",
-      featuredAuctions: "Aste in evidenza",
-      curatedSelection: "Selezione curata di pezzi eccezionali",
-      howItWorks: "Come funziona",
-      startBidding: "Inizia a fare offerte in tre passaggi",
-      trustedWorldwide: "Scelto dai collezionisti di tutto il mondo",
-      trustedWorldwideCopy: "Migliaia di collezionisti ci affidano i loro acquisti più preziosi",
-      stayInformed: "Resta informato",
-      stayInformedCopy: "Iscriviti alla newsletter per aggiornamenti esclusivi",
-      winterEditTitle: "La selezione invernale: icone del lusso",
-      winterEditCopy: "Borse · Alta gioielleria · Orologi\nUna selezione curata di borse iconiche, alta gioielleria e orologi di lusso. Gli ultimi lotti chiudono il 28 febbraio.",
-      viewAll: "Vedi tutto",
-      browseAuctions: "Esplora le aste",
-      subscribe: "Iscriviti",
-      learnMore: "Scopri di più",
-    },
-    pt: {
-      shopAll: "Ver tudo",
-      lastChance: "Última chance",
-      categories: "Categorias",
-      collections: "Coleções",
-      about: "Sobre",
-      contact: "Contato",
-      login: "Entrar",
-      register: "Registrar",
-      language: "Idioma",
-      chooseLanguage: "Escolha seu idioma",
-      search: "Buscar",
-      searchSubtitle: "Encontre o lote perfeito",
-      searchPlaceholder: "Buscar lotes, categorias ou artistas...",
-      viewAllResults: "Ver todos os resultados",
-      youMightLike: "Você pode gostar",
-      featuredAuctions: "Leilões em destaque",
-      curatedSelection: "Seleção curada de peças excepcionais",
-      howItWorks: "Como funciona",
-      startBidding: "Comece a dar lances em três passos",
-      trustedWorldwide: "Confiado por colecionadores no mundo todo",
-      trustedWorldwideCopy: "Milhares de colecionadores confiam em nós para suas aquisições mais valiosas",
-      stayInformed: "Fique informado",
-      stayInformedCopy: "Assine nossa newsletter para atualizações exclusivas",
-      winterEditTitle: "A seleção de inverno: ícones do luxo",
-      winterEditCopy: "Bolsas · Joias finas · Relógios\nUma seleção curada de bolsas icônicas, joias finas e relógios de luxo. Os lotes finais encerram em 28 de fevereiro.",
-      viewAll: "Ver tudo",
-      browseAuctions: "Explorar leilões",
-      subscribe: "Assinar",
-      learnMore: "Saiba mais",
-    },
-    nl: {
-      shopAll: "Alles bekijken",
-      lastChance: "Laatste kans",
-      categories: "Categorieën",
-      collections: "Collecties",
-      about: "Over",
-      contact: "Contact",
-      login: "Inloggen",
-      register: "Registreren",
-      language: "Taal",
-      chooseLanguage: "Kies je taal",
-      search: "Zoeken",
-      searchSubtitle: "Vind het perfecte lot",
-      searchPlaceholder: "Zoek kavels, categorieën of kunstenaars...",
-      viewAllResults: "Alle resultaten",
-      youMightLike: "Misschien interessant",
-      featuredAuctions: "Uitgelichte veilingen",
-      curatedSelection: "Samengestelde selectie van uitzonderlijke stukken",
-      howItWorks: "Hoe het werkt",
-      startBidding: "Begin in drie eenvoudige stappen met bieden",
-      trustedWorldwide: "Vertrouwd door verzamelaars wereldwijd",
-      trustedWorldwideCopy: "Duizenden verzamelaars vertrouwen ons met hun waardevolste aankopen",
-      stayInformed: "Blijf op de hoogte",
-      stayInformedCopy: "Abonneer je op onze nieuwsbrief voor exclusieve updates",
-      winterEditTitle: "De winterselectie: iconen van luxe",
-      winterEditCopy: "Handtassen · Fijne sieraden · Horloges\nEen samengestelde selectie van iconische handtassen, fijne sieraden en luxe horloges. De laatste kavels sluiten op 28 februari.",
-      viewAll: "Alles bekijken",
-      browseAuctions: "Veilingen bekijken",
-      subscribe: "Abonneren",
-      learnMore: "Meer informatie",
-    },
-    pl: {
-      shopAll: "Zobacz wszystko",
-      lastChance: "Ostatnia szansa",
-      categories: "Kategorie",
-      collections: "Kolekcje",
-      about: "O nas",
-      contact: "Kontakt",
-      login: "Zaloguj się",
-      register: "Zarejestruj się",
-      language: "Język",
-      chooseLanguage: "Wybierz język",
-      search: "Szukaj",
-      searchSubtitle: "Znajdź idealny obiekt",
-      searchPlaceholder: "Szukaj obiektów, kategorii lub artystów...",
-      viewAllResults: "Zobacz wszystkie wyniki",
-      youMightLike: "Może Ci się spodobać",
-      featuredAuctions: "Polecane aukcje",
-      curatedSelection: "Starannie wybrana selekcja wyjątkowych obiektów",
-      howItWorks: "Jak to działa",
-      startBidding: "Zacznij licytować w trzech krokach",
-      trustedWorldwide: "Zaufanie kolekcjonerów na całym świecie",
-      trustedWorldwideCopy: "Tysiące kolekcjonerów powierzają nam swoje najcenniejsze zakupy",
-      stayInformed: "Bądź na bieżąco",
-      stayInformedCopy: "Zapisz się do newslettera po ekskluzywne aktualizacje",
-      winterEditTitle: "Zimowa edycja: ikony luksusu",
-      winterEditCopy: "Torebki · Biżuteria premium · Zegarki\nStarannie wybrana kolekcja kultowych torebek, biżuterii premium i luksusowych zegarków. Ostatnie obiekty kończą się 28 lutego.",
-      viewAll: "Zobacz wszystko",
-      browseAuctions: "Przeglądaj aukcje",
-      subscribe: "Subskrybuj",
-      learnMore: "Dowiedz się więcej",
-    },
-    tr: {
-      shopAll: "Tümünü gör",
-      lastChance: "Son şans",
-      categories: "Kategoriler",
-      collections: "Koleksiyonlar",
-      about: "Hakkında",
-      contact: "İletişim",
-      login: "Giriş yap",
-      register: "Kayıt ol",
-      language: "Dil",
-      chooseLanguage: "Dil seçin",
-      search: "Ara",
-      searchSubtitle: "Mükemmel lotu bulun",
-      searchPlaceholder: "Lot, kategori veya sanatçı ara...",
-      viewAllResults: "Tüm sonuçlar",
-      youMightLike: "Beğenebilirsiniz",
-      featuredAuctions: "Öne çıkan müzayedeler",
-      curatedSelection: "Olağanüstü parçaların özenle seçilmiş koleksiyonu",
-      howItWorks: "Nasıl çalışır",
-      startBidding: "Üç adımda teklif vermeye başlayın",
-      trustedWorldwide: "Dünya çapında koleksiyonerlerin güvendiği",
-      trustedWorldwideCopy: "Binlerce koleksiyoner en değerli alımlarında bize güveniyor",
-      stayInformed: "Haberdar olun",
-      stayInformedCopy: "Özel güncellemeler için bültene abone olun",
-      winterEditTitle: "Kış seçkisi: lüks ikonlar",
-      winterEditCopy: "Çantalar · İnce mücevherler · Saatler\nİkonik çantalar, seçkin mücevherler ve lüks saatlerden oluşan özenle seçilmiş bir koleksiyon. Son lotlar 28 Şubat'ta kapanıyor.",
-      viewAll: "Tümünü gör",
-      browseAuctions: "Müzayedelere göz at",
-      subscribe: "Abone ol",
-      learnMore: "Daha fazla bilgi",
-    },
-    ar: {
-      shopAll: "عرض الكل",
-      lastChance: "الفرصة الأخيرة",
-      categories: "الفئات",
-      collections: "المجموعات",
-      about: "حول",
-      contact: "اتصل بنا",
-      login: "تسجيل الدخول",
-      register: "إنشاء حساب",
-      language: "اللغة",
-      chooseLanguage: "اختر لغتك",
-      search: "بحث",
-      searchSubtitle: "اعثر على القطعة المثالية",
-      searchPlaceholder: "ابحث عن القطع أو الفئات أو الفنانين...",
-      viewAllResults: "عرض كل النتائج",
-      youMightLike: "قد يعجبك",
-      featuredAuctions: "مزادات مميزة",
-      curatedSelection: "مجموعة مختارة من القطع الاستثنائية",
-      howItWorks: "كيف يعمل",
-      startBidding: "ابدأ المزايدة في ثلاث خطوات",
-      trustedWorldwide: "موثوق به من قبل جامعي التحف حول العالم",
-      trustedWorldwideCopy: "آلاف الجامعين يثقون بنا في أهم مشترياتهم",
-      stayInformed: "ابق على اطلاع",
-      stayInformedCopy: "اشترك في النشرة للحصول على تحديثات حصرية",
-      winterEditTitle: "اختيار الشتاء: أيقونات الفخامة",
-      winterEditCopy: "حقائب · مجوهرات فاخرة · ساعات\nمجموعة مختارة من الحقائب الأيقونية والمجوهرات الفاخرة والساعات الراقية. تنتهي آخر القطع في 28 فبراير.",
-      viewAll: "عرض الكل",
-      browseAuctions: "تصفح المزادات",
-      subscribe: "اشترك",
-      learnMore: "اعرف المزيد",
-    },
-    zh: {
-      shopAll: "查看全部",
-      lastChance: "最后机会",
-      categories: "分类",
-      collections: "系列",
-      about: "关于",
-      contact: "联系",
-      login: "登录",
-      register: "注册",
-      language: "语言",
-      chooseLanguage: "选择你的语言",
-      search: "搜索",
-      searchSubtitle: "找到理想拍品",
-      searchPlaceholder: "搜索拍品、分类或艺术家...",
-      viewAllResults: "查看全部结果",
-      youMightLike: "你可能喜欢",
-      featuredAuctions: "精选拍卖",
-      curatedSelection: "精心挑选的非凡拍品",
-      howItWorks: "如何运作",
-      startBidding: "三步开始出价",
-      trustedWorldwide: "受到全球藏家信赖",
-      trustedWorldwideCopy: "数千名藏家将最重要的购藏交给我们",
-      stayInformed: "保持关注",
-      stayInformedCopy: "订阅新闻获取独家拍卖更新",
-      winterEditTitle: "冬季甄选：奢华经典",
-      winterEditCopy: "手袋 · 高级珠宝 · 腕表\n精选标志性手袋、高级珠宝和奢华腕表。最后一批拍品将于2月28日截止。",
-      viewAll: "查看全部",
-      browseAuctions: "浏览拍卖",
-      subscribe: "订阅",
-      learnMore: "了解更多",
-    },
-    sv: {
-      shopAll: "Se allt",
-      lastChance: "Sista chansen",
-      categories: "Kategorier",
-      collections: "Kollektioner",
-      about: "Om oss",
-      contact: "Kontakt",
-      login: "Logga in",
-      register: "Registrera",
-      language: "Språk",
-      chooseLanguage: "Välj språk",
-      search: "Sök",
-      searchSubtitle: "Hitta det perfekta objektet",
-      searchPlaceholder: "Sök objekt, kategorier eller konstnärer...",
-      viewAllResults: "Visa alla resultat",
-      youMightLike: "Du kanske gillar",
-      featuredAuctions: "Utvalda auktioner",
-      curatedSelection: "Kurerat urval av exceptionella objekt",
-      howItWorks: "Så fungerar det",
-      startBidding: "Börja bjuda i tre steg",
-      trustedWorldwide: "Betrodd av samlare världen över",
-      trustedWorldwideCopy: "Tusentals samlare litar på oss med sina mest värdefulla köp",
-      stayInformed: "Håll dig uppdaterad",
-      stayInformedCopy: "Prenumerera på nyhetsbrevet för exklusiva uppdateringar",
-      winterEditTitle: "Vinterutgåvan: lyxens ikoner",
-      winterEditCopy: "Handväskor · Fina smycken · Klockor\nEtt kurerat urval av ikoniska handväskor, fina smycken och lyxklockor. De sista objekten stänger den 28 februari.",
-      viewAll: "Visa alla",
-      browseAuctions: "Bläddra bland auktioner",
-      subscribe: "Prenumerera",
-      learnMore: "Läs mer",
-    },
-    da: {
-      shopAll: "Se alle",
-      lastChance: "Sidste chance",
-      categories: "Kategorier",
-      collections: "Kollektioner",
-      about: "Om",
-      contact: "Kontakt",
-      login: "Log ind",
-      register: "Registrer",
-      language: "Sprog",
-      chooseLanguage: "Vælg dit sprog",
-      search: "Søg",
-      searchSubtitle: "Find det perfekte lot",
-      searchPlaceholder: "Søg lotter, kategorier eller kunstnere...",
-      viewAllResults: "Se alle resultater",
-      youMightLike: "Du vil måske kunne lide",
-      featuredAuctions: "Fremhævede auktioner",
-      curatedSelection: "Kurateret udvalg af enestående genstande",
-      howItWorks: "Sådan fungerer det",
-      startBidding: "Begynd at byde i tre trin",
-      trustedWorldwide: "Betroet af samlere verden over",
-      trustedWorldwideCopy: "Tusindvis af samlere betror os deres mest værdifulde køb",
-      stayInformed: "Hold dig opdateret",
-      stayInformedCopy: "Tilmeld dig nyhedsbrevet for eksklusive opdateringer",
-      winterEditTitle: "Vinterudvalget: luksusikoner",
-      winterEditCopy: "Håndtasker · Fine smykker · Ure\nEt kurateret udvalg af ikoniske håndtasker, fine smykker og luksusure. De sidste lots lukker den 28. februar.",
-      viewAll: "Se alle",
-      browseAuctions: "Se auktioner",
-      subscribe: "Tilmeld",
-      learnMore: "Læs mere",
-    },
-    no: {
-      shopAll: "Se alt",
-      lastChance: "Siste sjanse",
-      categories: "Kategorier",
-      collections: "Samlinger",
-      about: "Om",
-      contact: "Kontakt",
-      login: "Logg inn",
-      register: "Registrer",
-      language: "Språk",
-      chooseLanguage: "Velg språk",
-      search: "Søk",
-      searchSubtitle: "Finn det perfekte objektet",
-      searchPlaceholder: "Søk etter objekter, kategorier eller kunstnere...",
-      viewAllResults: "Se alle resultater",
-      youMightLike: "Du kan like",
-      featuredAuctions: "Utvalgte auksjoner",
-      curatedSelection: "Kurert utvalg av eksepsjonelle objekter",
-      howItWorks: "Slik fungerer det",
-      startBidding: "Begynn å by i tre trinn",
-      trustedWorldwide: "Betrodd av samlere over hele verden",
-      trustedWorldwideCopy: "Tusenvis av samlere stoler på oss med sine mest verdifulle kjøp",
-      stayInformed: "Hold deg oppdatert",
-      stayInformedCopy: "Abonner på nyhetsbrevet for eksklusive oppdateringer",
-      winterEditTitle: "Vinterutvalget: luksusikoner",
-      winterEditCopy: "Håndvesker · Eksklusive smykker · Klokker\nEt kuratert utvalg av ikoniske håndvesker, eksklusive smykker og luksusklokker. De siste objektene avsluttes 28. februar.",
-      viewAll: "Se alle",
-      browseAuctions: "Bla gjennom auksjoner",
-      subscribe: "Abonner",
-      learnMore: "Les mer",
-    },
-    cs: {
-      shopAll: "Zobrazit vše",
-      lastChance: "Poslední šance",
-      categories: "Kategorie",
-      collections: "Kolekce",
-      about: "O nás",
-      contact: "Kontakt",
-      login: "Přihlásit se",
-      register: "Registrovat",
-      language: "Jazyk",
-      chooseLanguage: "Vyberte jazyk",
-      search: "Hledat",
-      searchSubtitle: "Najděte ideální položku",
-      searchPlaceholder: "Hledejte položky, kategorie nebo umělce...",
-      viewAllResults: "Zobrazit všechny výsledky",
-      youMightLike: "Mohlo by se vám líbit",
-      featuredAuctions: "Doporučené aukce",
-      curatedSelection: "Pečlivě vybraný výběr výjimečných položek",
-      howItWorks: "Jak to funguje",
-      startBidding: "Začněte přihazovat ve třech krocích",
-      trustedWorldwide: "Důvěra sběratelů po celém světě",
-      trustedWorldwideCopy: "Tisíce sběratelů nám svěřují své nejcennější nákupy",
-      stayInformed: "Zůstaňte v obraze",
-      stayInformedCopy: "Přihlaste se k newsletteru pro exkluzivní novinky",
-      winterEditTitle: "Zimní výběr: ikony luxusu",
-      winterEditCopy: "Kabelky · Luxusní šperky · Hodinky\nPečlivě vybraný výběr ikonických kabelek, luxusních šperků a hodinek. Poslední položky končí 28. února.",
-      viewAll: "Zobrazit vše",
-      browseAuctions: "Procházet aukce",
-      subscribe: "Odebírat",
-      learnMore: "Zjistit více",
-    },
-    ro: {
-      shopAll: "Vezi tot",
-      lastChance: "Ultima șansă",
-      categories: "Categorii",
-      collections: "Colecții",
-      about: "Despre",
-      contact: "Contact",
-      login: "Autentificare",
-      register: "Înregistrare",
-      language: "Limbă",
-      chooseLanguage: "Alege limba",
-      search: "Caută",
-      searchSubtitle: "Găsește lotul perfect",
-      searchPlaceholder: "Caută loturi, categorii sau artiști...",
-      viewAllResults: "Vezi toate rezultatele",
-      youMightLike: "S-ar putea să-ți placă",
-      featuredAuctions: "Licitații recomandate",
-      curatedSelection: "Selecție curată de piese excepționale",
-      howItWorks: "Cum funcționează",
-      startBidding: "Începe să licitezi în trei pași",
-      trustedWorldwide: "De încredere pentru colecționari din toată lumea",
-      trustedWorldwideCopy: "Mii de colecționari ne încredințează cele mai valoroase achiziții",
-      stayInformed: "Rămâi informat",
-      stayInformedCopy: "Abonează-te la newsletter pentru actualizări exclusive",
-      winterEditTitle: "Selecția de iarnă: iconuri ale luxului",
-      winterEditCopy: "Genți · Bijuterii fine · Ceasuri\nO selecție curatoriată de genți iconice, bijuterii fine și ceasuri de lux. Ultimele loturi se închid pe 28 februarie.",
-      viewAll: "Vezi tot",
-      browseAuctions: "Răsfoiește licitațiile",
-      subscribe: "Abonare",
-      learnMore: "Află mai multe",
-    },
-  };
-  const AUTH_USERS_KEY = "auctio_users";
-  const AUTH_SESSION_KEY = "auctio_session";
-  const LEGACY_AUTH_USERS_KEY = "auctio-auth-users";
-  const LEGACY_AUTH_SESSION_KEY = "auctio-auth-session";
+  const LOGO_URL = "https://www.thehipstore.co.uk/skins/hipstoregb-mobile/public/img/logos/logo.png";
+  const BAG_ICON_URL = "https://www.thehipstore.co.uk/skins/streetwear-mobile/public/img/icons/svg/icon-bag-outline.svg";
+  const MENU_ICON_URL = "https://www.thehipstore.co.uk/skins/streetwear-mobile/public/img/icons/svg/icon-menu.svg";
+  const ASSET_ORIGIN = "https://www.thehipstore.co.uk";
+  const DEFAULT_ASSET_ORIGIN = "https://www.thehipstore.co.uk";
+  const LONG_ARROW_ICON_URL = "https://www.thehipstore.co.uk/skins/hipstoregb-mobile/public/img/icons/svg/icon-arrow-long-right.svg";
+  const SHOP_PAGE = "shop.html";
+  const PRODUCT_PAGE = "product/index.html";
+  const PLACEHOLDER_IMAGE = "placeholder.svg";
   const AUTH_EVENT = "auctio:auth-changed";
-  let currentLanguageCode = null;
-  let translationDataPromise = null;
-  let translationObserver = null;
-  let translationReapplyTimer = null;
-  let isApplyingTranslations = false;
-  let searchState = {
-    query: "",
-    page: 0,
-    total: 0,
-    hasMore: false,
-    loading: false,
-    loadingMore: false,
-    randomLoading: false,
-    results: [],
-    randomPicks: [],
-  };
-  const SEARCH_REMOTE_LOT_CACHE = new Map();
-  const ORIGINAL_TEXT_NODES = new WeakMap();
-  const ORIGINAL_ELEMENT_ATTRS = new WeakMap();
-  const MEGA_MENU = [
+  const CATALOG_PATH = "data/products.normalized.json";
+  const SEARCH_HISTORY_KEY = "hip_recent_searches";
+  const CART_KEY = "hip_store_cart";
+  const TRENDING_SEARCHES = [
+    "adidas Spezial",
+    "C.P. Company",
+    "Birkenstock",
+    "adidas",
+    "ASICS",
+    "Patta",
+    "Carhartt",
+    "New Balance",
+  ];
+  const SHOP_LINKS = [
+    { label: "Shop All", href: SHOP_PAGE },
+    { label: "Mens", href: SHOP_PAGE + "?plp=mens" },
+    { label: "Womens", href: SHOP_PAGE + "?plp=womens" },
+    { label: "Footwear", href: SHOP_PAGE + "?plp=footwear" },
+    { label: "Clothing", href: SHOP_PAGE + "?plp=clothing" },
+    { label: "Accessories", href: SHOP_PAGE + "?plp=accessories" },
+    { label: "Sale", href: SHOP_PAGE + "?plp=sale" },
+  ];
+  const MOBILE_MENU_ITEMS = [
     {
-      title: "Watches",
-      href: "category/watches.html",
-      items: [
-        { label: "Rolex", href: "category/watches.html" },
-        { label: "Cartier", href: "category/watches.html" },
-        { label: "Patek Philippe", href: "category/watches.html" },
-        { label: "Audemars Piguet", href: "category/watches.html" },
+      label: "Latest",
+      children: [
+        { label: "All Latest", href: "shop.html?plp=latest" },
+        { label: "Mens New In", href: "shop.html?plp=mens-new-in" },
+        { label: "Womens New In", href: "shop.html?plp=womens-new-in" },
+        { label: "Latest Clothing", href: "shop.html?plp=latest-clothing" },
+        { label: "Latest Footwear", href: "shop.html?plp=latest-footwear" },
+        { label: "Last Sizes Available", href: "shop.html?collection=last-sizes-available" },
       ],
     },
     {
-      title: "Bags & Fashion",
-      href: "category/handbag.html",
-      items: [
-        { label: "Hermes", href: "category/handbag.html" },
-        { label: "Chanel", href: "category/handbag.html" },
-        { label: "Louis Vuitton", href: "category/handbag.html" },
-        { label: "Goyard", href: "category/handbag.html" },
+      label: "Mens",
+      children: [
+        { label: "All Mens", href: "shop.html?plp=mens" },
+        { label: "New In", href: "shop.html?plp=mens-new-in" },
+        {
+          label: "Clothing",
+          children: [
+            { label: "Mens Jackets", href: "shop.html?plp=mens-clothing-jackets" },
+            { label: "Mens Hoodies", href: "shop.html?plp=mens-clothing-hoodies" },
+            { label: "Mens T-Shirts", href: "shop.html?plp=mens-clothing-t-shirts" },
+            { label: "Mens Jeans", href: "shop.html?plp=mens-clothing-jeans" },
+            { label: "Mens Trousers", href: "shop.html?plp=mens-clothing-trousers" },
+            { label: "Mens Sweatshirts", href: "shop.html?plp=mens-clothing-sweatshirts" },
+            { label: "Mens Shirts", href: "shop.html?plp=mens-clothing-shirts" },
+            { label: "Mens Shorts", href: "shop.html?plp=mens-clothing-shorts" },
+            { label: "All Mens Clothing", href: "shop.html?plp=mens-clothing" },
+          ],
+        },
+        {
+          label: "Footwear",
+          children: [
+            { label: "Mens Trainers", href: "shop.html?plp=mens-footwear-trainers" },
+            { label: "Mens Boots", href: "shop.html?plp=mens-footwear-boots" },
+            { label: "Mens Shoes", href: "shop.html?plp=mens-footwear-shoes" },
+            { label: "Mens Sandals", href: "shop.html?plp=mens-footwear-sandals" },
+            { label: "All Mens Footwear", href: "shop.html?plp=mens-footwear" },
+          ],
+        },
       ],
     },
     {
-      title: "Jewelry",
-      href: "category/earring.html",
-      items: [
-        { label: "Earrings", href: "category/earring.html" },
-        { label: "Rings", href: "auctions.html" },
-        { label: "Bracelets", href: "auctions.html" },
-        { label: "Necklaces", href: "auctions.html" },
+      label: "Womens",
+      children: [
+        { label: "All Womens", href: "shop.html?plp=womens" },
+        { label: "New In", href: "shop.html?plp=womens-new-in" },
+        { label: "Clothing", href: "shop.html?plp=womens-clothing" },
+        {
+          label: "Footwear",
+          children: [
+            { label: "Trainers", href: "shop.html?plp=womens-footwear-trainers" },
+            { label: "Boots", href: "shop.html?plp=womens-footwear-boots" },
+            { label: "Shoes", href: "shop.html?plp=womens-footwear-shoes" },
+            { label: "Sandals", href: "shop.html?plp=womens-footwear-sandals" },
+            { label: "All Womens Footwear", href: "shop.html?plp=womens-footwear" },
+          ],
+        },
       ],
     },
     {
-      title: "Collectibles & More",
-      href: "category/collectible.html",
-      items: [
-        { label: "Books & Manuscripts", href: "category/books-manuscripts.html" },
-        { label: "Vintage Posters", href: "category/collectible.html" },
-        { label: "Photographs", href: "category/collectible.html" },
-        { label: "Pens", href: "category/books-manuscripts.html" },
+      label: "Accessories",
+      children: [
+        {
+          label: "All Accessories",
+          children: [
+            { label: "Shop All", href: "shop.html?plp=accessories" },
+            { label: "Bags", href: "shop.html?plp=accessories-bags" },
+            { label: "Caps", href: "shop.html?plp=accessories-caps" },
+            { label: "Hats", href: "shop.html?plp=accessories-hats" },
+            { label: "Socks", href: "shop.html?plp=accessories-socks" },
+            { label: "Sunglasses", href: "shop.html?plp=accessories-sunglasses" },
+          ],
+        },
+        {
+          label: "Living",
+          children: [
+            { label: "Shop All", href: "shop.html?plp=living" },
+            { label: "Fragrance & Skincare", href: "shop.html?plp=living-fragrance" },
+            { label: "Garment & Footwear Care", href: "shop.html?plp=living-care" },
+            { label: "Homeware", href: "shop.html?plp=living-homeware" },
+          ],
+        },
       ],
     },
     {
-      title: "Fine Art",
-      href: "auctions.html",
-      items: [
-        { label: "Paintings", href: "auctions.html" },
-        { label: "Work on Paper", href: "auctions.html" },
-        { label: "Sculpture", href: "auctions.html" },
+      label: "Brands",
+      children: [
+        {
+          label: "All Brands",
+          children: [
+            { label: "Shop All", href: "collections.html" },
+            { label: "Adidas", href: "shop.html?brand=adidas" },
+            { label: "ASICS", href: "shop.html?brand=asics" },
+            { label: "C.P. Company", href: "shop.html?brand=c-p-company" },
+            { label: "Carhartt WIP", href: "shop.html?brand=carhartt-wip" },
+            { label: "Comme Des Garcons HOMME", href: "shop.html?brand=comme-des-garcons-homme" },
+            { label: "Goldwin", href: "shop.html?brand=goldwin" },
+            { label: "Martine Rose", href: "shop.html?brand=martine-rose" },
+            { label: "Needles", href: "shop.html?brand=needles" },
+            { label: "New Balance", href: "shop.html?brand=new-balance" },
+            { label: "Paraboot", href: "shop.html?brand=paraboot" },
+            { label: "Patta", href: "shop.html?brand=patta" },
+            { label: "Power Goods", href: "shop.html?brand=power-goods" },
+            { label: "Salomon", href: "shop.html?brand=salomon" },
+            { label: "Stone Island", href: "shop.html?brand=stone-island" },
+            { label: "Universal Works", href: "shop.html?brand=universal-works" },
+            { label: "Visvim", href: "shop.html?brand=visvim" },
+            { label: "YMC", href: "shop.html?brand=ymc" },
+          ],
+        },
+        {
+          label: "Style",
+          children: [
+            { label: "Formal", href: "shop.html?collection=formal" },
+            { label: "Elevated Casual", href: "shop.html?collection=elevated-casual" },
+            { label: "Everyday", href: "shop.html?collection=everyday" },
+            { label: "Vacation", href: "shop.html?collection=vacation" },
+            { label: "Streetwear", href: "shop.html?collection=streetwear" },
+            { label: "Classics", href: "shop.html?collection=classics" },
+            { label: "Luxury", href: "shop.html?collection=luxury" },
+            { label: "Outdoor", href: "shop.html?collection=outdoor" },
+            { label: "Approach", href: "shop.html?collection=approach" },
+          ],
+        },
       ],
     },
     {
-      title: "Spirits",
-      href: "collections/the-great-whiskey-collection.html",
-      items: [
-        { label: "Van Winkle", href: "collections/the-great-whiskey-collection.html" },
-        { label: "Weller", href: "collections/the-great-whiskey-collection.html" },
-        { label: "Old Fitzgerald", href: "collections/the-great-whiskey-collection.html" },
-        { label: "Four Roses", href: "collections/the-great-whiskey-collection.html" },
+      label: "Collections",
+      children: [
+        {
+          label: "adidas",
+          children: [
+            { label: "adidas SPEZIAL", href: "shop.html?collection=adidas-spezial" },
+            { label: "adidas Originals Gazelle", href: "shop.html?collection=adidas-gazelle" },
+            { label: "adidas Originals Handball Spezial", href: "shop.html?collection=adidas-handball-spezial" },
+            { label: "adidas Originals Japan", href: "shop.html?collection=adidas-japan" },
+            { label: "adidas Originals Samba", href: "shop.html?collection=adidas-samba" },
+            { label: "adidas Originals SL 72", href: "shop.html?collection=adidas-sl-72" },
+            { label: "adidas Originals Stan Smith", href: "shop.html?collection=adidas-stan-smith" },
+            { label: "Adidas Originals x Brain Dead", href: "shop.html?collection=adidas-brain-dead" },
+            { label: "Adidas Originals x CLOT", href: "shop.html?collection=adidas-clot" },
+            { label: "adidas Originals x Wales Bonner", href: "shop.html?collection=adidas-wales-bonner" },
+          ],
+        },
+        {
+          label: "ASICS",
+          children: [
+            { label: "ASICS GEL-DS TRAINER 14", href: "shop.html?collection=asics-gel-ds-trainer-14" },
+            { label: "ASICS GEL-KAYANO", href: "shop.html?collection=asics-gel-kayano" },
+            { label: "ASICS GT-2160", href: "shop.html?collection=asics-gt-2160" },
+          ],
+        },
+        {
+          label: "Birkenstock",
+          children: [
+            { label: "Birkenstock Boston", href: "shop.html?collection=birkenstock-boston" },
+            { label: "Birkenstock Arizona", href: "shop.html?collection=birkenstock-arizona" },
+          ],
+        },
+        {
+          label: "Clarks Originals",
+          children: [
+            { label: "Clarks Originals Wallabee", href: "shop.html?collection=clarks-wallabee" },
+            { label: "Clarks Originals Tor Hill", href: "shop.html?collection=clarks-tor-hill" },
+          ],
+        },
+        {
+          label: "New Balance",
+          children: [
+            { label: "New Balance Made In UK", href: "shop.html?collection=new-balance-made-in-uk" },
+            { label: "New Balance Made In USA", href: "shop.html?collection=new-balance-made-in-usa" },
+            { label: "New Balance 1500", href: "shop.html?collection=new-balance-1500" },
+            { label: "New Balance 1906", href: "shop.html?collection=new-balance-1906" },
+            { label: "New Balance 576", href: "shop.html?collection=new-balance-576" },
+            { label: "New Balance 740", href: "shop.html?collection=new-balance-740" },
+            { label: "New Balance 991", href: "shop.html?collection=new-balance-991" },
+          ],
+        },
+        {
+          label: "Nike",
+          children: [
+            { label: "Nike ACG", href: "shop.html?collection=nike-acg" },
+            { label: "Nike Air Force 1", href: "shop.html?collection=nike-air-force-1" },
+            { label: "Nike Air Max TL 2.5", href: "shop.html?collection=nike-air-max-tl-2-5" },
+            { label: "Nike Air Rift", href: "shop.html?collection=nike-air-rift" },
+            { label: "Nike Dunk", href: "shop.html?collection=nike-dunk" },
+            { label: "Nike Killshot", href: "shop.html?collection=nike-killshot" },
+            { label: "Nike Shox", href: "shop.html?collection=nike-shox" },
+          ],
+        },
+        {
+          label: "Paraboot",
+          children: [
+            { label: "Paraboot Michael", href: "shop.html?collection=paraboot-michael" },
+            { label: "Paraboot Montana", href: "shop.html?collection=paraboot-montana" },
+          ],
+        },
+        {
+          label: "Puma",
+          children: [
+            { label: "PUMA Mostro", href: "shop.html?collection=puma-mostro" },
+            { label: "PUMA Speedcat", href: "shop.html?collection=puma-speedcat" },
+            { label: "Puma x Noah", href: "shop.html?collection=puma-noah" },
+          ],
+        },
+        {
+          label: "Salomon",
+          children: [
+            { label: "Salomon RX MOC", href: "shop.html?collection=salomon-rx-moc" },
+            { label: "Salomon Snowclog", href: "shop.html?collection=salomon-snowclog" },
+            { label: "Salomon XT-4", href: "shop.html?collection=salomon-xt-4" },
+            { label: "Salomon XT-6", href: "shop.html?collection=salomon-xt-6" },
+            { label: "Salomon XT-WHISPER", href: "shop.html?collection=salomon-xt-whisper" },
+          ],
+        },
+        {
+          label: "The North Face",
+          children: [
+            { label: "The North Face x UNDERCOVER", href: "shop.html?collection=the-north-face-undercover" },
+          ],
+        },
       ],
     },
     {
-      title: "Furniture & Decor",
-      href: "auctions.html",
-      items: [
-        { label: "Decor", href: "auctions.html" },
-        { label: "Furniture", href: "auctions.html" },
-        { label: "Lighting", href: "auctions.html" },
-      ],
-    },
-    {
-      title: "Science",
-      href: "auctions.html",
-      items: [
-        { label: "Instruments", href: "auctions.html" },
-        { label: "Curiosities", href: "auctions.html" },
-        { label: "Discovery", href: "auctions.html" },
+      label: "Sale",
+      children: [
+        { label: "Shop All", href: "shop.html?plp=sale" },
+        {
+          label: "Mens",
+          children: [
+            { label: "Mens Footwear", href: "shop.html?plp=mens-footwear-sale" },
+            { label: "Mens Clothing", href: "shop.html?plp=mens-clothing-sale" },
+            { label: "Mens Accessories", href: "shop.html?plp=mens-accessories-sale" },
+          ],
+        },
+        {
+          label: "Womens",
+          children: [
+            { label: "Womens Footwear", href: "shop.html?plp=womens-footwear-sale" },
+            { label: "Womens Clothing", href: "shop.html?plp=womens-clothing-sale" },
+            { label: "Womens Accessories", href: "shop.html?plp=womens-accessories-sale" },
+          ],
+        },
+        {
+          label: "Brands",
+          children: [
+            { label: "adidas", href: "shop.html?brand=adidas&sale=1" },
+            { label: "AURALEE", href: "shop.html?brand=auralee&sale=1" },
+            { label: "Carhartt WIP", href: "shop.html?brand=carhartt-wip&sale=1" },
+            { label: "C.P Company", href: "shop.html?brand=c-p-company&sale=1" },
+            { label: "Needles", href: "shop.html?brand=needles&sale=1" },
+            { label: "New Balance", href: "shop.html?brand=new-balance&sale=1" },
+            { label: "Paraboot", href: "shop.html?brand=paraboot&sale=1" },
+            { label: "Patagonia", href: "shop.html?brand=patagonia&sale=1" },
+            { label: "Stone Island", href: "shop.html?brand=stone-island&sale=1" },
+            { label: "Universal Works", href: "shop.html?brand=universal-works&sale=1" },
+          ],
+        },
       ],
     },
   ];
-
-  function getBasePath() {
-    const path = window.location.pathname.replace(/\/+/g, "/");
-    if (path.includes("/collections/") || path.includes("/category/") || path.includes("/auctions/") || path.includes("/lot/") || path.includes("/bidding/")) {
-      return "../";
-    }
-    if (path === "/" || path.endsWith("/index.html")) {
-      return "";
-    }
-    return "";
-  }
-
-  function buildMegaMenu(basePath) {
-    return `
-      <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 fixed left-0 right-0 top-[80px] z-[100]">
-        <div class="container mx-auto px-4">
-          <div class="bg-background border border-border rounded-lg shadow-2xl p-6">
-            <div class="flex flex-wrap gap-x-8 gap-y-6">
-              ${MEGA_MENU.map(
-                (group) => `
-                  <div class="min-w-[180px] max-w-[220px] space-y-3">
-                    <a class="block text-sm font-semibold hover:underline underline-offset-4" href="${basePath}${group.href}">${group.title}</a>
-                    <div class="space-y-2">
-                      ${group.items
-                        .map(
-                          (item) =>
-                            `<a class="block text-sm text-muted-foreground hover:text-foreground transition-colors" href="${basePath}${item.href}">${item.label}</a>`
-                        )
-                        .join("")}
-                    </div>
-                  </div>`
-              ).join("")}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function buildHeaderActions() {
-    return `
-      <div class="flex items-center space-x-2 xl:space-x-4">
-        <button data-slot="button" data-header-search-trigger class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9" type="button" aria-label="Search">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search h-5 w-5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-        </button>
-        <div class="relative" data-header-language-root>
-          <button data-slot="dropdown-menu-trigger" data-header-language-trigger class="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-2 text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50" type="button" aria-haspopup="menu" aria-expanded="false" data-state="closed" aria-label="Switch language">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe h-4 w-4"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
-            <span data-current-language class="hidden text-[11px] font-semibold uppercase tracking-wide sm:inline">EN</span>
-            <span class="sr-only">Switch language</span>
-          </button>
-          <div id="header-language-menu" class="hidden absolute right-0 top-full z-[150] mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground p-1 shadow-md">
-            <div class="max-h-80 overflow-y-auto overscroll-contain touch-pan-y" data-language-scroll>
-              ${LANGUAGES.map(
-                (lang) => `
-                  <button type="button" role="menuitem" data-language-code="${lang.code}" class="relative flex w-full cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-hidden transition-colors focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground">
-                    <span class="truncate">${lang.nativeName}</span>
-                  </button>
-                `
-              ).join("")}
-            </div>
-          </div>
-        </div>
-        <div class="hidden xl:flex items-center gap-2" data-auth-controls></div>
-        <button data-slot="button" data-header-mobile-trigger class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 xl:hidden" type="button" aria-label="Menu">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu h-5 w-5"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
-        </button>
-      </div>
-    `;
-  }
-
-  function buildHeader(basePath) {
-    return `
-      <header class="sticky top-0 z-[100] w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div class="container mx-auto px-4 lg:px-8">
-          <div class="flex h-16 md:h-20 items-center justify-between gap-4">
-            <a class="flex items-center shrink-0" href="${basePath}index.html" aria-label="Sotheby's home">
-              <img alt="Sotheby's" width="160" height="33" class="block h-7 md:h-8 w-auto max-w-none" src="${basePath}${LOGO_FILE}" onerror="this.onerror=null;this.src='${basePath}logo.svg%3Fdpl=dpl_E4DfWRBoCFFJeTFNVUWWSdvjyfsT';"/>
-            </a>
-            <nav class="hidden xl:flex items-center space-x-8">
-              <a data-i18n="shopAll" class="text-sm font-medium hover:text-foreground hover:underline underline-offset-4 transition-all" href="${basePath}auctions.html">Shop All</a>
-              <a data-i18n="lastChance" class="text-sm font-medium hover:text-foreground hover:underline underline-offset-4 transition-all" href="${basePath}collections/last-chance.html">Last Chance</a>
-              <div class="relative group">
-                <button data-i18n="categories" class="flex items-center gap-1 text-sm font-medium hover:text-foreground hover:underline underline-offset-4 transition-all" type="button">Categories<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="m6 9 6 6 6-6"></path></svg></button>
-                ${buildMegaMenu(basePath)}
-              </div>
-              <a data-i18n="collections" class="text-sm font-medium hover:text-foreground hover:underline underline-offset-4 transition-all" href="${basePath}collections.html">Collections</a>
-              <a data-i18n="about" class="text-sm font-medium hover:text-foreground hover:underline underline-offset-4 transition-all" href="${basePath}about.html">About</a>
-              <a data-i18n="contact" class="text-sm font-medium hover:text-foreground hover:underline underline-offset-4 transition-all" href="${basePath}contact.html">Contact</a>
-            </nav>
-            ${buildHeaderActions()}
-          </div>
-        </div>
-      </header>
-    `;
-  }
-
-  function replaceHeader() {
-    const basePath = getBasePath();
-    const header = document.querySelector("header");
-    if (header) {
-      header.outerHTML = buildHeader(basePath);
-      return;
-    }
-
-    const body = document.body;
-    if (body) {
-      body.insertAdjacentHTML("afterbegin", buildHeader(basePath));
-    }
-  }
-
-  function fixFooterLogo() {
-    var footerLogo = document.querySelector("footer img");
-    if (!footerLogo) return;
-    footerLogo.setAttribute("src", getBasePath() + "logo1.svg");
-    footerLogo.setAttribute("width", "160");
-    footerLogo.setAttribute("height", "33");
-    footerLogo.className = "block h-8 w-auto max-w-none";
-  }
-
-  function readCookie(name) {
-    const match = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
-    return match ? decodeURIComponent(match[1]) : null;
-  }
-
-  function writeCookie(name, value) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + 365 * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
-  }
+  const MOBILE_SERVICE_ITEMS = [
+    {
+      label: "My Account",
+      children: [
+        { label: "Log in", href: "login.html" },
+        { label: "Wishlist", href: "account.html" },
+      ],
+    },
+    {
+      label: "Customer Service",
+      children: [
+        { label: "FAQs", href: "faq.html" },
+        { label: "Contact Us", href: "contact.html" },
+        { label: "Delivery", href: "shipping.html" },
+        { label: "Returns", href: "shipping.html" },
+        { label: "Privacy", href: "privacy.html" },
+        { label: "Terms", href: "terms.html" },
+      ],
+    },
+  ];
+  let searchState = { products: null, query: "", loading: false, results: [] };
+  let searchTimer = null;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -763,1606 +326,770 @@
       .replace(/'/g, "&#39;");
   }
 
-  function readAuthStorage(key, fallbackValue) {
-    try {
-      const rawValue = window.localStorage.getItem(key);
-      return rawValue ? JSON.parse(rawValue) : fallbackValue;
-    } catch (_error) {
-      return fallbackValue;
-    }
+  function getBasePath() {
+    const currentPath = window.location.pathname.replace(/\/+/g, "/");
+    const parts = currentPath.split("/").filter(Boolean);
+    if (!parts.length) return "";
+    const lastPart = parts[parts.length - 1] || "";
+    const folderDepth = /\.[a-z0-9]+$/i.test(lastPart) ? parts.length - 1 : parts.length;
+    return folderDepth > 0 ? "../".repeat(folderDepth) : "";
   }
 
-  function writeAuthStorage(key, value) {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (_error) {}
-  }
-
-  function getStoredUsers() {
-    const users = readAuthStorage(AUTH_USERS_KEY, readAuthStorage(LEGACY_AUTH_USERS_KEY, []));
-    return Array.isArray(users) ? users : [];
-  }
-
-  function getStoredSession() {
-    const session = readAuthStorage(AUTH_SESSION_KEY, readAuthStorage(LEGACY_AUTH_SESSION_KEY, null));
-    return session && typeof session === "object" ? session : null;
+  function withBase(basePath, href) {
+    if (/^https?:\/\//i.test(href)) return href;
+    return basePath + href;
   }
 
   function sanitizeUser(user) {
     if (!user) return null;
+    const firstName = user.firstName || user.first_name || "";
+    const lastName = user.lastName || user.last_name || "";
     return {
       id: user.id,
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
-      fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Collector",
+      firstName,
+      lastName,
+      fullName: (firstName + " " + lastName).trim() || user.email || "Customer",
       email: user.email || "",
       phone: user.phone || "",
-      createdAt: user.createdAt || "",
+      createdAt: user.createdAt || user.created_at || "",
     };
   }
 
   function getCurrentUser() {
-    if (window.__AUCTIO_AUTH_USER) {
-      return sanitizeUser(window.__AUCTIO_AUTH_USER);
-    }
-    const session = getStoredSession();
-    if (!session || !session.userId) return null;
-    const users = getStoredUsers();
-    return sanitizeUser(users.find((user) => user.id === session.userId) || null);
+    if (window.__AUCTIO_AUTH_USER) return sanitizeUser(window.__AUCTIO_AUTH_USER);
+    return null;
   }
 
   function dispatchAuthChange() {
-    window.dispatchEvent(new CustomEvent(AUTH_EVENT, { detail: { user: getCurrentUser() } }));
-    window.dispatchEvent(new CustomEvent("auctio:auth", { detail: { user: getCurrentUser() } }));
+    const user = getCurrentUser();
+    window.dispatchEvent(new CustomEvent(AUTH_EVENT, { detail: { user } }));
+    window.dispatchEvent(new CustomEvent("auctio:auth", { detail: { user } }));
   }
 
-  function registerAuthUser(payload) {
-    const users = getStoredUsers();
-    const email = String(payload.email || "").trim().toLowerCase();
-    if (!email) throw new Error("Email is required.");
-    if (users.some((user) => user.email === email)) throw new Error("An account with this email already exists.");
-    if (String(payload.password || "").length < 8) throw new Error("Password must be at least 8 characters.");
-
-    const user = {
-      id: `user_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
-      firstName: String(payload.firstName || "").trim(),
-      lastName: String(payload.lastName || "").trim(),
-      email,
-      phone: String(payload.phone || "").trim(),
-      password: String(payload.password || ""),
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(user);
-    writeAuthStorage(AUTH_USERS_KEY, users);
-    writeAuthStorage(AUTH_SESSION_KEY, { userId: user.id, createdAt: new Date().toISOString() });
-    dispatchAuthChange();
-    return sanitizeUser(user);
-  }
-
-  function loginAuthUser(email, password) {
-    const normalizedEmail = String(email || "").trim().toLowerCase();
-    const user = getStoredUsers().find((entry) => entry.email === normalizedEmail);
-    if (!user || user.password !== String(password || "")) throw new Error("Incorrect email or password.");
-
-    writeAuthStorage(AUTH_SESSION_KEY, { userId: user.id, createdAt: new Date().toISOString() });
-    dispatchAuthChange();
-    return sanitizeUser(user);
-  }
-
-  function logoutAuthUser() {
-    try {
-      window.localStorage.removeItem(AUTH_SESSION_KEY);
-      window.localStorage.removeItem(LEGACY_AUTH_SESSION_KEY);
-    } catch (_error) {}
-    dispatchAuthChange();
-  }
-
-  function getUserInitials(user) {
-    const parts = [user && user.firstName, user && user.lastName].filter(Boolean);
-    if (parts.length) {
-      return parts
-        .map((part) => String(part).trim().charAt(0).toUpperCase())
-        .join("")
-        .slice(0, 2);
+  function backend() {
+    if (!window.HipStoreBackend) {
+      throw new Error("Supabase client is not loaded.");
     }
-    return String((user && user.email) || "A").charAt(0).toUpperCase();
+    return window.HipStoreBackend;
+  }
+
+  async function refreshCurrentUser() {
+    if (!window.HipStoreBackend) return getCurrentUser();
+    const user = await window.HipStoreBackend.getCurrentUser();
+    window.__AUCTIO_AUTH_USER = user || null;
+    dispatchAuthChange();
+    return getCurrentUser();
+  }
+
+  async function registerAuthUser(payload) {
+    const user = await backend().register(payload);
+    window.__AUCTIO_AUTH_USER = user || null;
+    dispatchAuthChange();
+    return sanitizeUser(user);
+  }
+
+  async function loginAuthUser(email, password) {
+    const user = await backend().login(email, password);
+    window.__AUCTIO_AUTH_USER = user || null;
+    dispatchAuthChange();
+    return sanitizeUser(user);
+  }
+
+  async function logoutAuthUser() {
+    if (window.HipStoreBackend) await window.HipStoreBackend.logout();
+    window.__AUCTIO_AUTH_USER = null;
+    dispatchAuthChange();
   }
 
   function buildAuthPageUrl(pageName, basePath) {
-    const redirectTo = `${window.location.pathname}${window.location.search || ""}${window.location.hash || ""}`;
-    return `${basePath}${pageName}.html?redirect=${encodeURIComponent(redirectTo)}`;
+    const redirectTo = window.location.pathname + (window.location.search || "") + (window.location.hash || "");
+    return basePath + pageName + ".html?redirect=" + encodeURIComponent(redirectTo);
   }
 
   function getPostAuthRedirect(basePath) {
     const redirect = new URLSearchParams(window.location.search).get("redirect");
-    if (!redirect) return `${basePath}account.html`;
-    if (redirect.startsWith("http://") || redirect.startsWith("https://")) return `${basePath}account.html`;
-    if (
-      /(^|\/)(login|register|account)\.html(?:$|[?#])/.test(redirect) ||
-      redirect === "login" ||
-      redirect === "register" ||
-      redirect === "account"
-    ) {
-      return `${basePath}account.html`;
-    }
+    if (!redirect || /^https?:\/\//i.test(redirect)) return basePath + "account.html";
+    if (/(^|\/)(login|register|account)\.html(?:$|[?#])/.test(redirect)) return basePath + "account.html";
     return redirect;
   }
 
-  function renderAuthControls(basePath) {
-    const container = document.querySelector("[data-auth-controls]");
-    if (!container) return;
+  function getUserInitials(user) {
+    const parts = [user && user.firstName, user && user.lastName].filter(Boolean);
+    if (parts.length) return parts.map((part) => String(part).charAt(0).toUpperCase()).join("").slice(0, 2);
+    return String((user && user.email) || "A").charAt(0).toUpperCase();
+  }
 
+  function navLinksHtml(basePath, className) {
+    return SHOP_LINKS.map((link) => '<a class="' + className + '" href="' + withBase(basePath, link.href) + '">' + link.label + '</a>').join("");
+  }
+
+  function logoMarkHtml() {
+    return '<span aria-hidden="true" style="display:block;color:#111;line-height:.88;letter-spacing:0;text-transform:uppercase"><span style="display:block;font-size:10px;font-weight:800;letter-spacing:1.6px">The</span><span style="display:block;font-size:20px;font-weight:900;letter-spacing:.2px;white-space:nowrap">Hip Store</span></span>';
+  }
+
+  function buildAuthControls(basePath) {
     const user = getCurrentUser();
     if (!user) {
-      container.innerHTML = `
-        <a data-i18n="login" class="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground transition-all h-10" href="${buildAuthPageUrl("login", basePath)}">Login</a>
-        <a data-i18n="register" class="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow-xs transition-all h-10 hover:opacity-90" href="${buildAuthPageUrl("register", basePath)}">Register</a>
-      `;
+      return '' +
+        '<a class="inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium hover:bg-accent" href="' + buildAuthPageUrl("login", basePath) + '">Login</a>' +
+        '<a class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90" href="' + buildAuthPageUrl("register", basePath) + '">Register</a>';
+    }
+    return '' +
+      '<div class="relative" data-auth-menu-root>' +
+        '<button type="button" data-auth-menu-trigger aria-expanded="false" class="inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium hover:bg-accent">' +
+          '<span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">' + escapeHtml(getUserInitials(user)) + '</span>' +
+          '<span class="max-w-32 truncate">' + escapeHtml(user.fullName || user.email) + '</span>' +
+        '</button>' +
+        '<div data-auth-menu class="hidden absolute right-0 top-full z-[150] mt-3 w-56 rounded-md border border-border bg-background p-1 shadow-md">' +
+          '<a class="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent" href="' + basePath + 'account.html">Account</a>' +
+          '<a class="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent" href="' + basePath + 'account.html?tab=orders">Orders</a>' +
+          '<button type="button" data-auth-logout class="block w-full rounded-sm px-2 py-1.5 text-left text-sm text-red-600 hover:bg-accent">Logout</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderAuthControls(basePath) {
+    document.querySelectorAll("[data-auth-controls]").forEach((container) => {
+      container.innerHTML = buildAuthControls(basePath);
+    });
+    syncMobileMenuFooterAuth(basePath);
+  }
+
+  function syncMobileMenuFooterAuth(basePath) {
+    const user = getCurrentUser();
+    const signedOutLink = document.getElementById("myAccountLinkToModal");
+    const signedInLink = document.getElementById("loggedInMenuLink");
+    if (!signedOutLink || !signedInLink) return;
+    signedOutLink.href = basePath + "account.html";
+    signedInLink.href = basePath + "account.html";
+    if (user) {
+      signedOutLink.hidden = true;
+      signedOutLink.style.display = "none";
+      signedInLink.hidden = false;
+      signedInLink.style.display = "";
+    } else {
+      signedOutLink.hidden = false;
+      signedOutLink.style.display = "";
+      signedInLink.hidden = true;
+      signedInLink.style.display = "none";
+    }
+  }
+
+  function searchIconSvg() {
+    return '<svg id="open" xmlns="http://www.w3.org/2000/svg" width="19.996" height="20" viewBox="0 0 19.996 20"><path d="M8.333 0a8.339 8.339 0 0 1 6.355 13.732l5.079 4.956a.759.759 0 0 1 .013 1.073l-.012.012a.794.794 0 0 1-1.11 0l-5.08-4.957A8.336 8.336 0 1 1 8.333 0zm0 1.668A6.67 6.67 0 1 0 15 8.338a6.669 6.669 0 0 0-6.667-6.67z"></path></svg>';
+  }
+
+  function closeIconSvg() {
+    return '<svg id="close" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M21.724 8.391a1.333 1.333 0 1 1 1.886 1.886L17.886 16l5.723 5.724a1.334 1.334 0 0 1 .141 1.72l-.141.165a1.333 1.333 0 0 1-1.886 0L16 17.886l-5.724 5.723a1.334 1.334 0 0 1-1.72.141l-.165-.141a1.333 1.333 0 0 1 0-1.886L14.114 16l-5.723-5.724a1.334 1.334 0 0 1-.141-1.72l.141-.165a1.333 1.333 0 0 1 1.886 0L16 14.114z" transform="translate(-8 -8)"></path></svg>';
+  }
+
+  function accountIconSvg() {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="15.5" height="20.5" viewBox="0 0 15.5 20.5"><g><g fill="#fff"><path d="M18.125 20.125H2.875V14.49c0-2.559 1.622-4.875 4.058-5.826C5.94 7.697 5.375 6.374 5.375 5c0-2.826 2.3-5.125 5.125-5.125 2.826 0 5.125 2.3 5.125 5.125 0 1.373-.565 2.697-1.558 3.664 2.436.95 4.058 3.267 4.058 5.827v5.634zM4.008 19.082h12.985V14.49c0-2.37-1.62-4.442-3.944-5.055-.779.45-1.659.689-2.549.689-.89 0-1.77-.238-2.549-.69-2.324.614-3.943 2.686-3.943 5.056v4.59zM10.5.958C8.271.958 6.458 2.771 6.458 5c0 1.334.662 2.583 1.77 3.34.536.365 1.189.595 1.887.662.049.005.097.011.144.018.083.011.162.022.241.022.08 0 .158-.011.24-.022.048-.007.096-.013.145-.018.698-.067 1.35-.297 1.886-.663 1.109-.756 1.77-2.005 1.77-3.339 0-2.229-1.812-4.042-4.041-4.042z" transform="translate(.25 .25) translate(-3)"></path><path d="M10.5 0c-2.75 0-5 2.25-5 5 0 1.47.647 2.793 1.666 3.71C4.74 9.573 3 11.835 3 14.49V20h15v-5.51c0-2.656-1.74-4.918-4.166-5.78C14.854 7.794 15.5 6.47 15.5 5c0-2.75-2.25-5-5-5m0 9.167c-.136 0-.264-.028-.397-.04-.714-.07-1.381-.3-1.945-.684C7.058 7.692 6.333 6.429 6.333 5c0-2.298 1.87-4.167 4.167-4.167 2.297 0 4.167 1.87 4.167 4.167 0 1.43-.725 2.692-1.825 3.443-.564.385-1.231.614-1.945.684-.133.012-.261.04-.397.04m0 .833c.922 0 1.787-.257 2.53-.698 2.347.596 4.088 2.693 4.088 5.189v4.716H3.882V14.49c0-2.496 1.741-4.593 4.088-5.19.743.442 1.608.699 2.53.699m0-10.25c2.895 0 5.25 2.355 5.25 5.25 0 1.344-.529 2.642-1.462 3.619 2.385 1.01 3.962 3.323 3.962 5.872v5.759H2.75v-5.76c0-2.548 1.577-4.86 3.962-5.871C5.78 7.642 5.25 6.344 5.25 5c0-2.895 2.355-5.25 5.25-5.25zm0 9.167c.071 0 .145-.01.224-.021.05-.007.099-.013.15-.018.676-.066 1.308-.288 1.827-.642 1.074-.733 1.716-1.943 1.716-3.236 0-2.16-1.757-3.917-3.917-3.917S6.583 2.84 6.583 5c0 1.293.642 2.503 1.716 3.236.519.354 1.15.576 1.828.642l.15.018c.078.01.152.02.223.02zm0 1.333c-.895 0-1.78-.235-2.566-.68-2.243.615-3.802 2.624-3.802 4.92v4.467h12.736V14.49c0-2.297-1.559-4.306-3.802-4.921-.786.445-1.671.68-2.566.68z" transform="translate(.25 .25) translate(-3)"></path></g></g></svg>';
+  }
+
+  function basketIconSvg() {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path id="BASKET" d="M19.655 6.565v12.211H2.344V6.565zm-8.642-5.341A3.457 3.457 0 0 1 14.6 4.616v.726H7.4v-.726a3.472 3.472 0 0 1 3.613-3.392zm4.934 4.118v-.726A4.732 4.732 0 0 0 11.013 0a4.747 4.747 0 0 0-4.961 4.616v.726H2.624A1.463 1.463 0 0 0 1 6.752v11.866A1.379 1.379 0 0 0 2.624 20h16.913C20.668 20 21 19.388 21 18.618V6.752a1.37 1.37 0 0 0-1.463-1.41z" transform="translate(-1)"></path></svg>';
+  }
+
+  function backIconSvg() {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 200 200"><defs><style>.cls-1{fill-rule:evenodd;}</style></defs><path id="WISH" class="cls-1" d="M143.121,100.461l0.039,0.039-0.687.687a25.956,25.956,0,0,1-2.286,2.286L100,143.66,59.813,103.473a26.034,26.034,0,0,1-2.286-2.286L56.84,100.5l0.039-.039A25.985,25.985,0,0,1,96.488,66.827L100,70.34l3.513-3.513A25.985,25.985,0,0,1,143.121,100.461ZM123,66a17.935,17.935,0,0,0-13.366,5.974l-0.13-.131-9.5,9.5-9.5-9.5-0.131.131a17.984,17.984,0,0,0-28.2,22.2L61.84,94.5,100,132.66,138.16,94.5l-0.324-.324A17.987,17.987,0,0,0,123,66Z"></path></svg>';
+  }
+
+  function readCartCount() {
+    try {
+      const raw = JSON.parse(window.localStorage.getItem(CART_KEY) || "[]");
+      return Array.isArray(raw) ? raw.reduce((sum, item) => sum + Math.max(1, Number(item && item.quantity || 1)), 0) : 0;
+    } catch (_error) {
+      return 0;
+    }
+  }
+
+  function setBasketCount(count) {
+    document.querySelectorAll("[data-basket-count]").forEach((node) => {
+      node.textContent = String(count);
+      node.hidden = count === 0;
+      node.setAttribute("title", count === 1 ? "1 Item in your basket" : count + " Items in your basket");
+    });
+  }
+
+  async function refreshRemoteCartCount() {
+    if (!window.HipStoreBackend || !window.HipStoreBackend.isConfigured || !window.HipStoreBackend.isConfigured() || typeof window.HipStoreBackend.getCart !== "function") {
+      setBasketCount(readCartCount());
       return;
     }
-
-    container.innerHTML = `
-      <div class="relative" data-auth-menu-root>
-        <button type="button" data-auth-menu-trigger aria-expanded="false" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] hover:bg-accent hover:text-accent-foreground h-9 py-2 gap-2 px-3">
-          <div class="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-medium text-sm">${escapeHtml(getUserInitials(user).charAt(0))}</div>
-          <div class="text-left hidden lg:block">
-            <div class="text-sm font-medium leading-none truncate max-w-[140px]">${escapeHtml(user.fullName)}</div>
-            <div class="text-xs text-muted-foreground mt-1 truncate max-w-[140px]">${escapeHtml(user.email)}</div>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="m6 9 6 6 6-6"></path></svg>
-        </button>
-        <div data-auth-menu class="hidden absolute right-0 top-full z-[150] mt-3 w-56 overflow-x-hidden overflow-y-auto rounded-md border border-border bg-background p-1 shadow-md">
-          <a href="${basePath}account.html?tab=overview" class="relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            Overview
-          </a>
-          <a href="${basePath}account.html?tab=bids" class="relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"></path><path d="m16 16 6-6"></path><path d="m8 8 6-6"></path><path d="m9 7 8 8"></path><path d="m21 11-8-8"></path></svg>
-            Active Bids
-          </a>
-          <a href="${basePath}account.html?tab=watchlist" class="relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
-            Watchlist
-          </a>
-          <a href="${basePath}account.html?tab=history" class="relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            Viewing History
-          </a>
-          <a href="${basePath}account.html?tab=settings" class="relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            Settings
-          </a>
-          <button type="button" data-auth-logout class="relative flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-left text-red-600 transition-colors hover:bg-accent hover:text-red-600">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
-            Log Out
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  function buildMobileAuthSection(basePath) {
-    const user = getCurrentUser();
-    if (!user) {
-      return `
-        <div class="flex gap-2 mb-6">
-          <a class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 flex-1 bg-transparent" href="${buildAuthPageUrl("login", basePath)}">Login</a>
-          <a class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 flex-1" href="${buildAuthPageUrl("register", basePath)}">Register</a>
-        </div>
-      `;
+    try {
+      const result = await window.HipStoreBackend.getCart();
+      const items = Array.isArray(result && result.items) ? result.items : [];
+      try {
+        window.localStorage.setItem(CART_KEY, JSON.stringify(items.slice(0, 30)));
+      } catch (_error) {
+        // Ignore storage failures.
+      }
+      const count = items.reduce((sum, item) => sum + Math.max(1, Number(item && item.quantity || 1)), 0);
+      setBasketCount(count);
+    } catch (_error) {
+      setBasketCount(readCartCount());
     }
-
-    return `
-      <a class="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-4 mb-4 transition-colors hover:bg-muted/50" href="${basePath}account.html">
-        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-amber-700 text-lg font-semibold text-white">${escapeHtml(getUserInitials(user).charAt(0))}</div>
-        <div class="min-w-0 flex-1">
-          <div class="truncate text-sm font-semibold">${escapeHtml(user.fullName)}</div>
-          <div class="truncate text-xs text-muted-foreground">${escapeHtml(user.email)}</div>
-        </div>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 flex-shrink-0 text-muted-foreground"><path d="m9 18 6-6-6-6"></path></svg>
-      </a>
-      <button type="button" data-mobile-logout class="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-md border border-red-600/20 bg-transparent px-4 py-2 text-sm font-medium text-red-600 shadow-xs transition-all hover:bg-red-50 hover:text-red-700 h-9 mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
-        Log Out
-      </button>
-    `;
   }
 
-  function buildMobileCategories(basePath) {
-    return `
-      <div data-mobile-categories-view class="hidden flex-col h-full min-h-0">
-        <div class="p-6 border-b border-border flex-shrink-0">
-          <button type="button" data-mobile-categories-back class="flex items-center gap-2 text-sm font-medium hover:underline underline-offset-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 rotate-180"><path d="m9 18 6-6-6-6"></path></svg>
-            Back
-          </button>
-        </div>
-        <nav class="flex flex-col p-6 flex-1 overflow-y-auto min-h-0">
-          ${MEGA_MENU.map(
-            (group) => `
-              <div>
-                <button type="button" data-mobile-category-group class="flex items-center gap-4 py-5 group w-full text-left">
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-base line-clamp-1">${group.title}</div>
-                  </div>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 flex-shrink-0 transition-transform"><path d="m6 9 6 6 6-6"></path></svg>
-                </button>
-                <div data-mobile-category-panel class="hidden pb-4">
-                  <a class="block pb-3 text-sm font-semibold hover:underline underline-offset-4" href="${basePath}${group.href}">View all ${group.title}</a>
-                  <div class="space-y-3">
-                    ${group.items
-                      .map(
-                        (item) => `<a class="block text-sm text-muted-foreground hover:text-foreground transition-colors" href="${basePath}${item.href}">${item.label}</a>`
-                      )
-                      .join("")}
-                  </div>
-                </div>
-                <div class="h-px w-full bg-border"></div>
-              </div>
-            `
-          ).join("")}
-        </nav>
-      </div>
-    `;
+  function ensureHeaderStyles() {
+    if (document.getElementById("hip-original-header-style")) return;
+    document.head.insertAdjacentHTML("beforeend", '<style id="hip-original-header-style">' +
+      '.hidden{display:none!important}.hip-original-header{position:sticky;top:0;z-index:100;background:#050505;color:#fff}.hip-original-header *{box-sizing:border-box;font-family:"Open Sans",Arial,Helvetica,sans-serif;letter-spacing:0}.hip-original-header a,.hip-original-header button,.hip-original-header span{color:inherit;text-decoration:none}.hip-original-header button{font:inherit}.hip-original-header #head{position:relative;display:flex;min-height:62px;align-items:center;justify-content:space-between;background:#050505;padding:0 13px 0 16px}.hip-original-header .logo{display:inline-flex;align-items:center}.hip-original-header .headerLogo{display:block;width:96px;height:auto;filter:invert(1)}.hip-original-header #headLeft{display:flex;align-items:center}.hip-original-header #headRight{display:flex;align-items:center;gap:7px;margin-left:auto}.hip-original-header #headRight>a,.hip-original-header #headRight>button{position:relative;display:inline-grid;width:34px;height:44px;place-items:center;border:0;background:transparent;padding:0;cursor:pointer}.hip-original-header #headRight svg{fill:currentColor}.hip-original-header .headerIcon,.hip-original-header #headRight svg{width:21px;height:21px;object-fit:contain}.hip-original-header .basketIcon,.hip-original-header .menuIcon{filter:invert(1)}.hip-original-header .srch #close{display:none}.hip-original-header .srch.is-open #open{display:none}.hip-original-header .srch.is-open #close{display:block}.hip-original-header .back,.hip-original-header .open{display:none!important}.hip-original-header .basketCount{position:absolute;top:5px;right:-2px;min-width:16px;height:16px;border-radius:999px;background:#fff;color:#000;font-size:10px;font-weight:800;line-height:16px;text-align:center}.hip-original-header #cartSummaryOverlay,.hip-original-header #userMenuContainer,.hip-original-header #miniCart,.hip-original-header #headBot{display:none}.hip-original-header #search{position:absolute;right:0;left:0;top:100%;z-index:101;background:#fff;color:#111;border-bottom:1px solid #e7e8e9;padding:10px 10px 0}.hip-original-header #searchBar,.hip-original-header .inpBg,.hip-original-header .srchInputContainer{display:flex;width:100%;align-items:center}.hip-original-header .inpBg{position:relative}.hip-original-header .srchInputContainer{min-height:42px;border:1px solid #d8d8d8;background:#fff;padding:0 8px}.hip-original-header #srchInput{min-width:0;flex:1;border:0;outline:0;padding:0 10px;font-size:15px}.hip-original-header #srchButton{position:absolute;width:1px;height:1px;opacity:0}.hip-original-header #clearInput{display:inline-grid;width:28px;height:28px;place-items:center;border:0;background:transparent;color:#111;cursor:pointer}.hip-original-header #clearInput:before{content:"x";font-size:18px;line-height:1}.hip-original-header #speechInput{display:none!important}.hip-original-header #search .srch{display:inline-grid;width:42px;place-items:center;border:0;background:transparent;color:#111}.hip-original-header #enhancedSearch{padding:14px 0 0}.hip-original-header #enhancedSearch>ul{margin:0;padding:0;list-style:none}.hip-original-header #liveSearchResultsContent,.hip-original-header #recentSearchesContent{display:block}.hip-original-header #recentSearchesContent h2,.hip-original-header .liveSearchHeading{margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid #ececec;color:#111;font-size:12px;font-weight:800;line-height:1.4;text-transform:uppercase}.hip-original-header .liveSearchHeading{margin-top:0}.hip-original-header .liveSearchList,.hip-original-header #recentSearchesList{margin:0;padding:0;list-style:none}.hip-original-header .liveSearchList li,.hip-original-header #recentSearchesList li{border-bottom:1px solid #f0f0f0}.hip-original-header .liveSearchList li:last-child,.hip-original-header #recentSearchesList li:last-child{border-bottom:0}.hip-original-header .liveSearchResult{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;align-items:center;padding:10px 0}.hip-original-header .liveSearchResult img{display:block;width:58px;height:58px;border:1px solid #ececec;background:#f6f6f6;object-fit:contain;padding:3px}.hip-original-header .liveSearchMeta{min-width:0}.hip-original-header .liveSearchMeta strong{display:block;margin-bottom:2px;color:#111;font-size:12px;font-weight:700;line-height:1.45;text-transform:none}.hip-original-header .liveSearchMeta span{display:block;color:#666;font-size:10px;font-weight:700;line-height:1.45;text-transform:uppercase}.hip-original-header .liveSearchMeta em{display:block;margin-top:3px;color:#111;font-size:12px;font-style:normal;font-weight:700;line-height:1.45}.hip-original-header .searchEmpty{padding:4px 0 12px;color:#666;font-size:12px;line-height:1.5}.hip-original-header #recentSearchesList a{display:block;padding:10px 0;color:#111;font-size:12px;font-weight:700;line-height:1.45;text-decoration:none}.hip-original-header #clearRecentSearches{display:block;width:100%;border:0;border-top:1px solid #ececec;background:#fff;padding:12px 0 14px;color:#666;font-size:11px;font-weight:800;line-height:1.4;text-transform:uppercase;text-align:left;cursor:pointer}.hip-original-header #clearRecentSearches.hidden,.hip-original-header #recentSearchesContent.hidden{display:none!important}.hip-nav-scrim{position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.52)}.hip-nav-panel{position:fixed;top:0;bottom:0;left:50%;z-index:141;width:min(420px,100vw);max-width:100%;transform:translateX(-50%);overflow-y:auto;background:#fff;color:#111}.hip-nav-head{display:flex;min-height:63px;align-items:center;justify-content:space-between;background:#050505;padding:0 14px}.hip-nav-head img{width:96px;filter:invert(1)}.hip-nav-head button{display:inline-grid;width:34px;height:34px;place-items:center;border:0;background:transparent;color:#fff;cursor:pointer}.hip-nav-head button svg{width:18px;height:18px;fill:currentColor}.hip-nav-panel ul{margin:0;padding:0;list-style:none}.hip-nav-panel li{border-bottom:1px solid #e7e8e9}.hip-nav-panel a,.hip-nav-panel summary{display:flex;min-height:50px;align-items:center;justify-content:space-between;padding:0 18px;font-size:14px;font-weight:800;text-transform:uppercase}.hip-nav-panel .menu ul{background:#fff}.hip-nav-panel .menu ul a,.hip-nav-panel .menu ul summary{min-height:40px;padding-left:34px;color:#333;font-size:13px;font-weight:600;text-transform:none}.hip-nav-panel .menu ul ul a,.hip-nav-panel .menu ul ul summary{padding-left:50px;font-size:12px}.hip-nav-panel summary{cursor:pointer;list-style:none}.hip-nav-panel summary::-webkit-details-marker{display:none}.hip-nav-panel summary:after{content:"+";font-size:22px;font-weight:400}.hip-nav-panel details[open]>summary:after{content:"-"}.hip-auth-links{display:grid;gap:8px;padding:16px 18px}.hip-auth-links a,.hip-auth-links button{min-height:42px;border:1px solid #111;background:#fff;color:#111;padding:0 12px;font-size:12px;font-weight:900;text-align:center;text-transform:uppercase;cursor:pointer}.hip-auth-links a:first-child{background:#111;color:#fff}@media(max-width:1180px){.hip-nav-panel{left:0;transform:none}}' +
+      '</style>');
   }
 
-  function buildMobileMenu(basePath) {
-    return `
-      <div data-header-mobile-overlay class="hidden fixed inset-0 z-[205] bg-black/50 backdrop-blur-[1px]"></div>
-      <div role="dialog" aria-modal="true" data-header-mobile-menu class="hidden fixed inset-y-0 right-0 z-[210] h-full w-full border-l bg-background shadow-lg sm:max-w-sm sm:w-3/4">
-        <div class="flex h-full flex-col">
-          <div class="flex flex-col gap-1.5 border-b border-border p-6">
-            <img alt="Auction House" width="120" height="30" class="h-8 w-auto" src="${basePath}logo1.svg" />
-          </div>
-          <nav data-mobile-main-nav class="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-            ${buildMobileAuthSection(basePath)}
-            <div class="mb-4 h-px w-full bg-border"></div>
-            <a class="py-4 text-lg font-medium transition-all hover:text-foreground hover:underline underline-offset-4" href="${basePath}auctions.html">Shop All</a>
-            <div class="h-px w-full bg-border"></div>
-            <a class="py-4 text-lg font-medium transition-all hover:text-foreground hover:underline underline-offset-4" href="${basePath}collections/last-chance.html">Last Chance</a>
-            <div class="h-px w-full bg-border"></div>
-            <button type="button" data-mobile-categories-trigger class="flex items-center justify-between py-4 text-left text-lg font-medium transition-all hover:text-foreground hover:underline underline-offset-4">
-              <span>Categories</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 transition-transform"><path d="m9 18 6-6-6-6"></path></svg>
-            </button>
-            <div class="h-px w-full bg-border"></div>
-            <a class="py-4 text-lg font-medium transition-all hover:text-foreground hover:underline underline-offset-4" href="${basePath}collections.html">Collections</a>
-            <div class="h-px w-full bg-border"></div>
-            <a class="py-4 text-lg font-medium transition-all hover:text-foreground hover:underline underline-offset-4" href="${basePath}about.html">About</a>
-            <div class="h-px w-full bg-border"></div>
-            <a class="py-4 text-lg font-medium transition-all hover:text-foreground hover:underline underline-offset-4" href="${basePath}contact.html">Contact</a>
-          </nav>
-          ${buildMobileCategories(basePath)}
-          <button type="button" data-mobile-menu-close class="absolute right-4 top-4 rounded-xs opacity-70 transition-opacity hover:opacity-100">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-            <span class="sr-only">Close</span>
-          </button>
-        </div>
-      </div>
-    `;
+  function ensureOriginalMenuStyles() {
+    if (document.getElementById("hip-original-mobile-menu-style")) return;
+    document.head.insertAdjacentHTML("beforeend", '<style id="hip-original-mobile-menu-style">' +
+      '#navBackground{position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.52)}#nav{position:fixed;top:0;bottom:0;left:50%;z-index:141;width:min(1180px,100vw);max-width:100%;transform:translateX(-50%);overflow-y:auto;background:#fff;color:#111;-webkit-overflow-scrolling:touch}#nav .menu{margin:0;padding:0;list-style:none;background:#fff}#nav .top-nav-header{display:flex;min-height:62px;align-items:center;justify-content:space-between;background:#050505;padding:0 14px}#nav .top-nav-header .headerLogo{width:96px;height:auto;filter:invert(1)}#nav .close-nav{display:inline-grid;width:34px;height:34px;place-items:center;color:#fff;text-decoration:none}#nav .close-nav svg{width:16px;height:16px;fill:currentColor}#nav li{list-style:none;border-bottom:1px solid #e7e8e9}#nav li a{display:flex;min-height:50px;align-items:center;justify-content:space-between;padding:0 18px;color:#111;font-size:14px;font-weight:800;line-height:1.25;text-transform:uppercase;text-decoration:none}#nav li.level1>a{min-height:40px;padding-left:34px;color:#333;font-size:13px;font-weight:600;text-transform:none}#nav li.level2>a{padding-left:50px;font-size:12px}#nav li.wChild>a::after{content:\"\";display:block;width:8px;height:8px;margin-left:12px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .18s ease}#nav li.wChild.is-open>a::after{transform:rotate(45deg)}#nav .acitem{display:none;margin:0;padding:0;list-style:none;background:#fff}#nav li.is-open>.acitem{display:block!important;left:0!important}#navServiceContainer{display:grid;margin-top:12px;border-top:1px solid #e7e8e9;border-bottom:1px solid #e7e8e9;background:#fff}#navServiceContainer .navServiceMenu{margin:0;padding:0;list-style:none;background:#fff}#navServiceContainer li{border-bottom:1px solid #e7e8e9}#navServiceContainer li:last-child{border-bottom:0}#navServiceContainer li.level0>a{min-height:52px;padding:0 18px;font-size:13px;font-weight:800;text-transform:uppercase}#navServiceContainer li.wChild>a::after{content:\"→\";display:block;width:auto;height:auto;margin-left:12px;border:0;font-size:16px;line-height:1;transform:none}#navServiceContainer li.wChild.is-open>a::after{transform:rotate(90deg)}#navServiceContainer li.level1>a{min-height:40px;padding-left:34px;color:#333;font-size:13px;font-weight:600;text-transform:none}#navFooterContainer{display:grid;padding-top:0;background:#fff}#navFooterContainer a{display:flex;min-height:52px;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid #e7e8e9;color:#111;font-size:13px;font-weight:800;line-height:1.3;text-transform:uppercase;text-decoration:none}#navFooterContainer a:last-child{border-bottom:0}#navFooterContainer img{display:block;width:17px;height:17px;object-fit:contain}#navLoader{display:none}@media(max-width:1180px){#nav{left:0;transform:none;width:100%}}' +
+      '</style>');
+  }
+
+  function ensureSearchPanelStyles() {
+    if (document.getElementById("hip-original-search-panel-style")) return;
+    document.head.insertAdjacentHTML("beforeend", '<style id="hip-original-search-panel-style">' +
+      '.hip-original-header #trendingSearches{display:block;padding-bottom:8px}.hip-original-header #trendingSearches.hidden{display:none!important}.hip-original-header #trendingSearches ul{margin:0;padding:0;list-style:none}.hip-original-header #trendingSearches li{border-bottom:1px solid #f0f0f0}.hip-original-header #trendingSearches li:last-child{border-bottom:0}.hip-original-header #trendingSearches li.title{margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid #ececec;color:#111;font-size:12px;font-weight:800;line-height:1.4;text-transform:uppercase}.hip-original-header #trendingSearches li.title+li{border-top:0}.hip-original-header #trendingSearches a{display:block;padding:10px 0;color:#111;font-size:12px;font-weight:700;line-height:1.45;text-decoration:none}' +
+      '</style>');
+  }
+
+  function buildHeader(basePath) {
+    return '' +
+      '<header class="hip-original-header">' +
+        '<div id="head" data-e2e="header-wrap" class="">' +
+          '<a class="logo " href="' + basePath + 'index.html"><img class="headerLogo" src="' + LOGO_URL + '" title="The Hip Store" alt="The Hip Store"></a>' +
+          '<div id="headLeft"></div>' +
+          '<div id="headRight">' +
+            '<a class="srch" href="#!" data-header-search-trigger data-e2e="header-search-toggle" aria-label="Search">' + searchIconSvg() + closeIconSvg() + '</a>' +
+            '<a class="ga-ip" rel="nofollow" data-e2e="homePage-userMenu-myAccount" data-ip-position="header-sign in" href="' + basePath + 'account.html">' + accountIconSvg() + '</a>' +
+            '<a class="bskt" data-e2e="basket-go-to" href="' + basePath + 'checkout/index.html" title="">' +
+              '<div id="cartSummaryOverlay" class="eq1"><img src="' + ASSET_ORIGIN + '/skins/default/public/img/icons/preload-white.gif" alt=""></div>' +
+              basketIconSvg() +
+              '<span class="basketCount" data-e2e="basket-count" data-basket-count hidden></span>' +
+            '</a>' +
+            '<a class="closed" href="#!" data-header-mobile-trigger data-e2e="header-burgerMenu-open" aria-label="Menu"><img class="headerIcon menuIcon" src="' + MENU_ICON_URL + '" alt="Menu"></a>' +
+            '<a class="back" href="#!" aria-hidden="true">' + backIconSvg() + '</a>' +
+            '<a class="open" href="#!" data-e2e="header-burgerMenu-close" data-display="inline-block" aria-hidden="true"><img class="headerIcon menuIcon" src="' + MENU_ICON_URL + '" alt="Menu"></a>' +
+          '</div>' +
+          '<section id="userMenuContainer"></section>' +
+          '<div class="clr"></div>' +
+        '</div>' +
+        '<div id="search" data-top="0" data-zindex="8" hidden>' +
+          '<form id="searchBar" action="' + basePath + SHOP_PAGE + '">' +
+            '<span class="inpBg"><div class="srchInputContainer"><label>' + searchIconSvg() + '<input type="submit" title="Search" data-e2e="header-search-submit" id="srchButton"></label><input type="text" name="q" placeholder="Search" id="srchInput" data-e2e="header-search-input" data-live-search="1" data-listening="Listening ..." autocomplete="off"><span id="clearInput" class="clearInput" data-search-clear aria-label="Clear search"></span><span id="speechInput" style="display: none;"></span></div><a class="srch" href="#!" data-search-close data-e2e="header-search-toggle" aria-label="Close search">' + closeIconSvg() + '</a><span class="liveSearchLoader hidden"></span></span>' +
+          '</form>' +
+          '<div id="enhancedSearch"><ul><li id="liveSearchResultsContent"></li></ul><div id="trendingSearches"></div><div id="recentSearchesContent" class="hidden"><h2>Recent Searches</h2><ul id="recentSearchesList"></ul></div><div id="clearRecentSearches" class="hidden">Clear Recent Searches</div></div>' +
+        '</div>' +
+        '<div id="miniCart"></div><div id="headBot"></div>' +
+      '</header>';
+  }
+
+  function replaceHeader(basePath) {
+    ensureHeaderStyles();
+    ensureOriginalMenuStyles();
+    ensureSearchPanelStyles();
+    const header = document.querySelector("header");
+    if (header) header.outerHTML = buildHeader(basePath);
+    else document.body.insertAdjacentHTML("afterbegin", buildHeader(basePath));
+  }
+
+  function renderMenuFooter(basePath) {
+    return '' +
+      '<div id="navFooterContainer">' +
+        '<a class="ga-ip innerCloseNav" id="myAccountLinkToModal" rel="nofollow" data-e2e="homePage-userMenu-myAccount" href="' + basePath + 'account.html">' +
+          'Sign into my account' +
+          '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
+        '</a>' +
+        '<a class="ga-ip innerCloseNav" id="loggedInMenuLink" rel="nofollow" href="' + basePath + 'account.html" style="display: none;" hidden>' +
+          'My Account' +
+          '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
+        '</a>' +
+        '<a class="ga-ip" data-ip-position="header-help" href="' + basePath + 'faq.html">' +
+          'Help' +
+          '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
+        '</a>' +
+      '</div>';
+  }
+
+  function renderMenuService(basePath) {
+    return '' +
+      '<div id="navServiceContainer">' +
+        '<ul class="navServiceMenu">' +
+          renderMenuItems(basePath, MOBILE_SERVICE_ITEMS, 0) +
+        '</ul>' +
+      '</div>';
   }
 
   function ensureMobileMenu(basePath) {
-    const existing = document.querySelector("[data-header-mobile-menu]");
-    if (existing) {
-      existing.remove();
-    }
-    document.querySelector("[data-header-mobile-overlay]")?.remove();
-    document.body.insertAdjacentHTML("beforeend", buildMobileMenu(basePath));
+    document.getElementById("navBackground")?.remove();
+    document.getElementById("nav")?.remove();
+    document.body.insertAdjacentHTML("beforeend", '' +
+      '<div id="navBackground" hidden></div>' +
+      '<div id="nav" data-e2e="header-nav-wrap" class="navSlideClosed" hidden aria-label="Mobile navigation">' +
+        '<ul class="menu">' +
+          '<div class="top-nav-header">' +
+            '<img class="headerLogo" src="' + LOGO_URL + '" title="The Hip Store" alt="The Hip Store">' +
+            '<a class="close-nav open" href="#!" data-mobile-menu-close style="display: inline-block;" aria-label="Close menu">' + closeIconSvg() + '</a>' +
+          '</div>' +
+          renderMenuItems(basePath, MOBILE_MENU_ITEMS, 0) +
+          renderMenuService(basePath) +
+          renderMenuFooter(basePath) +
+        '</ul>' +
+        '<div id="navLoader"></div>' +
+      '</div>');
   }
 
-  function getLanguageByCode(code) {
-    return LANGUAGES.find((lang) => lang.code === code) || LANGUAGES[0];
-  }
-
-  function normalizeText(value) {
-    return String(value || "").replace(/\s+/g, " ").trim();
-  }
-
-  function loadTranslationData(basePath) {
-    if (!translationDataPromise) {
-      const resolvedBasePath = basePath || getBasePath();
-      translationDataPromise = Promise.all([
-        fetch(`${resolvedBasePath}data/site-translations.json`, { cache: "no-store" }).then((response) =>
-          response.ok ? response.json() : null
-        ),
-        fetch(`${resolvedBasePath}data/site-languages.json`, { cache: "no-store" }).then((response) =>
-          response.ok ? response.json() : null
-        ),
-      ])
-        .then(([translations, languages]) => {
-          if (Array.isArray(languages) && languages.length) {
-            LANGUAGES.splice(0, LANGUAGES.length, ...languages);
-          }
-          return {
-            translations: translations || null,
-          };
-        })
-        .catch(function () {
-          return { translations: null };
-        });
-    }
-
-    return translationDataPromise;
-  }
-
-  function collectTranslationPairs(source, target, map) {
-    if (typeof source === "string") {
-      if (typeof target === "string" && source && target && source !== target) {
-        map.set(source, target);
-        map.set(normalizeText(source), target);
+  function renderMenuItems(basePath, items, depth) {
+    return items.map((item) => {
+      const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+      const href = item.href ? ' href="' + escapeHtml(withBase(basePath, item.href)) + '"' : "";
+      if (!hasChildren) {
+        return '<li class="level' + depth + '"><a data-e2e="header-burgerMenu-link" class=""' + href + '>' + escapeHtml(item.label) + '</a></li>';
       }
-      return;
-    }
+      return '<li class="level' + depth + ' wChild"><a data-e2e="header-burgerMenu-link" class=" wChild"' + href + '>' + escapeHtml(item.label) + '</a><ul class="acitem" data-e2e="header-nav-submenu-wrap" style="left: -100%; display: none;">' + renderMenuItems(basePath, item.children, depth + 1) + '</ul></li>';
+    }).join("");
+  }
 
-    if (!source || typeof source !== "object") {
-      return;
-    }
+  function ensureFooterStyles() {
+    if (document.getElementById("hip-original-footer-style")) return;
+    document.head.insertAdjacentHTML("beforeend", '<style id="hip-original-footer-style">' +
+      '#hipFooter,#hipFooter *{box-sizing:border-box;font-family:"Open Sans",Arial,Helvetica,sans-serif;letter-spacing:0}#hipFooter{background:#111;color:#fff;border-top:1px solid #333}#hipFooter a{color:inherit;text-decoration:none}.infoLinks{background:#111;color:#fff;text-align:center}.desktop-url{display:block;border-bottom:1px solid #333}.desktop-url a{display:block;padding:14px 16px;font-size:12px;font-weight:900;line-height:1.35;text-transform:uppercase}.footer-content-wrap{display:block}.footer-left ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;padding:0;list-style:none}.footer-left li{border-right:1px solid #333;border-bottom:1px solid #333}.footer-left li:nth-child(2n){border-right:0}.footer-left a{display:grid;min-height:42px;place-items:center;padding:8px;text-align:center;font-size:11px;font-weight:800;line-height:1.25;text-transform:uppercase}.footer-right{display:none}@media(max-width:520px){.footer-left ul{grid-template-columns:1fr}.footer-left li{border-right:0}}' +
+      '</style>');
+  }
 
-    Object.keys(source).forEach(function (key) {
-      collectTranslationPairs(source[key], target && typeof target === "object" ? target[key] : undefined, map);
+  function footerLinkItem(href, label, className, dataName, target, extraAttrs) {
+    return '<li><a href="' + escapeHtml(href) + '" class="' + escapeHtml(className || "ga-ip") + '"' +
+      (dataName ? ' data-ip-position="footer" data-ip-name="' + escapeHtml(dataName) + '"' : '') +
+      (target ? ' target="' + escapeHtml(target) + '"' : '') +
+      (extraAttrs ? ' ' + extraAttrs : '') +
+      '>' + escapeHtml(label) + '</a></li>';
+  }
+
+  function buildFooter(basePath) {
+    var footerLinks = [
+      [basePath + "faq.html", "FAQs", "ga-ip", "FAQ"],
+      [basePath + "faq.html", "Size Guide", "ga-ip", "Size Guide"],
+      [basePath + "contact.html", "Contact Us", "contactUsPopUp", "Contact Us"],
+      [basePath + "terms.html", "Terms & Conditions", "ga-ip", "Terms & Conditions"],
+      [basePath + "shipping.html", "Delivery Info", "ga-ip", "Delivery Info"],
+      [basePath + "shipping.html", "Returning Items", "ga-ip", "Returning Items"],
+      [basePath + "privacy.html", "Privacy Policy", "ga-ip", "Privacy Policy"],
+      [basePath + "accessibility.html", "Accessibility", "ga-ip", "Accessibility"],
+    ];
+
+    return '' +
+      '<footer id="hipFooter">' +
+        '<div class="infoLinks"><div class="footer-content-wrap"><div class="footer-left"><ul>' +
+          footerLinks.map(function (link) { return footerLinkItem(link[0], link[1], link[2], link[3], link[4], link[5]); }).join("") +
+        '</ul></div><div class="footer-right"></div></div></div>' +
+      '</footer>';
+  }
+
+  function replaceFooter(basePath) {
+    ensureFooterStyles();
+    const footer = document.querySelector("footer");
+    if (footer) footer.outerHTML = buildFooter(basePath);
+    else {
+      const shell = document.querySelector(".min-h-screen") || document.body;
+      shell.insertAdjacentHTML("beforeend", buildFooter(basePath));
+    }
+    document.querySelector(".openCookieSettings")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      document.querySelector("[data-cookie-settings]")?.click();
     });
   }
 
-  function buildTranslationMap(translations, langCode, fallbackCopy) {
-    const map = new Map();
-    const english = translations && translations.en ? translations.en : null;
-    const target = translations && translations[langCode] ? translations[langCode] : english;
+  const NEWSLETTER_PATTERNS = [
+    /sign\s+up\s+to\s+our\s+newsletter/i,
+    /join\s+our\s+mailing\s+list/i,
+    /10%\s*off\s+your\s+first\s+order/i,
+    /sign\s+up\s+for\s+the\s+latest\s+updates/i,
+  ];
 
-    if (english && target) {
-      collectTranslationPairs(english, target, map);
-    }
-
-    const fallback = fallbackCopy || UI_TRANSLATIONS[langCode] || UI_TRANSLATIONS.en;
-    const fallbackBase = UI_TRANSLATIONS.en || {};
-    collectTranslationPairs(fallbackBase, fallback, map);
-
-    return map;
+  function hasNewsletterCopy(node) {
+    const text = String(node && (node.innerText || node.textContent) || "").replace(/\s+/g, " ").trim();
+    return text && NEWSLETTER_PATTERNS.some((pattern) => pattern.test(text));
   }
 
-  function translateRawText(rawText, translationMap) {
-    if (!rawText) return rawText;
-    const leadingWhitespace = (rawText.match(/^\s*/) || [""])[0];
-    const trailingWhitespace = (rawText.match(/\s*$/) || [""])[0];
-    const core = rawText.trim();
-
-    if (!core) return rawText;
-
-    const translated = translationMap.get(core) || translationMap.get(normalizeText(core));
-    if (!translated) return rawText;
-
-    return `${leadingWhitespace}${translated}${trailingWhitespace}`;
+  function removeNewsletterNode(node) {
+    if (!node || !node.parentElement) return;
+    const target = node.closest("#signup,.newsletterSignup,.newsletter-signup,.footerNewsletter,[data-newsletter-form],section,form") || node;
+    if (target && target !== document.body && target !== document.documentElement) target.remove();
   }
 
-  function rememberOriginalAttr(element, attribute, value) {
-    let cached = ORIGINAL_ELEMENT_ATTRS.get(element);
-    if (!cached) {
-      cached = {};
-      ORIGINAL_ELEMENT_ATTRS.set(element, cached);
-    }
-    if (!(attribute in cached)) {
-      cached[attribute] = value;
-    }
-    return cached[attribute];
+  function removeNewsletterBlocks() {
+    document.querySelectorAll("#signup,#newsletterSignupForm,[data-newsletter-form],.newsletterSignup,.newsletter-signup,.footerNewsletter,#footerNewsletter").forEach(removeNewsletterNode);
+    document.querySelectorAll("section,form,footer div,main div,body > div").forEach((node) => {
+      if (hasNewsletterCopy(node)) removeNewsletterNode(node);
+    });
   }
 
-  function translateElementAttributes(translationMap) {
-    const attrNames = ["placeholder", "title", "aria-label"];
+  let newsletterCleanupObserver = null;
+  let newsletterCleanupQueued = false;
 
-    document.body.querySelectorAll("*").forEach(function (element) {
-      if (element.closest("header, #header-search-dialog, #header-language-menu, [data-language-code], [data-no-translate]")) return;
-
-      attrNames.forEach(function (attribute) {
-        if (!element.hasAttribute(attribute)) return;
-        const original = rememberOriginalAttr(element, attribute, element.getAttribute(attribute));
-        const translated = translateRawText(original, translationMap);
-        if (translated !== element.getAttribute(attribute)) {
-          element.setAttribute(attribute, translated);
-        }
+  function ensureNewsletterCleanup() {
+    removeNewsletterBlocks();
+    if (newsletterCleanupObserver || !document.body) return;
+    newsletterCleanupObserver = new MutationObserver(() => {
+      if (newsletterCleanupQueued) return;
+      newsletterCleanupQueued = true;
+      window.requestAnimationFrame(() => {
+        newsletterCleanupQueued = false;
+        removeNewsletterBlocks();
       });
-
-      if (element.tagName === "INPUT" && /^(submit|button|reset)$/i.test(element.type || "")) {
-        const originalValue = rememberOriginalAttr(element, "value", element.value);
-        const translatedValue = translateRawText(originalValue, translationMap);
-        if (translatedValue !== element.value) {
-          element.value = translatedValue;
-        }
-      }
     });
+    newsletterCleanupObserver.observe(document.body, { childList: true, subtree: true });
   }
 
-  function translateTextNodes(translationMap) {
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode: function (node) {
-          const parent = node.parentElement;
-          if (!parent) return NodeFilter.FILTER_REJECT;
-          if (!node.textContent || !node.textContent.trim()) return NodeFilter.FILTER_REJECT;
-          if (
-            parent.closest(
-              "header, #header-search-dialog, #header-language-menu, script, style, noscript, svg, code, pre, [data-language-code], [data-current-language], [data-no-translate]"
-            )
-          ) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      }
-    );
-
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (!ORIGINAL_TEXT_NODES.has(node)) {
-        ORIGINAL_TEXT_NODES.set(node, node.textContent);
-      }
-      const originalText = ORIGINAL_TEXT_NODES.get(node);
-      const translatedText = translateRawText(originalText, translationMap);
-      if (translatedText !== node.textContent) {
-        node.textContent = translatedText;
-      }
-    }
+  function normalizeProduct(item) {
+    if (!item) return null;
+    const id = item.id || item.product_id || item.sku || item.routeSlug || item.slug || "";
+    const sourceSlug = item.sourceSlug || item.slug || slugify(item.title || id);
+    const routeSlug = item.routeSlug || (sourceSlug && id ? sourceSlug + "-" + id : sourceSlug);
+    const images = Array.isArray(item.images) ? item.images.filter(Boolean) : [];
+    const image = item.mainImage || item.main_image || item.image || images[0] || "placeholder.svg";
+    return {
+      id,
+      routeSlug,
+      title: item.title || item.full_name || "Untitled Product",
+      brand: item.brand || "Product",
+      sku: item.sku || item.product_id || "",
+      categoryPath: item.categoryPath || item.category_path || item.category || "",
+      price: Number(item.price || 0),
+      currency: item.currency || "GBP",
+      image,
+    };
   }
 
-  function setNodeText(node, value) {
-    if (!node || !value) return;
-    const firstTextNode = Array.from(node.childNodes).find((child) => child.nodeType === Node.TEXT_NODE);
-    if (firstTextNode) {
-      firstTextNode.textContent = value;
-      return;
-    }
-    node.textContent = value;
+  function slugify(value) {
+    return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   }
 
-  function applyHeaderTranslations(targetTranslation, copy) {
-    const nav = (targetTranslation && targetTranslation.nav) || {};
-    const search = (targetTranslation && targetTranslation.search) || {};
-    const auth = (targetTranslation && targetTranslation.auth) || {};
-    const home = (targetTranslation && targetTranslation.home) || {};
-    const categories = (targetTranslation && targetTranslation.categories) || {};
-
-    document.querySelectorAll("[data-i18n='shopAll']").forEach((node) => setNodeText(node, nav.shopAll || copy.shopAll));
-    document.querySelectorAll("[data-i18n='lastChance']").forEach((node) => setNodeText(node, copy.lastChance));
-    document.querySelectorAll("[data-i18n='categories']").forEach((node) => setNodeText(node, nav.categories || copy.categories));
-    document.querySelectorAll("[data-i18n='collections']").forEach((node) => setNodeText(node, nav.collections || copy.collections));
-    document.querySelectorAll("[data-i18n='about']").forEach((node) => setNodeText(node, nav.about || copy.about));
-    document.querySelectorAll("[data-i18n='contact']").forEach((node) => setNodeText(node, nav.contact || copy.contact));
-    document.querySelectorAll("[data-i18n='login']").forEach((node) => setNodeText(node, auth.login || copy.login));
-    document.querySelectorAll("[data-i18n='register']").forEach((node) => setNodeText(node, auth.register || copy.register));
-
-    replaceExactText("#header-search-dialog h2", search.title || copy.search);
-    replaceExactText("#header-search-dialog [data-search-view-all]", search.viewAll || copy.viewAllResults);
-    replaceExactText("#header-search-dialog [data-search-summary]", search.randomPicks || copy.youMightLike);
-
-    const searchSubtitle = document.querySelector("#header-search-dialog h2 + p");
-    if (searchSubtitle) searchSubtitle.textContent = search.subtitle || copy.searchSubtitle;
-    const searchInput = document.querySelector("[data-search-input]");
-    if (searchInput) searchInput.placeholder = search.placeholder || copy.searchPlaceholder;
-
-    const megaMenuMap = new Map([
-      ["Watches", (home.watches && home.watches.title) || (categories.watches && categories.watches.name)],
-      ["Bags & Fashion", categories["bags-fashion"] && categories["bags-fashion"].name],
-      ["Jewelry", categories.jewelry && categories.jewelry.name],
-      ["Collectibles & More", categories.collectibles && categories.collectibles.name],
-      ["Fine Art", categories["fine-art"] && categories["fine-art"].name],
-      ["Spirits", categories.spirits && categories.spirits.name],
-      ["Furniture & Decor", categories["furniture-decor"] && categories["furniture-decor"].name],
-      ["Science", categories.science && categories.science.name],
-    ]);
-
-    document.querySelectorAll(".group .bg-background.border.border-border.rounded-lg.shadow-2xl a.block.text-sm.font-semibold").forEach((node) => {
-      const translated = megaMenuMap.get(normalizeText(node.textContent));
-      if (translated) node.textContent = translated;
-    });
-  }
-
-  async function applySiteTranslations(langCode, copy, basePath) {
-    const translationData = await loadTranslationData(basePath);
-    const translationMap = buildTranslationMap(translationData.translations, langCode, copy);
-    const targetTranslation =
-      (translationData.translations && translationData.translations[langCode]) ||
-      (translationData.translations && translationData.translations.en) ||
-      null;
-
-    if (!translationMap.size) {
-      applyHeaderTranslations(targetTranslation, copy);
-      applyPageTranslations(copy);
-      return;
-    }
-
-    isApplyingTranslations = true;
+  function formatCurrency(value, currency) {
+    const amount = Number(value || 0);
     try {
-      applyHeaderTranslations(targetTranslation, copy);
-      translateTextNodes(translationMap);
-      translateElementAttributes(translationMap);
-      applyPageTranslations(copy);
-    } finally {
-      isApplyingTranslations = false;
+      return new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP", maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount);
+    } catch (_error) {
+      return (currency || "GBP") + " " + amount.toLocaleString("en-US");
     }
   }
 
-  function ensureTranslationObserver(basePath) {
-    if (translationObserver || !document.body) return;
-
-    translationObserver = new MutationObserver(function () {
-      if (isApplyingTranslations) return;
-      window.clearTimeout(translationReapplyTimer);
-      translationReapplyTimer = window.setTimeout(function () {
-        syncLanguage(undefined, basePath);
-      }, 60);
-    });
-
-    translationObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  function getCurrentLanguage() {
-    if (currentLanguageCode && LANGUAGES.some((lang) => lang.code === currentLanguageCode)) {
-      return currentLanguageCode;
-    }
-    try {
-      const stored = window.localStorage.getItem("language");
-      if (stored && LANGUAGES.some((lang) => lang.code === stored)) {
-        currentLanguageCode = stored;
-        return stored;
-      }
-    } catch (_error) {}
-    const saved = readCookie("language");
-    if (saved && LANGUAGES.some((lang) => lang.code === saved)) {
-      currentLanguageCode = saved;
-      return saved;
-    }
-    const browser = String(navigator.language || "en").toLowerCase().split("-")[0];
-    currentLanguageCode = LANGUAGES.some((lang) => lang.code === browser) ? browser : "en";
-    return currentLanguageCode;
-  }
-
-  function syncLanguage(nextCode, basePath) {
-    if (nextCode && LANGUAGES.some((lang) => lang.code === nextCode)) {
-      currentLanguageCode = nextCode;
+  async function loadSearchProducts(basePath) {
+    if (searchState.products) return searchState.products;
+    const backend = window.HipStoreBackend;
+    if (backend && typeof backend.isConfigured === "function" && backend.isConfigured() && typeof backend.getCatalog === "function") {
       try {
-        window.localStorage.setItem("language", nextCode);
-      } catch (_error) {}
-      writeCookie("language", nextCode);
-    }
-    const current = getLanguageByCode(getCurrentLanguage());
-    const copy = UI_TRANSLATIONS[current.code] || UI_TRANSLATIONS.en;
-    document.documentElement.setAttribute("lang", current.code);
-    document.documentElement.setAttribute("dir", current.rtl ? "rtl" : "ltr");
-    document.body.setAttribute("data-language", current.code);
-    const trigger = document.querySelector("[data-header-language-trigger]");
-    if (trigger) {
-      trigger.setAttribute("title", current.nativeName);
-      trigger.setAttribute("aria-label", `Language: ${current.nativeName}`);
-    }
-    document.querySelectorAll("[data-current-language]").forEach((node) => {
-      node.textContent = current.code.toUpperCase();
-    });
-    document.querySelectorAll("[data-i18n]").forEach((node) => {
-      const key = node.getAttribute("data-i18n");
-      if (copy[key]) {
-        const firstTextNode = Array.from(node.childNodes).find((child) => child.nodeType === Node.TEXT_NODE);
-        if (firstTextNode) {
-          firstTextNode.textContent = copy[key];
-        } else {
-          node.textContent = copy[key];
-        }
-      }
-    });
-    document.querySelectorAll("[data-language-code]").forEach((node) => {
-      const active = node.getAttribute("data-language-code") === current.code;
-      node.classList.toggle("bg-accent", active);
-      node.classList.toggle("font-medium", active);
-    });
-    applyHeaderTranslations(null, copy);
-    applySiteTranslations(current.code, copy, basePath).catch(function () {
-      applyHeaderTranslations(null, copy);
-      applyPageTranslations(copy);
-    });
-  }
-
-  function replaceExactText(selector, value) {
-    const node = document.querySelector(selector);
-    if (node && value) node.textContent = value;
-  }
-
-  function isHomePage() {
-    var path = String(window.location.pathname || "/");
-    return (
-      path === "/" ||
-      path === "/index.html" ||
-      path.endsWith("/index.html") && !path.includes("/lot/") && !path.includes("/collections/") && !path.includes("/category/")
-    );
-  }
-
-  function applyPageTranslations(copy) {
-    replaceExactText("#header-search-dialog h2", copy.search);
-    replaceExactText("#header-search-dialog [data-search-summary]", copy.youMightLike);
-    replaceExactText("#header-search-dialog [data-search-view-all]", copy.viewAllResults);
-
-    const searchSubtitle = document.querySelector("#header-search-dialog h2 + p");
-    if (searchSubtitle) searchSubtitle.textContent = copy.searchSubtitle;
-    const searchInput = document.querySelector("[data-search-input]");
-    if (searchInput) searchInput.placeholder = copy.searchPlaceholder;
-
-    if (!isHomePage()) {
-      return;
-    }
-
-    const sections = Array.from(document.querySelectorAll("main > section"));
-    const featured = sections[1];
-    const howItWorks = sections[2];
-    const trusted = sections.find((section) => section.querySelectorAll("div.text-2xl, div.sm\\:text-3xl, div.lg\\:text-4xl").length >= 4);
-    const stayInformed = sections.find((section) => section.querySelector("input[type='email']") && section.querySelector("button[type='submit']"));
-
-    if (featured) {
-      replaceExactText("main > section:nth-of-type(2) h2", copy.featuredAuctions);
-      replaceExactText("main > section:nth-of-type(2) p.text-muted-foreground", copy.curatedSelection);
-    }
-
-    if (howItWorks) {
-      replaceExactText("main > section:nth-of-type(3) h2", copy.howItWorks);
-      replaceExactText("main > section:nth-of-type(3) .text-center p.text-muted-foreground", copy.startBidding);
-      const learnMoreButton = howItWorks.querySelector("a[href='how-to-bid.html'] button");
-      if (learnMoreButton) {
-        const textNode = Array.from(learnMoreButton.childNodes).find((child) => child.nodeType === Node.TEXT_NODE);
-        if (textNode) textNode.textContent = copy.learnMore;
+        const products = await backend.getCatalog();
+        searchState.products = (Array.isArray(products) ? products : []).map(normalizeProduct).filter((product) => product && product.routeSlug);
+        return searchState.products;
+      } catch (error) {
+        console.warn("Catalog backend unavailable, using local catalog file:", error);
       }
     }
-
-    if (trusted) {
-      const title = trusted.querySelector("h2");
-      const subtitle = trusted.querySelector("p.text-muted-foreground");
-      if (title) title.textContent = copy.trustedWorldwide;
-      if (subtitle) subtitle.textContent = UI_TRANSLATIONS[getCurrentLanguage()]?.trustedWorldwideCopy || subtitle.textContent;
+    async function fetchProducts(path) {
+      const response = await fetch(basePath + path, { cache: "no-store" });
+      if (!response.ok) throw new Error("Unable to load products");
+      return response.json();
     }
-
-    if (stayInformed) {
-      const title = stayInformed.querySelector("h2");
-      const subtitle = stayInformed.querySelector("p");
-      const subscribeButton = stayInformed.querySelector("button[type='submit']");
-      if (title) title.textContent = copy.stayInformed;
-      if (subtitle) subtitle.textContent = UI_TRANSLATIONS[getCurrentLanguage()]?.stayInformedCopy || subtitle.textContent;
-      if (subscribeButton) subscribeButton.textContent = copy.subscribe;
-    }
-
-    const winterEditSection = sections.find((section) =>
-      section.querySelector("a[href='collections/the-winter-edit-icons-of-luxury.html']")
-    );
-    if (winterEditSection) {
-      const title = winterEditSection.querySelector("h2");
-      const subtitle = winterEditSection.querySelector("p.text-base");
-      const viewAllLink = winterEditSection.querySelector("a[href='collections/the-winter-edit-icons-of-luxury.html']");
-      if (title) title.textContent = copy.winterEditTitle;
-      if (subtitle) subtitle.textContent = copy.winterEditCopy;
-      if (viewAllLink) {
-        const textNode = Array.from(viewAllLink.childNodes).find((child) => child.nodeType === Node.TEXT_NODE);
-        if (textNode) {
-          textNode.textContent = copy.viewAll;
-        }
-        const innerSpan = viewAllLink.querySelector("span");
-        if (innerSpan) innerSpan.textContent = copy.viewAll;
-      }
-    }
-
-    document.querySelectorAll("a[href='auctions.html'] button").forEach((button) => {
-      const textNode = Array.from(button.childNodes).find((child) => child.nodeType === Node.TEXT_NODE);
-      if (textNode && textNode.textContent.trim() === "Browse Auctions") {
-        textNode.textContent = copy.browseAuctions;
-      }
-    });
+    const products = await fetchProducts(CATALOG_PATH);
+    searchState.products = (Array.isArray(products) ? products : []).map(normalizeProduct).filter((product) => product && product.routeSlug);
+    return searchState.products;
   }
 
-  function ensureLanguageMenu() {
-    return;
+  function readRecentSearches() {
+    try {
+      const raw = JSON.parse(window.localStorage.getItem(SEARCH_HISTORY_KEY) || "[]");
+      return Array.isArray(raw) ? raw.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 8) : [];
+    } catch (_error) {
+      return [];
+    }
   }
 
-  function ensureSearchDialog() {
+  function writeRecentSearches(items) {
+    try {
+      window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify((Array.isArray(items) ? items : []).slice(0, 8)));
+    } catch (_error) {
+      // Ignore storage failures.
+    }
+  }
+
+  function pushRecentSearch(query) {
+    const clean = String(query || "").trim();
+    if (!clean) return;
+    const next = [clean].concat(readRecentSearches().filter((item) => item.toLowerCase() !== clean.toLowerCase()));
+    writeRecentSearches(next.slice(0, 8));
+  }
+
+  function renderRecentSearches(basePath) {
+    const recentNode = document.getElementById("recentSearchesContent");
+    const listNode = document.getElementById("recentSearchesList");
+    const clearNode = document.getElementById("clearRecentSearches");
+    if (!recentNode || !listNode || !clearNode) return;
+    const items = readRecentSearches();
+    listNode.innerHTML = items.map((item) => '<li><a href="' + basePath + SHOP_PAGE + '?search=' + encodeURIComponent(item) + '" data-recent-search-link="' + escapeHtml(item) + '">' + escapeHtml(item) + '</a></li>').join("");
+    recentNode.classList.toggle("hidden", items.length === 0 || searchState.query.trim().length > 0);
+    clearNode.classList.toggle("hidden", items.length === 0 || searchState.query.trim().length > 0);
+  }
+
+  function renderTrendingSearches(basePath) {
+    const trendingNode = document.getElementById("trendingSearches");
+    if (!trendingNode) return;
+    trendingNode.innerHTML = '<ul><li class="title">Trending Searches</li>' + TRENDING_SEARCHES.map((item) => (
+      '<li><a href="' + basePath + SHOP_PAGE + '?search=' + encodeURIComponent(item) + '" data-trending-search-link="' + escapeHtml(item) + '">' + escapeHtml(item) + '</a></li>'
+    )).join("") + '</ul>';
+    trendingNode.classList.toggle("hidden", searchState.query.trim().length > 0);
+  }
+
+  function buildSearchCard(product, basePath) {
+    return '' +
+      '<a href="' + basePath + PRODUCT_PAGE + '?slug=' + encodeURIComponent(product.routeSlug) + '" class="liveSearchResult" data-search-result-link="' + escapeHtml(product.routeSlug) + '">' +
+        '<img src="' + escapeHtml(product.image || basePath + PLACEHOLDER_IMAGE) + '" alt="' + escapeHtml(product.title) + '" onerror="this.onerror=null;this.src=\'' + basePath + PLACEHOLDER_IMAGE + '\';" />' +
+        '<span class="liveSearchMeta"><span>' + escapeHtml(product.brand) + '</span><strong>' + escapeHtml(product.title) + '</strong><em>' + formatCurrency(product.price, product.currency) + '</em></span>' +
+      '</a>';
+  }
+
+  function ensureSearchDialog(basePath) {
     const existing = document.getElementById("header-search-dialog");
     if (existing) existing.remove();
-    document.body.insertAdjacentHTML(
-      "beforeend",
-      `
-        <div id="header-search-dialog" class="hidden fixed inset-0 z-[150]">
-          <div class="absolute inset-0 bg-background/80 backdrop-blur-sm" data-search-close></div>
-          <div class="relative h-[90vh] overflow-y-auto bg-background" data-search-scroll>
-            <div class="container mx-auto px-4 lg:px-8 py-8">
-              <div class="mx-auto max-w-4xl">
-                <div class="mb-8 flex items-start justify-between gap-4">
-                  <div>
-                    <h2 class="text-2xl font-serif">Search</h2>
-                    <p class="text-sm text-muted-foreground">Find the perfect lot</p>
-                  </div>
-                  <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent transition-colors" data-search-close aria-label="Close search">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-                  </button>
-                </div>
-                <div class="space-y-6">
-                  <div class="relative">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-                    <input data-search-input type="search" placeholder="Search lots, categories, or artists..." class="h-12 w-full rounded-md border border-input bg-background pl-10 pr-10 text-base outline-none placeholder:text-muted-foreground" />
-                    <div class="absolute right-3 top-1/2 hidden -translate-y-1/2" data-search-spinner>
-                      <div class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                    </div>
-                  </div>
-                  <div class="space-y-4" data-search-body>
-                    <div class="hidden space-y-4" data-search-query-state>
-                      <div class="flex items-center justify-between">
-                        <p class="text-sm text-muted-foreground" data-search-query-summary></p>
-                        <a data-search-view-all class="text-sm font-medium hover:underline underline-offset-4" href="#">View All Results</a>
-                      </div>
-                      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4" data-search-results></div>
-                      <div class="hidden py-4" data-search-loading-more>
-                        <div class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                      </div>
-                      <p class="hidden text-center text-sm text-muted-foreground" data-search-scroll-more>Scroll for more results...</p>
-                    </div>
-                    <div class="hidden py-12 text-center" data-search-empty-state>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 h-12 w-12 text-muted-foreground"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-                      <p class="text-muted-foreground" data-search-empty-title>No results found</p>
-                      <p class="mt-2 text-sm text-muted-foreground" data-search-empty-copy>Try different keywords</p>
-                    </div>
-                    <div class="space-y-4" data-search-random-state>
-                      <p class="text-sm text-muted-foreground" data-search-summary>You might like</p>
-                      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4" data-search-random-results></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `
-    );
+    document.querySelector("#searchBar")?.setAttribute("action", basePath + SHOP_PAGE);
   }
 
-  function getSearchStrings() {
-    const langCode = getCurrentLanguage();
-    let remote = null;
-    try {
-      remote = window.__AUCTIO_TRANSLATIONS && window.__AUCTIO_TRANSLATIONS[langCode];
-    } catch (_error) {}
-    const search = (remote && remote.search) || {};
-    const product = (remote && remote.product) || {};
-    const fallback = UI_TRANSLATIONS[langCode] || UI_TRANSLATIONS.en;
-    return {
-      title: search.title || fallback.search,
-      subtitle: search.subtitle || fallback.searchSubtitle,
-      placeholder: search.placeholder || fallback.searchPlaceholder,
-      noResults: search.noResults || "No results found",
-      tryDifferent: search.tryDifferent || "Try different keywords",
-      viewAll: search.viewAll || fallback.viewAllResults,
-      randomPicks: search.randomPicks || fallback.youMightLike,
-      scrollForMore: search.scrollForMore || "Scroll for more results...",
-      resultsFoundWord: search.resultsFound || "results found",
-      resultWord: search.result || "result",
-      resultsWord: search.results || "results",
-      currentBid: product.currentBid || "Current Bid",
-    };
-  }
-
-  function requestRemoteSupabase(path) {
-    return fetch(REMOTE_SUPABASE_URL + path, {
-      headers: {
-        apikey: REMOTE_SUPABASE_KEY,
-      },
-    }).then(function (response) {
-      if (!response.ok) throw new Error("Remote request failed: " + response.status);
-      return response.json();
-    });
-  }
-
-  function chunkArray(items, size) {
-    const chunks = [];
-    for (let index = 0; index < items.length; index += size) {
-      chunks.push(items.slice(index, index + size));
+  async function renderSearchResults(basePath) {
+    const resultsNode = document.getElementById("liveSearchResultsContent");
+    if (!resultsNode) return;
+    const products = await loadSearchProducts(basePath);
+    const query = searchState.query.trim().toLowerCase();
+    let results = [];
+    if (query) {
+      results = products.filter((product) => [product.title, product.brand, product.sku, product.routeSlug, product.categoryPath].join(" ").toLowerCase().includes(query));
     }
-    return chunks;
-  }
-
-  function buildRemoteSearchLotMap(slugs) {
-    const map = new Map();
-    (Array.isArray(slugs) ? slugs : []).forEach(function (slug) {
-      if (SEARCH_REMOTE_LOT_CACHE.has(slug)) {
-        map.set(slug, SEARCH_REMOTE_LOT_CACHE.get(slug));
-      }
-    });
-    return map;
-  }
-
-  function fetchRemoteSearchLotsBySlugs(slugs) {
-    const cleanSlugs = Array.from(
-      new Set(
-        (Array.isArray(slugs) ? slugs : [])
-          .map(function (slug) {
-            return String(slug || "").trim();
-          })
-          .filter(Boolean)
-      )
-    );
-
-    if (!cleanSlugs.length) return Promise.resolve(new Map());
-
-    const missingSlugs = cleanSlugs.filter(function (slug) {
-      return !SEARCH_REMOTE_LOT_CACHE.has(slug);
-    });
-
-    if (!missingSlugs.length) {
-      return Promise.resolve(buildRemoteSearchLotMap(cleanSlugs));
-    }
-
-    return Promise.allSettled(
-      chunkArray(missingSlugs, 20).map(function (batch) {
-        const batchFilter =
-          "(" +
-          batch
-            .map(function (slug) {
-              return '"' + slug.replace(/"/g, "") + '"';
-            })
-            .join(",") +
-          ")";
-
-        return requestRemoteSupabase(
-          "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status&slug=in." + encodeURIComponent(batchFilter)
-        );
-      })
-    )
-      .then(function (results) {
-        results.forEach(function (result) {
-          if (result.status !== "fulfilled" || !Array.isArray(result.value)) return;
-          result.value.forEach(function (lot) {
-            const lotSlug = String((lot && lot.slug) || "").trim();
-            if (!lotSlug) return;
-            SEARCH_REMOTE_LOT_CACHE.set(lotSlug, lot);
-          });
-        });
-
-        missingSlugs.forEach(function (slug) {
-          if (!SEARCH_REMOTE_LOT_CACHE.has(slug)) {
-            SEARCH_REMOTE_LOT_CACHE.set(slug, null);
-          }
-        });
-
-        return buildRemoteSearchLotMap(cleanSlugs);
-      })
-      .catch(function () {
-        return buildRemoteSearchLotMap(cleanSlugs);
-      });
-  }
-
-  function mergeRemoteDataIntoSearchLot(lot, remoteLot) {
-    if (!lot || !remoteLot) return lot;
-
-    return Object.assign({}, lot, {
-      title: remoteLot.title || lot.title,
-      currentBid:
-        remoteLot.current_bid != null ? Number(remoteLot.current_bid) : Number(lot.currentBid || lot.current_bid || lot.startingBid || 0),
-      endTime: remoteLot.end_time || lot.endTime || lot.end_time,
-      status: remoteLot.status || lot.status,
-    });
-  }
-
-  function hydrateSearchLots(lots) {
-    const sourceLots = Array.isArray(lots) ? lots.slice() : [];
-    const slugs = sourceLots.map(function (lot) {
-      return lot && lot.slug;
-    });
-
-    return fetchRemoteSearchLotsBySlugs(slugs)
-      .then(function (remoteLotsBySlug) {
-        return sourceLots.map(function (lot) {
-          const slug = String((lot && lot.slug) || "").trim();
-          return mergeRemoteDataIntoSearchLot(lot, remoteLotsBySlug.get(slug));
-        });
-      })
-      .catch(function () {
-        return sourceLots;
-      });
-  }
-
-  function getSearchImage(lot, basePath) {
-    const candidate =
-      lot.image ||
-      (Array.isArray(lot.images) && lot.images[0] && (lot.images[0].image_url || lot.images[0])) ||
-      "placeholder.svg";
-    const value = String(candidate || "");
-    if (/^https?:\/\//i.test(value)) return value;
-    return `${basePath}${value.replace(/^\.?\//, "")}`;
-  }
-
-  function buildSearchCard(lot, basePath) {
-    const bidValue = Math.round(Number(lot.currentBid || lot.current_bid || lot.startingBid || lot.starting_bid || 0)).toLocaleString("en-US");
-    const href = `${basePath}lot/index.html?slug=${encodeURIComponent(lot.slug || "")}`;
-    return `
-      <a href="${href}" class="group flex flex-col gap-2 overflow-hidden rounded-lg border border-border transition-all hover:border-primary/50">
-        <div class="aspect-square relative overflow-hidden bg-muted">
-          <img src="${getSearchImage(lot, basePath)}" alt="${lot.title || "Lot"}" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" onerror="this.onerror=null;this.src='${basePath}placeholder.svg';" />
-        </div>
-        <div class="space-y-1 p-3">
-          <h3 class="line-clamp-2 text-sm font-medium transition-colors group-hover:text-primary">${lot.title || "Untitled Lot"}</h3>
-          <p class="text-sm text-muted-foreground">€${bidValue}</p>
-        </div>
-      </a>
-    `;
-  }
-
-  function buildSearchSkeletonGrid(count) {
-    return Array.from({ length: count })
-      .map(
-        (_, index) => `
-          <div class="space-y-3" data-search-skeleton="${index}">
-            <div class="aspect-square rounded-lg bg-muted animate-pulse"></div>
-            <div class="space-y-2">
-              <div class="h-4 rounded bg-muted animate-pulse"></div>
-              <div class="h-3 w-2/3 rounded bg-muted animate-pulse"></div>
-            </div>
-          </div>
-        `
-      )
-      .join("");
-  }
-
-  function renderSearchResults(basePath) {
-    const strings = getSearchStrings();
-    const queryState = document.querySelector("[data-search-query-state]");
-    const randomState = document.querySelector("[data-search-random-state]");
-    const emptyState = document.querySelector("[data-search-empty-state]");
-    const resultsNode = document.querySelector("[data-search-results]");
-    const randomResultsNode = document.querySelector("[data-search-random-results]");
-    const summaryNode = document.querySelector("[data-search-summary]");
-    const querySummaryNode = document.querySelector("[data-search-query-summary]");
-    const viewAllNode = document.querySelector("[data-search-view-all]");
-    const spinner = document.querySelector("[data-search-spinner]");
-    const loadingMore = document.querySelector("[data-search-loading-more]");
-    const scrollMore = document.querySelector("[data-search-scroll-more]");
-    const emptyTitle = document.querySelector("[data-search-empty-title]");
-    const emptyCopy = document.querySelector("[data-search-empty-copy]");
-    if (!queryState || !randomState || !emptyState || !resultsNode || !randomResultsNode) return;
-
-    const query = searchState.query.trim();
-    const hasQuery = Boolean(query);
-    const results = searchState.results || [];
-    const randomPicks = searchState.randomPicks || [];
-
-    if (spinner) spinner.classList.toggle("hidden", !searchState.loading);
-    if (loadingMore) loadingMore.classList.toggle("hidden", !searchState.loadingMore);
-    if (scrollMore) {
-      scrollMore.classList.toggle("hidden", !(hasQuery && searchState.hasMore && !searchState.loadingMore));
-      scrollMore.textContent = strings.scrollForMore;
-    }
-    if (viewAllNode) {
-      viewAllNode.textContent = strings.viewAll;
-      viewAllNode.setAttribute("href", `${basePath}auctions.html`);
-    }
-    if (summaryNode) summaryNode.textContent = strings.randomPicks;
-    if (emptyTitle) emptyTitle.textContent = strings.noResults;
-    if (emptyCopy) emptyCopy.textContent = strings.tryDifferent;
-
-    if (hasQuery) {
-      queryState.classList.remove("hidden");
-      randomState.classList.add("hidden");
-      emptyState.classList.toggle("hidden", searchState.loading || results.length > 0);
-
-      if (querySummaryNode) {
-        querySummaryNode.textContent = `${searchState.total || results.length} ${strings.resultsFoundWord}`;
-      }
-
-      if (searchState.loading && !results.length) {
-        resultsNode.innerHTML = buildSearchSkeletonGrid(8);
-      } else {
-        resultsNode.innerHTML = results.map((lot) => buildSearchCard(lot, basePath)).join("");
-      }
-      return;
-    }
-
-    queryState.classList.add("hidden");
-    emptyState.classList.add("hidden");
-    randomState.classList.remove("hidden");
-    randomResultsNode.innerHTML = searchState.randomLoading ? buildSearchSkeletonGrid(8) : randomPicks.map((lot) => buildSearchCard(lot, basePath)).join("");
-  }
-
-  function searchLots(allLots, query, offset, limit) {
-    const normalized = query.trim().toLowerCase();
-    const matched = allLots.filter((lot) => {
-      const haystack = [
-        lot.title,
-        lot.category,
-        lot.description,
-        lot.slug,
-        lot.lotNumber,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(normalized);
-    });
-    return {
-      results: matched.slice(offset, offset + limit),
-      hasMore: matched.length > offset + limit,
-      total: matched.length,
-    };
-  }
-
-  async function ensureRandomPicks(basePath) {
-    if (searchState.randomPicks.length) return searchState.randomPicks;
-    searchState.randomLoading = true;
-    renderSearchResults(basePath);
-    const lots = await loadSearchLots(basePath);
-    const shuffled = lots
-      .slice()
-      .sort(function () {
-        return Math.random() - 0.5;
-      })
-      .slice(0, 8);
-    searchState.randomPicks = await hydrateSearchLots(shuffled);
-    searchState.randomLoading = false;
-    renderSearchResults(basePath);
-    return searchState.randomPicks;
-  }
-
-  async function runSearch(basePath, query, append) {
-    const lots = await loadSearchLots(basePath);
-    const nextPage = append ? searchState.page + 1 : 0;
-    const offset = nextPage * 20;
-    if (append) {
-      searchState.loadingMore = true;
+    const visible = results.slice(0, 12);
+    if (!query) {
+      resultsNode.innerHTML = "";
+    } else if (!visible.length) {
+      resultsNode.innerHTML = '<div class="liveSearchHeading">Products</div><p class="searchEmpty">No matching products were found.</p>';
     } else {
-      searchState.loading = true;
-      searchState.results = [];
-      searchState.page = 0;
-      searchState.total = 0;
-      searchState.hasMore = false;
+      resultsNode.innerHTML = '<div class="liveSearchHeading">Products</div><ul class="liveSearchList">' + visible.map((product) => '<li>' + buildSearchCard(product, basePath) + '</li>').join("") + '</ul>';
     }
-    searchState.query = query;
-    renderSearchResults(basePath);
-
-    const outcome = searchLots(lots, query, offset, 20);
-    const hydratedResults = await hydrateSearchLots(outcome.results);
-    if (append) {
-      searchState.results = searchState.results.concat(hydratedResults);
-      searchState.page = nextPage;
-    } else {
-      searchState.results = hydratedResults;
-      searchState.page = 0;
-    }
-    searchState.total = outcome.total;
-    searchState.hasMore = outcome.hasMore;
-    searchState.loading = false;
-    searchState.loadingMore = false;
-    renderSearchResults(basePath);
+    renderTrendingSearches(basePath);
+    renderRecentSearches(basePath);
   }
 
-  async function loadSearchLots(basePath) {
-    if (window.__AUCTIO_SEARCH_LOTS) return window.__AUCTIO_SEARCH_LOTS;
-    const response = await fetch(`${basePath}data/all-shop-lots.json`, { cache: "no-store" });
-    const lots = await response.json();
-    window.__AUCTIO_SEARCH_LOTS = Array.isArray(lots) ? lots : [];
-    return window.__AUCTIO_SEARCH_LOTS;
+  function openSearch(basePath) {
+    const panel = document.getElementById("search");
+    const input = document.getElementById("srchInput");
+    const trigger = document.querySelector("[data-header-search-trigger]");
+    if (!panel) return;
+    panel.hidden = false;
+    if (trigger) trigger.classList.add("is-open");
+    renderRecentSearches(basePath);
+    renderSearchResults(basePath);
+    setTimeout(() => input && input.focus(), 20);
   }
 
-  function bindHeaderInteractions(basePath) {
-    const languageTrigger = document.querySelector("[data-header-language-trigger]");
-    const searchTrigger = document.querySelector("[data-header-search-trigger]");
-    const mobileTrigger = document.querySelector("[data-header-mobile-trigger]");
-    const languageMenu = document.getElementById("header-language-menu");
-    const languageScroll = document.querySelector("[data-language-scroll]");
-    const searchDialog = document.getElementById("header-search-dialog");
-    const searchInput = document.querySelector("[data-search-input]");
-    const searchScroll = document.querySelector("[data-search-scroll]");
-    const mobileOverlay = document.querySelector("[data-header-mobile-overlay]");
-    const mobileMenu = document.querySelector("[data-header-mobile-menu]");
-    const mobileMainNav = document.querySelector("[data-mobile-main-nav]");
-    const mobileClose = document.querySelector("[data-mobile-menu-close]");
-    const mobileCategoriesTrigger = document.querySelector("[data-mobile-categories-trigger]");
-    const mobileCategoriesView = document.querySelector("[data-mobile-categories-view]");
-    const mobileCategoriesBack = document.querySelector("[data-mobile-categories-back]");
-    const authRoot = document.querySelector("[data-auth-menu-root]");
-    const authTrigger = authRoot ? authRoot.querySelector("[data-auth-menu-trigger]") : null;
-    const authMenu = authRoot ? authRoot.querySelector("[data-auth-menu]") : null;
+  function closeSearch(basePath) {
+    const panel = document.getElementById("search");
+    const trigger = document.querySelector("[data-header-search-trigger]");
+    if (!panel) return;
+    panel.hidden = true;
+    if (trigger) trigger.classList.remove("is-open");
+    renderRecentSearches(basePath);
+  }
 
-    const closeLanguageMenu = function () {
-      if (!languageMenu || !languageTrigger) return;
-      languageMenu.classList.add("hidden");
-      languageTrigger.setAttribute("aria-expanded", "false");
-      languageTrigger.setAttribute("data-state", "closed");
-    };
-
-    const openLanguageMenu = function () {
-      if (!languageMenu || !languageTrigger) return;
-      languageMenu.classList.remove("hidden");
-      languageTrigger.setAttribute("aria-expanded", "true");
-      languageTrigger.setAttribute("data-state", "open");
-    };
-
-    function getMobileRefs() {
-      return {
-        menu: document.querySelector("[data-header-mobile-menu]"),
-        overlay: document.querySelector("[data-header-mobile-overlay]"),
-        mainNav: document.querySelector("[data-mobile-main-nav]"),
-        categoriesView: document.querySelector("[data-mobile-categories-view]"),
-      };
-    }
-
-    const closeMobileMenu = function () {
-      const refs = getMobileRefs();
-      if (!refs.menu || !refs.overlay) return;
-      refs.menu.classList.add("hidden");
-      refs.overlay.classList.add("hidden");
-      document.body.style.removeProperty("overflow");
-      document.documentElement.style.removeProperty("overflow");
-    };
-
-    const openMobileMenu = function () {
-      let refs = getMobileRefs();
-      if (!refs.menu || !refs.overlay) {
-        ensureMobileMenu(basePath);
-        refs = getMobileRefs();
-      }
-      if (!refs.menu || !refs.overlay) return;
-      closeLanguageMenu();
-      closeSearch();
-      closeAuthMenu();
-      if (refs.mainNav && refs.categoriesView) {
-        refs.mainNav.classList.remove("hidden");
-        refs.categoriesView.classList.add("hidden");
-        refs.categoriesView.classList.remove("flex");
-      }
-      refs.menu.classList.remove("hidden");
-      refs.overlay.classList.remove("hidden");
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-    };
-
-    const closeAuthMenu = function () {
-      if (!authMenu || !authTrigger) return;
-      authMenu.classList.add("hidden");
-      authTrigger.setAttribute("aria-expanded", "false");
-    };
-
-    const toggleAuthMenu = function () {
-      if (!authMenu || !authTrigger) return;
-      const shouldOpen = authMenu.classList.contains("hidden");
-      authMenu.classList.toggle("hidden", !shouldOpen);
-      authTrigger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
-    };
-
-    const closeSearch = function () {
-      if (!searchDialog) return;
-      searchDialog.classList.add("hidden");
-      document.body.style.removeProperty("overflow");
-    };
-
-    const openSearch = async function () {
-      if (!searchDialog || !searchInput) return;
-      searchDialog.classList.remove("hidden");
-      document.body.style.overflow = "hidden";
-      window.requestAnimationFrame(() => {
-        searchInput.focus();
-        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+  function bindInteractions(basePath) {
+    function collapseMobileBranch(node) {
+      if (!node) return;
+      node.classList.remove("is-open");
+      node.querySelectorAll(".is-open").forEach((branch) => branch.classList.remove("is-open"));
+      node.querySelectorAll(".acitem").forEach((submenu) => {
+        submenu.style.display = "none";
+        submenu.style.left = "-100%";
       });
-      searchState.query = searchInput.value || "";
+    }
+
+    function resetMobileMenu() {
+      const nav = document.getElementById("nav");
+      if (!nav) return;
+      nav.querySelectorAll(".is-open").forEach((branch) => branch.classList.remove("is-open"));
+      nav.querySelectorAll(".acitem").forEach((submenu) => {
+        submenu.style.display = "none";
+        submenu.style.left = "-100%";
+      });
+    }
+
+    function openMobileMenu() {
+      const nav = document.getElementById("nav");
+      const background = document.getElementById("navBackground");
+      if (!nav || !background) return;
+      resetMobileMenu();
+      nav.hidden = false;
+      background.hidden = false;
+      nav.classList.remove("navSlideClosed");
+      nav.classList.add("navSlideOpen");
+      document.body.style.overflow = "hidden";
+      renderAuthControls(basePath);
+    }
+
+    function closeMobileMenu() {
+      const nav = document.getElementById("nav");
+      const background = document.getElementById("navBackground");
+      if (nav) {
+        nav.hidden = true;
+        nav.classList.remove("navSlideOpen");
+        nav.classList.add("navSlideClosed");
+      }
+      if (background) background.hidden = true;
+      resetMobileMenu();
+      document.body.style.removeProperty("overflow");
+    }
+
+    document.querySelector("[data-header-search-trigger]")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      const panel = document.getElementById("search");
+      if (panel && !panel.hidden) closeSearch(basePath);
+      else openSearch(basePath);
+    });
+    document.querySelectorAll("[data-search-close]").forEach((node) => node.addEventListener("click", (event) => {
+      event.preventDefault();
+      closeSearch(basePath);
+    }));
+    document.querySelector("[data-search-clear]")?.addEventListener("click", () => {
+      const input = document.getElementById("srchInput");
+      if (input) input.value = "";
+      searchState.query = "";
       renderSearchResults(basePath);
-      if (searchInput.value.trim()) {
-        await runSearch(basePath, searchInput.value, false);
-      } else {
-        await ensureRandomPicks(basePath);
+    });
+    document.getElementById("clearRecentSearches")?.addEventListener("click", () => {
+      writeRecentSearches([]);
+      renderRecentSearches(basePath);
+    });
+    document.getElementById("srchInput")?.addEventListener("input", (event) => {
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(() => {
+        searchState.query = String(event.target && event.target.value || "");
         renderSearchResults(basePath);
-      }
-    };
-
-    if (languageTrigger && languageMenu && !languageTrigger.dataset.bound) {
-      languageTrigger.dataset.bound = "true";
-      languageTrigger.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (languageMenu.classList.contains("hidden")) {
-          openLanguageMenu();
-        } else {
-          closeLanguageMenu();
-        }
-      });
-
-      languageMenu.addEventListener("click", function (event) {
-        event.stopPropagation();
-      });
-
-      if (languageScroll) {
-        languageScroll.addEventListener(
-          "wheel",
-          function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            languageScroll.scrollTop += event.deltaY;
-          },
-          { passive: false }
-        );
-      }
-
-      languageMenu.querySelectorAll("[data-language-code]").forEach((button) => {
-        button.addEventListener("click", function () {
-          syncLanguage(button.getAttribute("data-language-code"));
-          closeLanguageMenu();
-        });
-      });
-    }
-
-    if (searchTrigger && searchDialog && searchInput && !searchTrigger.dataset.bound) {
-      searchTrigger.dataset.bound = "true";
-      searchTrigger.addEventListener("click", async function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        await openSearch();
-      });
-
-      searchDialog.querySelectorAll("[data-search-close]").forEach((node) => {
-        node.addEventListener("click", function (event) {
-          event.preventDefault();
-          closeSearch();
-        });
-      });
-
-      searchDialog.querySelector("[data-search-scroll]")?.addEventListener("click", function (event) {
-        event.stopPropagation();
-      });
-
-      searchInput.addEventListener("input", async function () {
-        searchState.query = searchInput.value || "";
-        if (!searchInput.value.trim()) {
-          searchState.results = [];
-          searchState.page = 0;
-          searchState.hasMore = false;
-          await ensureRandomPicks(basePath);
-          renderSearchResults(basePath);
-          return;
-        }
-        await runSearch(basePath, searchInput.value, false);
-      });
-
-      if (searchScroll) {
-        searchScroll.addEventListener("scroll", function () {
-          if (
-            !searchState.query.trim() ||
-            searchState.loadingMore ||
-            searchState.loading ||
-            !searchState.hasMore
-          ) {
-            return;
-          }
-          const threshold = (searchScroll.scrollTop + searchScroll.clientHeight) / searchScroll.scrollHeight;
-          if (threshold > 0.8) {
-            runSearch(basePath, searchState.query, true);
-          }
-        });
-      }
-    }
-
-    if (mobileTrigger && !mobileTrigger.dataset.bound) {
-      mobileTrigger.dataset.bound = "true";
-      mobileTrigger.addEventListener("click", function (event) {
-        event.preventDefault();
-        openMobileMenu();
-      });
-    }
-
-    if (mobileClose && !mobileClose.dataset.bound) {
-      mobileClose.dataset.bound = "true";
-      mobileClose.addEventListener("click", function (event) {
-        event.preventDefault();
-        closeMobileMenu();
-      });
-    }
-
-    if (mobileOverlay && !mobileOverlay.dataset.bound) {
-      mobileOverlay.dataset.bound = "true";
-      mobileOverlay.addEventListener("click", closeMobileMenu);
-    }
-
-    if (mobileCategoriesTrigger && mobileMainNav && mobileCategoriesView && !mobileCategoriesTrigger.dataset.bound) {
-      mobileCategoriesTrigger.dataset.bound = "true";
-      mobileCategoriesTrigger.addEventListener("click", function () {
-        mobileMainNav.classList.add("hidden");
-        mobileCategoriesView.classList.remove("hidden");
-        mobileCategoriesView.classList.add("flex");
-      });
-    }
-
-    if (mobileCategoriesBack && mobileMainNav && mobileCategoriesView && !mobileCategoriesBack.dataset.bound) {
-      mobileCategoriesBack.dataset.bound = "true";
-      mobileCategoriesBack.addEventListener("click", function () {
-        mobileCategoriesView.classList.add("hidden");
-        mobileCategoriesView.classList.remove("flex");
-        mobileMainNav.classList.remove("hidden");
-      });
-    }
-
-    mobileMenu?.querySelectorAll("[data-mobile-category-group]").forEach((button) => {
-      if (button.dataset.bound) return;
-      button.dataset.bound = "true";
-      button.addEventListener("click", function () {
-        const panel = button.parentElement?.querySelector("[data-mobile-category-panel]");
-        const icon = button.querySelector("svg");
-        const isHidden = panel?.classList.contains("hidden");
-        panel?.classList.toggle("hidden", !isHidden);
-        icon?.classList.toggle("rotate-180", Boolean(isHidden));
-      });
+      }, 120);
+    });
+    document.querySelector("#searchBar")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = document.getElementById("srchInput");
+      const query = input ? input.value.trim() : "";
+      if (query) pushRecentSearch(query);
+      window.location.href = basePath + SHOP_PAGE + (query ? "?search=" + encodeURIComponent(query) : "");
+    });
+    document.getElementById("enhancedSearch")?.addEventListener("click", (event) => {
+      const recentLink = event.target.closest("[data-recent-search-link]");
+      if (recentLink) pushRecentSearch(recentLink.getAttribute("data-recent-search-link"));
+      const trendingLink = event.target.closest("[data-trending-search-link]");
+      if (trendingLink) pushRecentSearch(trendingLink.getAttribute("data-trending-search-link"));
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      closeSearch(basePath);
+      closeMobileMenu();
     });
 
-    mobileMenu?.querySelectorAll("a").forEach((link) => {
-      if (link.dataset.bound) return;
-      link.dataset.bound = "true";
-      link.addEventListener("click", closeMobileMenu);
+    document.querySelector("[data-header-mobile-trigger]")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      openMobileMenu();
     });
-
-    const mobileLogout = mobileMenu?.querySelector("[data-mobile-logout]");
-    if (mobileLogout && !mobileLogout.dataset.bound) {
-      mobileLogout.dataset.bound = "true";
-      mobileLogout.addEventListener("click", function (event) {
+    document.querySelector("[data-mobile-menu-close]")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      closeMobileMenu();
+    });
+    document.getElementById("navBackground")?.addEventListener("click", () => {
+      closeMobileMenu();
+    });
+    document.getElementById("nav")?.addEventListener("click", (event) => {
+      const branchTrigger = event.target.closest("li.wChild > a");
+      if (branchTrigger && branchTrigger.nextElementSibling && branchTrigger.nextElementSibling.classList.contains("acitem")) {
         event.preventDefault();
-        Promise.resolve(window.AuctioAuth.logout()).then(function () {
-          closeMobileMenu();
-          window.location.href = basePath + "index.html";
+        const branch = branchTrigger.parentElement;
+        const submenu = branchTrigger.nextElementSibling;
+        const shouldOpen = !branch.classList.contains("is-open");
+        Array.from(branch.parentElement ? branch.parentElement.children : []).forEach((sibling) => {
+          if (sibling !== branch && sibling.classList) collapseMobileBranch(sibling);
         });
-      });
-    }
-
-    if (document.body.dataset.headerGlobalBindingsReady !== "true") {
-      document.body.dataset.headerGlobalBindingsReady = "true";
-      document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape") {
-          closeLanguageMenu();
-          closeSearch();
-          closeAuthMenu();
-          closeMobileMenu();
+        collapseMobileBranch(branch);
+        if (shouldOpen) {
+          branch.classList.add("is-open");
+          submenu.style.display = "block";
+          submenu.style.left = "0";
         }
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && searchTrigger) {
-          event.preventDefault();
-          openSearch();
-        }
-      });
-
-      document.addEventListener("click", function (event) {
-        if (
-          languageMenu &&
-          languageTrigger &&
-          !languageMenu.classList.contains("hidden") &&
-          !languageMenu.contains(event.target) &&
-          !languageTrigger.contains(event.target)
-        ) {
-          closeLanguageMenu();
-        }
-        if (authMenu && authTrigger && !authMenu.classList.contains("hidden") && !authMenu.contains(event.target) && !authTrigger.contains(event.target)) {
-          closeAuthMenu();
-        }
-      });
-    }
-
-    if (authTrigger && authMenu && !authTrigger.dataset.bound) {
-      authTrigger.dataset.bound = "true";
-      authTrigger.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleAuthMenu();
-      });
-
-      authMenu.addEventListener("click", function (event) {
-        event.stopPropagation();
-      });
-
-      authMenu.querySelector("[data-auth-logout]")?.addEventListener("click", function (event) {
-        event.preventDefault();
-        Promise.resolve(window.AuctioAuth.logout()).then(function () {
-          window.location.href = basePath + "index.html";
-        });
-      });
-    }
-  }
-
-  function enhanceHeader(basePath) {
-    const resolvedBasePath = basePath || getBasePath();
-    const header = document.querySelector("header");
-    if (header && !header.querySelector("[data-header-search-trigger]")) {
-      header.outerHTML = buildHeader(resolvedBasePath);
-    }
-    renderAuthControls(resolvedBasePath);
-    ensureMobileMenu(resolvedBasePath);
-    ensureLanguageMenu();
-    ensureSearchDialog();
-    syncLanguage(undefined, resolvedBasePath);
-    bindHeaderInteractions(resolvedBasePath);
-    ensureTranslationObserver(resolvedBasePath);
-  }
-
-  function ensureTawkChat() {
-    if (typeof document === "undefined") {
-      return;
-    }
-    configureTawkChatDisplay();
-    if (document.querySelector(`script[src="${TAWK_EMBED_SRC}"]`)) {
-      scheduleTawkDisplayRefresh();
-      return;
-    }
-    window.Tawk_API = window.Tawk_API || {};
-    window.Tawk_LoadStart = window.Tawk_LoadStart || new Date();
-    const firstScript = document.getElementsByTagName("script")[0];
-    if (!firstScript || !firstScript.parentNode) {
-      return;
-    }
-    const embedScript = document.createElement("script");
-    embedScript.async = true;
-    embedScript.src = TAWK_EMBED_SRC;
-    embedScript.charset = "UTF-8";
-    firstScript.parentNode.insertBefore(embedScript, firstScript);
-  }
-
-  function shouldShowExpandedTawk() {
-    return isHomePage();
-  }
-
-  function isLikelyTawkNode(node) {
-    if (!node || typeof node.getAttribute !== "function") {
-      return false;
-    }
-    const id = String(node.id || "").toLowerCase();
-    const className = String(node.className || "").toLowerCase();
-    const title = String(node.getAttribute("title") || "").toLowerCase();
-    const name = String(node.getAttribute("name") || "").toLowerCase();
-    const src = String(node.getAttribute("src") || "").toLowerCase();
-    return (
-      id.includes("tawk") ||
-      className.includes("tawk") ||
-      title.includes("chat") ||
-      name.includes("tawk") ||
-      src.includes("tawk")
-    );
-  }
-
-  function pruneTawkOverlays() {
-    if (typeof window === "undefined" || typeof document === "undefined" || shouldShowExpandedTawk()) {
-      return;
-    }
-    const nodes = Array.from(
-      document.querySelectorAll(
-        'iframe[src*="tawk"], iframe[title*="chat" i], iframe[name*="tawk" i], [id*="tawk" i], [class*="tawk" i]'
-      )
-    );
-    nodes.forEach(function (node) {
-      if (!isLikelyTawkNode(node)) {
         return;
       }
-      const style = window.getComputedStyle(node);
-      if (style.position !== "fixed") {
+      const clickedLink = event.target.closest("#nav a[href]");
+      if (clickedLink) closeMobileMenu();
+    });
+
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest("[data-auth-menu-trigger]");
+      if (trigger) {
+        const root = trigger.closest("[data-auth-menu-root]");
+        const menu = root && root.querySelector("[data-auth-menu]");
+        if (menu) {
+          const shouldOpen = menu.classList.contains("hidden");
+          menu.classList.toggle("hidden", !shouldOpen);
+          trigger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        }
         return;
       }
-      const rect = node.getBoundingClientRect();
-      const isLargeOverlay = rect.width > 100 || rect.height > 100;
-      if (!isLargeOverlay) {
-        node.style.removeProperty("display");
+      const logout = event.target.closest("[data-auth-logout]");
+      if (logout) {
+        Promise.resolve(window.AuctioAuth.logout()).then(() => { window.location.href = basePath + "index.html"; });
         return;
       }
-      node.style.setProperty("display", "none", "important");
+      document.querySelectorAll("[data-auth-menu]").forEach((menu) => {
+        if (!menu.closest("[data-auth-menu-root]")?.contains(event.target)) menu.classList.add("hidden");
+      });
     });
   }
 
-  function applyTawkDisplayMode() {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const api = window.Tawk_API;
-    if (!api) {
-      return;
-    }
-    if (typeof api.showWidget === "function") {
-      try {
-        api.showWidget();
-      } catch (_error) {}
-    }
-    if (!shouldShowExpandedTawk() && typeof api.minimize === "function") {
-      try {
-        api.minimize();
-      } catch (_error) {}
-    }
-    pruneTawkOverlays();
-  }
-
-  function scheduleTawkDisplayRefresh() {
-    [0, 250, 900, 1800, 3200].forEach(function (delay) {
-      window.setTimeout(applyTawkDisplayMode, delay);
+  function init() {
+    const basePath = getBasePath();
+    ensureNewsletterCleanup();
+    replaceHeader(basePath);
+    replaceFooter(basePath);
+    removeNewsletterBlocks();
+    ensureMobileMenu(basePath);
+    ensureSearchDialog(basePath);
+    renderAuthControls(basePath);
+    bindInteractions(basePath);
+    setBasketCount(readCartCount());
+    refreshRemoteCartCount();
+    window.addEventListener("hip:cart-updated", (event) => {
+      const items = Array.isArray(event.detail && event.detail.items) ? event.detail.items : [];
+      const count = items.reduce((sum, item) => sum + Math.max(1, Number(item && item.quantity || 1)), 0);
+      setBasketCount(count);
     });
+    refreshCurrentUser()
+      .then(() => renderAuthControls(basePath))
+      .catch(() => renderAuthControls(basePath));
   }
 
-  function configureTawkChatDisplay() {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const existingApi = window.Tawk_API || {};
-    if (existingApi.__auctioDisplayConfigured) {
-      scheduleTawkDisplayRefresh();
-      return;
-    }
-    const previousOnLoad = typeof existingApi.onLoad === "function" ? existingApi.onLoad : null;
-    const previousOnChatMinimized = typeof existingApi.onChatMinimized === "function" ? existingApi.onChatMinimized : null;
-    const previousOnChatHidden = typeof existingApi.onChatHidden === "function" ? existingApi.onChatHidden : null;
-    existingApi.onLoad = function () {
-      if (previousOnLoad) {
-        previousOnLoad.apply(this, arguments);
-      }
-      scheduleTawkDisplayRefresh();
-    };
-    existingApi.onChatMinimized = function () {
-      if (previousOnChatMinimized) {
-        previousOnChatMinimized.apply(this, arguments);
-      }
-      if (!shouldShowExpandedTawk()) {
-        scheduleTawkDisplayRefresh();
-      }
-    };
-    existingApi.onChatHidden = function () {
-      if (previousOnChatHidden) {
-        previousOnChatHidden.apply(this, arguments);
-      }
-      if (!shouldShowExpandedTawk()) {
-        scheduleTawkDisplayRefresh();
-      }
-    };
-    existingApi.__auctioDisplayConfigured = true;
-    window.Tawk_API = existingApi;
-    window.addEventListener("pageshow", scheduleTawkDisplayRefresh);
-    document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) {
-        scheduleTawkDisplayRefresh();
-      }
-    });
-  }
-
-  window.__AUCTIO_HEADER = {
-    enhanceHeader,
-    syncLanguage,
-  };
-  window.AuctioAuth = {
+  window.__AUCTIO_HEADER = { getBasePath };
+  window.AuctioAuth = Object.assign(window.AuctioAuth || {}, {
     getCurrentUser,
-    getStoredUsers,
+    refreshCurrentUser,
+    getStoredUsers: () => [],
     register: registerAuthUser,
     login: loginAuthUser,
+    requestPasswordReset: (email, redirectTo) => backend().requestPasswordReset(email, redirectTo),
     logout: logoutAuthUser,
-    getPostAuthRedirect,
+    updatePassword: (newPassword) => backend().updatePassword(newPassword),
+    getProfile: () => backend().getProfile(),
+    saveProfile: (profile) => backend().saveProfile(profile),
+    getCustomerAddresses: () => backend().getCustomerAddresses ? backend().getCustomerAddresses() : Promise.resolve([]),
+    saveCustomerAddress: (address) => backend().saveCustomerAddress ? backend().saveCustomerAddress(address) : backend().saveProfile(address),
+    deleteCustomerAddress: (addressId) => backend().deleteCustomerAddress ? backend().deleteCustomerAddress(addressId) : Promise.resolve(true),
+    getCustomerOrders: () => backend().getCustomerOrders(),
     buildAuthPageUrl,
-  };
-  window.addEventListener(AUTH_EVENT, function () {
-    const basePath = getBasePath();
-    renderAuthControls(basePath);
-    ensureMobileMenu(basePath);
-    syncLanguage(undefined, basePath);
-    bindHeaderInteractions(basePath);
-  });
-  window.addEventListener("auctio:auth", function () {
-    const basePath = getBasePath();
-    renderAuthControls(basePath);
-    ensureMobileMenu(basePath);
-    syncLanguage(undefined, basePath);
-    bindHeaderInteractions(basePath);
+    getPostAuthRedirect,
   });
 
-  if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      function () {
-        const basePath = getBasePath();
-        replaceHeader();
-        fixFooterLogo();
-        enhanceHeader(basePath);
-        ensureTawkChat();
-      },
-      { once: true }
-    );
-  } else {
-    const basePath = getBasePath();
-    replaceHeader();
-    fixFooterLogo();
-    enhanceHeader(basePath);
-    ensureTawkChat();
-  }
+  window.addEventListener(AUTH_EVENT, () => renderAuthControls(getBasePath()));
+  window.addEventListener("auctio:auth", () => renderAuthControls(getBasePath()));
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();

@@ -1,4 +1,6 @@
 (function () {
+  "use strict";
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -9,1419 +11,1853 @@
   }
 
   function getBasePath() {
-    const path = window.location.pathname.replace(/\/+/g, "/");
-    if (path.includes("/collections/") || path.includes("/category/") || path.includes("/auctions/") || path.includes("/lot/") || path.includes("/bidding/")) {
-      return "../";
-    }
-    return "";
+    return window.__AUCTIO_HEADER && window.__AUCTIO_HEADER.getBasePath
+      ? window.__AUCTIO_HEADER.getBasePath()
+      : "";
   }
 
-  function renderShell(content, title, subtitle) {
-    const root = document.querySelector("[data-auth-root]");
-    if (!root) return;
-    root.innerHTML = `
-      <section class="border-b border-border/40 bg-secondary/20">
-        <div class="container mx-auto px-4 lg:px-8 py-16">
-          <h1 class="font-serif text-4xl md:text-5xl mb-4 text-balance">${title}</h1>
-          <p class="text-lg text-muted-foreground max-w-2xl text-pretty">${subtitle}</p>
-        </div>
-      </section>
-      <section class="py-16">
-        <div class="container mx-auto px-4 lg:px-8">
-          <div class="mx-auto max-w-md rounded-2xl border border-border/60 bg-background p-8 shadow-sm">
-            ${content}
-          </div>
-        </div>
-      </section>
-    `;
-  }
-
-  function renderWideShell(content, title, subtitle) {
-    const root = document.querySelector("[data-auth-root]");
-    if (!root) return;
-    root.innerHTML = `
-      <section class="py-10 lg:py-16">
-        <div class="container mx-auto px-4 lg:px-8">
-          ${content}
-        </div>
-      </section>
-    `;
-  }
-
-  function buildInput(label, name, type, autocomplete, required) {
-    return `
-      <label class="block space-y-2">
-        <span class="text-sm font-medium">${label}</span>
-        <input name="${name}" type="${type}" autocomplete="${autocomplete}" ${required ? "required" : ""} class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-11 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" />
-      </label>
-    `;
-  }
-
-  const COUNTRIES = [
-    "Afghanistan","Aland Islands","Albania","Algeria","American Samoa","Andorra","Angola","Anguilla","Antigua and Barbuda","Argentina",
-    "Armenia","Aruba","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin",
-    "Bermuda","Bhutan","Bolivia","Bonaire, Sint Eustatius and Saba","Bosnia and Herzegovina","Botswana","Brazil","British Indian Ocean Territory",
-    "Brunei Darussalam","Bulgaria","Burkina Faso","Burundi","Cambodia","Cameroon","Canada","Cape Verde","Cayman Islands","Central African Republic",
-    "Chad","Chile","China","Christmas Island","Cocos (Keeling) Islands","Colombia","Comoros","Congo","Congo, Democratic Republic of the","Cook Islands",
-    "Costa Rica","Cote d'Ivoire","Croatia","Cuba","Curacao","Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador",
-    "Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Ethiopia","Falkland Islands","Faroe Islands","Federated States of Micronesia","Fiji",
-    "Finland","France","French Guiana","French Polynesia","Gabon","Gambia","Georgia","Germany","Ghana","Gibraltar","Greece","Greenland","Grenada",
-    "Guadeloupe","Guam","Guatemala","Guernsey","Guinea","Guinea-Bissau","Guyana","Haiti","Holy See (Vatican City State)","Honduras","Hong Kong",
-    "Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Isle of Man","Israel","Italy","Jamaica","Japan","Jersey","Jordan","Kazakhstan",
-    "Kenya","Kiribati","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg",
-    "Macao","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Martinique","Mauritania","Mauritius","Mayotte","Mexico",
-    "Moldova","Monaco","Mongolia","Montenegro","Montserrat","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Caledonia",
-    "New Zealand","Nicaragua","Niger","Nigeria","Niue","Norfolk Island","North Korea","North Macedonia","Northern Mariana Islands","Norway","Oman",
-    "Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Puerto Rico","Qatar","Reunion",
-    "Romania","Russia","Rwanda","Saint Barthelemy","Saint Helena","Saint Kitts and Nevis","Saint Lucia","Saint Martin (French Part)",
-    "Saint Pierre and Miquelon","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia",
-    "Seychelles","Sierra Leone","Singapore","Sint Maarten","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan",
-    "Spain","Sri Lanka","Sudan","Suriname","Svalbard and Jan Mayen","Swaziland","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania",
-    "Thailand","Timor-Leste","Togo","Tokelau","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Turks and Caicos Islands","Tuvalu",
-    "Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Venezuela","Vietnam",
-    "Virgin Islands, British","Virgin Islands, U.S.","Wallis and Futuna","Western Sahara","Yemen","Zambia","Zimbabwe"
+  var COUNTRY_OPTIONS = [
+    ["United Kingdom (excluding Channel Islands)", "gb"],
+    ["Afghanistan", "af"],
+    ["Albania", "al"],
+    ["Algeria", "dz"],
+    ["American Samoa", "as"],
+    ["Andorra", "ad"],
+    ["Angola", "ao"],
+    ["Anguilla", "ai"],
+    ["Antarctica", "aq"],
+    ["Antigua And Barbuda", "ag"],
+    ["Argentina", "ar"],
+    ["Armenia", "am"],
+    ["Aruba", "aw"],
+    ["Australia", "au"],
+    ["Austria", "at"],
+    ["Azerbaijan", "az"],
+    ["Bahamas", "bs"],
+    ["Bahrain", "bh"],
+    ["Bangladesh", "bd"],
+    ["Barbados", "bb"],
+    ["Belgium", "be"],
+    ["Belize", "bz"],
+    ["Bermuda", "bm"],
+    ["Brazil", "br"],
+    ["Bulgaria", "bg"],
+    ["Canada", "ca"],
+    ["Chile", "cl"],
+    ["China", "cn"],
+    ["Colombia", "co"],
+    ["Croatia", "hr"],
+    ["Cyprus", "cy"],
+    ["Czech Republic", "cz"],
+    ["Denmark", "dk"],
+    ["Egypt", "eg"],
+    ["Estonia", "ee"],
+    ["Finland", "fi"],
+    ["France", "fr"],
+    ["Georgia", "ge"],
+    ["Germany", "de"],
+    ["Gibraltar", "gi"],
+    ["Greece", "gr"],
+    ["Guernsey", "gg"],
+    ["Hong Kong", "hk"],
+    ["Hungary", "hu"],
+    ["Iceland", "is"],
+    ["India", "in"],
+    ["Indonesia", "id"],
+    ["Ireland", "ie"],
+    ["Isle Of Man", "im"],
+    ["Italy", "it"],
+    ["Japan", "jp"],
+    ["Jersey", "je"],
+    ["Korea, Republic Of", "kr"],
+    ["Kuwait", "kw"],
+    ["Latvia", "lv"],
+    ["Lithuania", "lt"],
+    ["Luxembourg", "lu"],
+    ["Malaysia", "my"],
+    ["Malta", "mt"],
+    ["Mexico", "mx"],
+    ["Netherlands", "nl"],
+    ["New Zealand", "nz"],
+    ["Norway", "no"],
+    ["Poland", "pl"],
+    ["Portugal", "pt"],
+    ["Romania", "ro"],
+    ["Singapore", "sg"],
+    ["Slovakia", "sk"],
+    ["South Africa", "za"],
+    ["Spain", "es"],
+    ["Sweden", "se"],
+    ["Switzerland", "ch"],
+    ["Turkey", "tr"],
+    ["United Arab Emirates", "ae"],
+    ["United States", "us"],
+    ["Vietnam", "vn"],
   ];
 
-  function renderCountryOptions(selectedCountry) {
-    return COUNTRIES.map(function (country) {
-      return `<option ${selectedCountry === country ? "selected" : ""}>${country}</option>`;
+  function countryOptionsHtml(selectedCode) {
+    return COUNTRY_OPTIONS.map(function (item) {
+      var selected = item[1] === selectedCode ? ' selected="selected"' : "";
+      return '<option value="' + escapeHtml(item[0] + "|" + item[1]) + '" data-postcode="1"' + selected + ' data-postcodelookupsupported="1">' + escapeHtml(item[0]) + '</option>';
     }).join("");
   }
 
-  function buildLoginPage(basePath) {
-    return `
-      <div class="min-h-[calc(100vh-80px)] grid lg:grid-cols-2">
-        <div class="flex flex-col justify-center px-6 py-12 lg:px-16 xl:px-24 bg-background">
-          <div class="w-full max-w-md mx-auto space-y-8">
-            <div class="space-y-2">
-              <h1 class="text-4xl font-serif font-bold tracking-tight">Login</h1>
-              <p class="text-muted-foreground">Enter your credentials to access your account</p>
-            </div>
-            <form data-auth-form class="space-y-6">
-              <div class="space-y-2">
-                <label class="flex items-center gap-2 font-medium text-base" for="email">Email</label>
-                <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base" id="email" name="email" placeholder="Enter your email" required type="email" autocomplete="email" />
-              </div>
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <label class="flex items-center gap-2 font-medium text-base" for="password">Password</label>
-                  <a class="text-sm text-primary hover:underline" href="${basePath}contact.html">Forgot password?</a>
-                </div>
-                <div class="relative">
-                  <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base pr-12" id="password" name="password" placeholder="Enter your password" required type="password" autocomplete="current-password" />
-                  <button type="button" data-password-toggle class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label="Show password">
-                    <svg xmlns="http://www.w3.org/2000/svg" data-password-icon="show" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" data-password-icon="hide" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden h-5 w-5"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
-                  </button>
-                </div>
-              </div>
-              <p data-auth-error class="hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"></p>
-              <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-6 w-full h-12 text-base" type="submit">Sign In</button>
-            </form>
-            <div class="text-center text-base">
-              <span class="text-muted-foreground">Don't have an account? </span>
-              <a class="text-primary font-medium hover:underline" href="${window.AuctioAuth.buildAuthPageUrl("register", basePath)}">Sign Up</a>
-            </div>
-            <div class="text-center pt-4">
-              <a class="text-sm text-muted-foreground hover:text-foreground transition-colors" href="${basePath}index.html">← Back to Home</a>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col justify-center relative bg-muted/30 overflow-hidden lg:min-h-0 min-h-[500px]">
-          <div class="absolute inset-0">
-            <img alt="Luxury auction gallery" class="object-cover h-full w-full" src="${basePath}luxury-jewelry-watches-display.jpg" />
-            <div class="absolute inset-0 bg-gradient-to-br from-background/95 via-background/85 to-background/75"></div>
-          </div>
-          <div class="relative z-10 px-6 py-12 lg:px-16 xl:px-24 space-y-8 lg:space-y-12">
-            <div class="space-y-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 lg:w-12 lg:h-12 text-primary/60"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path></svg>
-              <blockquote class="text-xl lg:text-2xl xl:text-3xl font-serif leading-relaxed text-foreground">The exceptional quality and seamless experience gave me complete confidence in my purchase. Truly a world-class auction platform.</blockquote>
-              <div class="space-y-1">
-                <div class="font-semibold text-base lg:text-lg">Michael Chen</div>
-                <div class="text-sm text-muted-foreground">Art Collector</div>
-              </div>
-            </div>
-            <div class="grid grid-cols-3 gap-4 lg:gap-8 pt-6 lg:pt-8 border-t border-border/40">
-              <div>
-                <div class="text-2xl lg:text-3xl font-bold text-primary">50K+</div>
-                <div class="text-xs lg:text-sm text-muted-foreground mt-1">Trusted Collectors</div>
-              </div>
-              <div>
-                <div class="text-2xl lg:text-3xl font-bold text-primary">25+</div>
-                <div class="text-xs lg:text-sm text-muted-foreground mt-1">Years Experience</div>
-              </div>
-              <div>
-                <div class="text-2xl lg:text-3xl font-bold text-primary">€2.5B+</div>
-                <div class="text-xs lg:text-sm text-muted-foreground mt-1">Total Sales</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function buildRegisterPage(basePath) {
-    return `
-      <div class="min-h-[calc(100vh-80px)] grid lg:grid-cols-2">
-        <div class="flex flex-col justify-center px-6 py-12 lg:px-16 xl:px-24 bg-background">
-          <div class="w-full max-w-md mx-auto space-y-8">
-            <div class="space-y-2">
-              <h1 class="text-4xl font-serif font-bold tracking-tight">Register</h1>
-              <p class="text-muted-foreground">Join our community of collectors and enthusiasts</p>
-            </div>
-            <form data-auth-form class="space-y-5">
-              <div class="space-y-2">
-                <label class="flex items-center gap-2 font-medium text-base" for="firstName">First Name</label>
-                <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base" id="firstName" name="firstName" placeholder="Enter your first name" required type="text" autocomplete="given-name" />
-              </div>
-              <div class="space-y-2">
-                <label class="flex items-center gap-2 font-medium text-base" for="lastName">Last Name</label>
-                <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base" id="lastName" name="lastName" placeholder="Enter your last name" required type="text" autocomplete="family-name" />
-              </div>
-              <div class="space-y-2">
-                <label class="flex items-center gap-2 font-medium text-base" for="email">Email</label>
-                <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base" id="email" name="email" placeholder="Enter your email" required type="email" autocomplete="email" />
-              </div>
-              <div class="space-y-2">
-                <label class="flex items-center gap-2 font-medium text-base" for="phone">Phone</label>
-                <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base" id="phone" name="phone" placeholder="Enter your phone number" type="tel" autocomplete="tel" />
-              </div>
-              <div class="space-y-2">
-                <label class="flex items-center gap-2 font-medium text-base" for="password">Password</label>
-                <div class="relative">
-                  <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base pr-12" id="password" name="password" placeholder="Enter your password" required type="password" autocomplete="new-password" />
-                  <button type="button" data-password-toggle="password" class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label="Show password">
-                    <svg xmlns="http://www.w3.org/2000/svg" data-password-icon="show" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" data-password-icon="hide" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden h-5 w-5"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
-                  </button>
-                </div>
-              </div>
-              <div class="space-y-2">
-                <label class="flex items-center gap-2 font-medium text-base" for="confirmPassword">Confirm Password</label>
-                <div class="relative">
-                  <input class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm h-12 text-base pr-12" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required type="password" autocomplete="new-password" />
-                  <button type="button" data-password-toggle="confirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label="Show password">
-                    <svg xmlns="http://www.w3.org/2000/svg" data-password-icon="show" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" data-password-icon="hide" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden h-5 w-5"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg>
-                  </button>
-                </div>
-              </div>
-              <div class="flex items-start space-x-3 pt-2">
-                <input id="terms" name="terms" class="mt-0.5 h-4 w-4 rounded border border-input" required type="checkbox" />
-                <label for="terms" class="text-sm text-muted-foreground leading-relaxed cursor-pointer">I agree to the <a class="text-primary hover:underline" href="${basePath}terms.html">Terms of Service</a> and <a class="text-primary hover:underline" href="${basePath}privacy.html">Privacy Policy</a></label>
-              </div>
-              <p data-auth-error class="hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"></p>
-              <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-6 w-full h-12 text-base" type="submit">Create Account</button>
-            </form>
-            <div class="text-center text-base">
-              <span class="text-muted-foreground">Already have an account? </span>
-              <a class="text-primary font-medium hover:underline" href="${window.AuctioAuth.buildAuthPageUrl("login", basePath)}">Sign In</a>
-            </div>
-            <div class="text-center pt-4">
-              <a class="text-sm text-muted-foreground hover:text-foreground transition-colors" href="${basePath}index.html">← Back to Home</a>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col justify-center relative bg-muted/30 overflow-hidden lg:min-h-0 min-h-[600px]">
-          <div class="absolute inset-0">
-            <img alt="Luxury watches and jewelry" class="object-cover h-full w-full" src="${basePath}luxury-jewelry-watches-display.jpg" />
-            <div class="absolute inset-0 bg-gradient-to-br from-background/95 via-background/85 to-background/75"></div>
-          </div>
-          <div class="relative z-10 px-6 py-12 lg:px-16 xl:px-24 space-y-8 lg:space-y-12">
-            <div class="space-y-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 lg:w-12 lg:h-12 text-primary/60"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"></path></svg>
-              <blockquote class="text-xl lg:text-2xl xl:text-3xl font-serif leading-relaxed text-foreground">From rare timepieces to exceptional jewelry, the quality and authenticity of every item exceeded my expectations.</blockquote>
-              <div class="space-y-1">
-                <div class="font-semibold text-base lg:text-lg">Sarah Williams</div>
-                <div class="text-sm text-muted-foreground">Watch Enthusiast</div>
-              </div>
-            </div>
-            <div class="space-y-6 pt-6 lg:pt-8 border-t border-border/40">
-              <div class="flex items-start gap-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg>
-                <div>
-                  <div class="font-semibold mb-1">Authenticity Guarantee</div>
-                  <div class="text-sm text-muted-foreground">Every item is verified by our expert team</div>
-                </div>
-              </div>
-              <div class="flex items-start gap-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle></svg>
-                <div>
-                  <div class="font-semibold mb-1">Expert Curators</div>
-                  <div class="text-sm text-muted-foreground">World-renowned specialists in every category</div>
-                </div>
-              </div>
-              <div class="flex items-start gap-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>
-                <div>
-                  <div class="font-semibold mb-1">Secure Shipping</div>
-                  <div class="text-sm text-muted-foreground">Insured worldwide delivery for all items</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function bindPasswordToggle(button, input) {
-    if (!button || !input) return;
-    button.addEventListener("click", function () {
-      const showing = input.type === "text";
-      input.type = showing ? "password" : "text";
-      button.querySelector('[data-password-icon="show"]')?.classList.toggle("hidden", !showing);
-      button.querySelector('[data-password-icon="hide"]')?.classList.toggle("hidden", showing);
-      button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
-    });
-  }
-
-  function setAuthSubmitState(button, isLoading, idleLabel, loadingLabel) {
-    if (!button) return;
-    if (!button.dataset.idleLabel) {
-      button.dataset.idleLabel = idleLabel;
-      button.dataset.loadingLabel = loadingLabel;
-    }
-    button.disabled = !!isLoading;
-    button.innerHTML = isLoading
-      ? `
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
-          <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-90"></path>
-        </svg>
-        <span>${loadingLabel}</span>
-      `
-      : `<span>${idleLabel}</span>`;
-  }
-
-  function bindLoginPage(basePath) {
-    if (window.AuctioAuth.getCurrentUser()) {
-      window.location.replace(window.AuctioAuth.getPostAuthRedirect(basePath));
-      return;
-    }
-
-    const root = document.querySelector("[data-auth-root]");
+  function renderShell(content) {
+    var root = document.querySelector("[data-auth-root]");
     if (!root) return;
-    root.innerHTML = buildLoginPage(basePath);
-
-    const form = document.querySelector("[data-auth-form]");
-    const errorNode = document.querySelector("[data-auth-error]");
-    const passwordInput = document.querySelector("#password");
-    const passwordToggle = document.querySelector("[data-password-toggle]");
-    let isSubmitting = false;
-    if (!form || !errorNode || !passwordInput) return;
-
-    bindPasswordToggle(passwordToggle, passwordInput);
-
-    form.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      if (isSubmitting) return;
-      errorNode.classList.add("hidden");
-      const submitBtn = form.querySelector("[type=submit]");
-      setAuthSubmitState(submitBtn, true, "Sign In", "Signing In...");
-      isSubmitting = true;
-      const formData = new FormData(form);
-      try {
-        await window.AuctioAuth.login(formData.get("email"), formData.get("password"));
-        window.location.href = window.AuctioAuth.getPostAuthRedirect(basePath);
-      } catch (error) {
-        errorNode.textContent = error.message || "Unable to log in.";
-        errorNode.classList.remove("hidden");
-        setAuthSubmitState(submitBtn, false, "Sign In", "Signing In...");
-      } finally {
-        isSubmitting = false;
-      }
-    });
+    root.innerHTML = '<section class="py-10 lg:py-16"><div class="container mx-auto px-4 lg:px-8">' + content + '</div></section>';
   }
 
-  function bindRegisterPage(basePath) {
-    if (window.AuctioAuth.getCurrentUser()) {
-      window.location.replace(window.AuctioAuth.getPostAuthRedirect(basePath));
-      return;
-    }
-
-    const root = document.querySelector("[data-auth-root]");
+  function renderRaw(content) {
+    var root = document.querySelector("[data-auth-root]");
     if (!root) return;
-    root.innerHTML = buildRegisterPage(basePath);
-
-    const form = document.querySelector("[data-auth-form]");
-    const errorNode = document.querySelector("[data-auth-error]");
-    const passwordInput = document.querySelector("#password");
-    const confirmPasswordInput = document.querySelector("#confirmPassword");
-    let isSubmitting = false;
-    if (!form || !errorNode || !passwordInput || !confirmPasswordInput) return;
-
-    bindPasswordToggle(document.querySelector('[data-password-toggle="password"]'), passwordInput);
-    bindPasswordToggle(document.querySelector('[data-password-toggle="confirmPassword"]'), confirmPasswordInput);
-
-    form.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      if (isSubmitting) return;
-      errorNode.classList.add("hidden");
-      const submitBtn = form.querySelector("[type=submit]");
-      const formData = new FormData(form);
-
-      if (String(formData.get("password") || "") !== String(formData.get("confirmPassword") || "")) {
-        errorNode.textContent = "Passwords do not match.";
-        errorNode.classList.remove("hidden");
-        return;
-      }
-
-      if (!formData.get("terms")) {
-        errorNode.textContent = "You must accept the terms to continue.";
-        errorNode.classList.remove("hidden");
-        return;
-      }
-
-      setAuthSubmitState(submitBtn, true, "Create Account", "Creating Account...");
-      isSubmitting = true;
-      try {
-        await window.AuctioAuth.register({
-          firstName: formData.get("firstName"),
-          lastName: formData.get("lastName"),
-          email: formData.get("email"),
-          phone: formData.get("phone"),
-          password: formData.get("password"),
-        });
-        window.location.href = window.AuctioAuth.getPostAuthRedirect(basePath);
-      } catch (error) {
-        if (error.isConfirmEmail) {
-          errorNode.className = errorNode.className.replace(/border-red-\S+|bg-red-\S+|text-red-\S+/g, "").trim();
-          errorNode.classList.add("border-green-200", "bg-green-50", "text-green-800");
-        } else {
-          errorNode.className = errorNode.className.replace(/border-green-\S+|bg-green-\S+|text-green-\S+/g, "").trim();
-          errorNode.classList.add("border-red-200", "bg-red-50", "text-red-700");
-          setAuthSubmitState(submitBtn, false, "Create Account", "Creating Account...");
-        }
-        errorNode.textContent = error.message || "Unable to create account.";
-        errorNode.classList.remove("hidden");
-      } finally {
-        isSubmitting = false;
-      }
-    });
+    root.innerHTML = content;
   }
 
-  function bindAccountPage(basePath) {
-    const user = window.AuctioAuth.getCurrentUser();
-    if (!user) {
-      window.location.href = window.AuctioAuth.buildAuthPageUrl("login", basePath);
-      return;
-    }
-    const profileKey = `auctio_profile_${user.id}`;
-    const views = [
-      { id: "overview", label: "Overview", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' },
-      { id: "bids", label: "My Bids", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"></path><path d="m16 16 6-6"></path><path d="m8 8 6-6"></path><path d="m9 7 8 8"></path><path d="m21 11-8-8"></path></svg>' },
-      { id: "watchlist", label: "Watchlist", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>' },
-      { id: "history", label: "Viewing History", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>' },
-      { id: "settings", label: "Settings", icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>' },
-    ];
-    const allowedTabs = new Set(["overview", "bids", "watchlist", "history", "settings"]);
-    const initialTab = new URLSearchParams(window.location.search).get("tab");
-    let activeView = allowedTabs.has(initialTab) ? initialTab : "overview";
-    let flash = { profile: null, password: null, danger: null };
-
-    function handleAuthLoss() {
-      if (window.AuctioAuth.getCurrentUser()) return;
-      window.location.href = window.AuctioAuth.buildAuthPageUrl("login", basePath);
-    }
-
-    window.addEventListener("auctio:auth", handleAuthLoss);
-
-    function setActionButtonState(button, isLoading, idleLabel, loadingLabel) {
-      if (!button) return;
-      button.disabled = !!isLoading;
-      button.innerHTML = isLoading
-        ? `
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
-            <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-90"></path>
-          </svg>
-          <span>${loadingLabel}</span>
-        `
-        : `<span>${idleLabel}</span>`;
-    }
-
-    // ── Data cache ─────────────────────────────────────────────────────────
-    const cache = { counts: null, bids: null, watchlist: null, history: null, notifications: null, profile: null, userId: user.id };
-
-    function resetCacheForUser(nextUserId) {
-      if (!nextUserId || cache.userId === nextUserId) return;
-      cache.counts = null;
-      cache.bids = null;
-      cache.watchlist = null;
-      cache.history = null;
-      cache.notifications = null;
-      cache.profile = null;
-      cache.userId = nextUserId;
-    }
-
-	    async function loadDataForView(view) {
-	      if (!window.SupabaseAPI) return;
-	      try {
-	        resetCacheForUser((window.AuctioAuth.getCurrentUser() || user).id);
-	        if (!cache.counts) {
-	          cache.counts = await window.SupabaseAPI.getCounts();
-	        }
-	        if (view === "bids" && !cache.bids) {
-	          cache.bids = await window.SupabaseAPI.getBids();
-	        }
-        if (view === "watchlist" && !cache.watchlist) {
-          cache.watchlist = await window.SupabaseAPI.getWatchlist();
-        }
-        if (view === "history" && !cache.history) {
-          cache.history = await window.SupabaseAPI.getViewingHistory();
-        }
-        if (view === "settings" && !cache.notifications) {
-          cache.notifications = await window.SupabaseAPI.getNotificationSettings();
-        }
-        if ((view === "settings" || view === "overview") && !cache.profile) {
-          cache.profile = await window.SupabaseAPI.getProfile();
-        }
-	      } catch (_e) {}
-	    }
-
-	    function getNavBadgeCount(viewId) {
-	      if (viewId === "bids") {
-	        if (cache.counts && Number.isFinite(Number(cache.counts.bids))) return Number(cache.counts.bids);
-	        if (Array.isArray(cache.bids)) return cache.bids.length;
-	      }
-	      if (viewId === "watchlist") {
-	        if (cache.counts && Number.isFinite(Number(cache.counts.watchlist))) return Number(cache.counts.watchlist);
-	        if (Array.isArray(cache.watchlist)) return cache.watchlist.length;
-	      }
-	      return null;
-	    }
-
-    function readStoredProfile() {
-      try {
-        return JSON.parse(window.localStorage.getItem(profileKey)) || {};
-      } catch (_error) {
-        return {};
+  function ensureClassicAccountStyles() {
+    if (document.getElementById("classic-account-style")) return;
+    document.head.insertAdjacentHTML("beforeend", `<style id="classic-account-style">
+      .maxWidth{width:100%;max-width:1180px;margin:0 auto;padding:0 14px}
+      #accountPage,#accountPage *{box-sizing:border-box;font-family:"Open Sans",Arial,Helvetica,sans-serif;letter-spacing:0}
+      #accountPage{background:#fff;color:#111}
+      #accountPage a{color:inherit}
+      #accountPage button,#accountPage input,#accountPage select{font:inherit}
+      #accountPage #breads{border-bottom:1px solid #e7e8e9;background:#fff}
+      #accountPage #breads .maxWidth{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding-top:10px;padding-bottom:10px}
+      #accountPage #breads span{display:inline-flex;align-items:center;color:#646464;font-size:10px;font-weight:700;line-height:1.4;text-transform:none}
+      #accountPage #breads span.active{color:#111}
+      #accountPage #breads span.no i{display:inline-flex;align-items:center;justify-content:center;margin-left:5px;color:#999;font-style:normal}
+      #accountPage #breads span.no i::before{content:"›";font-size:12px;line-height:1}
+      #accountPageContent{padding:28px 0 44px}
+      #accountTitle h1{margin:0 0 22px;font-size:32px;font-weight:900;line-height:1.05;text-transform:none}
+      #accountContent{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
+      .fs{display:block;margin:0}
+      .fs-mod{border:1px solid #e7e8e9;background:#fff}
+      .fs-mod-ttl{padding:16px 18px;border-bottom:1px solid #e7e8e9}
+      .fs-mod-ttl h2,.fs-mod-ttl h3{margin:0;font-size:20px;font-weight:800;line-height:1.2;text-transform:none}
+      .fs-mod-cnt{padding:18px}
+      .fs-grp + .fs-grp{margin-top:18px}
+      .fs-row{display:grid;grid-template-columns:130px minmax(0,1fr);gap:14px;align-items:start;margin-bottom:14px}
+      .fs-row:last-child{margin-bottom:0}
+      .fs-row label{display:block;padding-top:11px;font-size:12px;font-weight:700;line-height:1.35;color:#111;text-transform:none}
+      .fs-row.inp > span,.fs-row.sel > span,.fs-row.but > span,.fs-row.lnk > span,.fs-row.chk > span{display:block;position:relative}
+      .fs-row.inp input,.fs-row.sel select{width:100%;height:42px;border:1px solid #cfcfcf;border-radius:0;padding:0 12px;background:#fff;color:#111;font-size:14px;outline:none}
+      .fs-row.sel select{appearance:auto}
+      .fs-row.inp input:focus,.fs-row.sel select:focus{border-color:#111}
+      .fs-row.but label,.fs-row.lnk label{padding-top:0}
+      .fs-row.inf{display:block}
+      .fs-row.inf p{margin:0;color:#555;font-size:13px;line-height:1.75}
+      .btn.btn-level1.large{display:inline-flex;align-items:center;justify-content:center;min-height:42px;width:auto;min-width:220px;border:1px solid #111;border-radius:0;background:#111;padding:0 20px;color:#fff;font-size:12px;font-weight:900;line-height:1;text-transform:none;cursor:pointer}
+      .btn.btn-level1.large:hover{background:#222}
+      .btn.btn-level1.large:disabled{cursor:not-allowed;opacity:.62}
+      .btn.btn-level3{display:inline-flex;align-items:center;justify-content:center;min-height:38px;border:1px solid #111;border-radius:0;background:#fff;padding:0 16px;color:#111;font-size:12px;font-weight:900;cursor:pointer}
+      .forgotPasswordLink,.privacy-statement{text-decoration:underline;text-underline-offset:3px}
+      .fs-row.lnk span{padding-top:3px}
+      .fs-row.lnk a{font-size:12px;font-weight:700;line-height:1.5}
+      .legalRequirementMessage{margin-top:22px;border-top:1px solid #e7e8e9;padding-top:16px}
+      .privacyNotice{margin:0;color:#666;font-size:12px;line-height:1.6;text-align:center}
+      .accountCreate #accountContent{display:block}
+      .accountCreate .fs-mod{margin-bottom:18px}
+      .accountCreate .accountCreateButton{border:0}
+      .accountCreate .accountCreateButton .fs-mod-cnt{padding:0}
+      .accountCreate .accountCreateButton .legalRequirementMessage{margin-top:0}
+      .accountCreate .inputErr{display:none;margin:8px 0 0 144px;color:#b00020;font-size:12px;line-height:1.45}
+      .accountCreate .inputErr i{display:none}
+      .accountCreate .fs-row.has-error .inputErr{display:block}
+      .accountCreate .tooltipIcon{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-left:7px;border:1px solid #bbb;border-radius:999px;color:#777;font-size:11px;vertical-align:middle}
+      .accountCreate .tooltipIcon::before{content:"i"}
+      .accountCreate .chk input{position:absolute;opacity:0;pointer-events:none}
+      .accountCreate .chk label[for]{display:flex;gap:10px;align-items:flex-start;padding-top:0;cursor:pointer}
+      .accountCreate .chkbox{display:inline-flex;width:18px;height:18px;flex:0 0 18px;align-items:center;justify-content:center;border:1px solid #111;background:#fff;color:#111;font-size:11px;line-height:1}
+      .accountCreate .chk input:not(:checked) + label .chkbox i{visibility:hidden}
+      .accountCreate .chk input:checked + label .chkbox i::before{content:"";display:block;width:8px;height:4px;border-left:2px solid #111;border-bottom:2px solid #111;transform:rotate(-45deg)}
+      .accountCreate .chk .label{display:block;color:#333;font-size:12px;font-weight:400;line-height:1.55}
+      .accountCreate #shippingAddressHolder{max-height:0;overflow:hidden;transition:max-height .2s ease}
+      .accountCreate #shippingAddressHolder.is-open{max-height:2200px!important}
+      .accountCreate .formInputInactiveOverlay{display:none}
+      .accountPasswordReset #accountContent{display:block;max-width:620px}
+      .accountLogin [data-auth-error],.accountCreate [data-auth-error],.accountPasswordReset [data-auth-error]{margin:0 0 12px;color:#b00020;font-size:12px;font-weight:700;line-height:1.5}
+      .accountLogin [data-auth-error].success,.accountCreate [data-auth-error].success,.accountPasswordReset [data-auth-error].success{color:#207245}
+      .accountDashboard #accountPageContent{padding:24px 0 46px}
+      .accountDashboard #accountContent{display:block}
+      .accountDashboard #breads.searchCrumbs{display:none!important}
+      .accountDashboard #breads.defaultBreadcrumbs{display:block}
+      .accountDashboard #breads span{text-transform:none}
+      .accountDashboard #breads span.no i::before{content:"›";font-size:12px;line-height:1}
+      #accountLeft{float:left;width:255px;padding-right:22px}
+      #accountRight.splitRight{overflow:hidden}
+      .splitRightContainer{width:100%;min-height:420px}
+      .splitLeftList{margin:0;padding:0;list-style:none;border:1px solid #dcdcdc;border-bottom:0;background:#fff}
+      .splitLeftList li{margin:0;border-bottom:1px solid #dcdcdc}
+      .splitLeftList .btn.btn-default{position:relative;display:flex;min-height:46px;align-items:center;justify-content:space-between;width:100%;border:0;background:#fff;padding:0 14px;color:#111;font-size:13px;font-weight:800;line-height:1.25;text-align:left;text-decoration:none;text-transform:none}
+      .splitLeftList .btn.btn-default.active,.splitLeftList .btn.btn-default:hover{background:#111;color:#fff!important}
+      .splitLeftList .btn.btn-default.active .accountNavLabel,.splitLeftList .btn.btn-default:hover .accountNavLabel,.splitLeftList .btn.btn-default.active i,.splitLeftList .btn.btn-default:hover i{color:#fff!important}
+      .splitLeftList .accountNavLabel{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .splitLeftList .btn.btn-default i{flex:0 0 auto;margin-left:10px;color:inherit;font-style:normal}
+      .splitLeftList .fa-angle-right::before{content:"›";font-size:18px;line-height:1}
+      .splitLeftList .fa-external-link::before{content:"↗";font-size:13px;line-height:1}
+      .splitTitle h1{margin:0 0 18px;color:#111;font-size:32px;font-weight:900;line-height:1.1;text-transform:none}
+      .dashboard-list{margin:0 0 18px;border:1px solid #dcdcdc;background:#fff}
+      .dashboard-list ul{margin:0;padding:0;list-style:none}
+      .dashboard-list-item{display:flex;min-height:96px;align-items:center;justify-content:space-between;gap:18px;padding:18px}
+      .dashboard-list-item-left{min-width:0}
+      .dashboard-list-item-left h3{margin:0 0 8px;color:#111;font-size:18px;font-weight:800;line-height:1.2;text-transform:none}
+      .dashboard-list-item-left p{margin:0;color:#555;font-size:13px;font-weight:400;line-height:1.55}
+      .dashboard-list-item-right{flex:0 0 auto}
+      .dashboard-list-item-right .btn.btn-default{display:inline-flex;min-height:38px;align-items:center;justify-content:center;border:1px solid #111;background:#fff;padding:0 16px;color:#111;font-size:12px;font-weight:900;text-decoration:none;text-transform:none}
+      .dashboard-list-item-right .btn.btn-default:hover{background:#111;color:#fff}
+      .dashboard-list-item-right .fa{display:inline-flex;margin-right:7px;font-style:normal}
+      .dashboard-list-item-right .fa-pencil::before{content:"✎";font-size:13px;line-height:1}
+      [data-account-flash]{margin:0 0 16px;border:1px solid #f0c2c2;background:#fff7f7;padding:10px 12px;color:#b00020;font-size:13px;font-weight:800;line-height:1.45}
+      [data-account-flash].success{border-color:#bfe3c4;background:#f6fff7;color:#207245}
+      .accountOrdersList{display:grid;gap:12px}
+      .accountAddressToolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+      .accountAddressToolbar p{margin:0;color:#555;font-size:13px;line-height:1.5}
+      .accountAddressList{display:grid;gap:12px;margin:0 0 18px;padding:0;list-style:none}
+      .accountAddressCard{border:1px solid #dcdcdc;background:#fff;padding:16px}
+      .accountAddressCardHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+      .accountAddressCard h3{margin:0;color:#111;font-size:16px;font-weight:900;line-height:1.25;text-transform:none}
+      .accountAddressBadge{display:inline-flex;align-items:center;margin-left:8px;border:1px solid #111;padding:2px 7px;color:#111;font-size:10px;font-weight:900;line-height:1;text-transform:uppercase}
+      .accountAddressCard address{margin:0;color:#333;font-size:13px;font-style:normal;line-height:1.55}
+      .accountAddressCard .muted{color:#666}
+      .accountAddressActions{display:flex;flex:0 0 auto;gap:8px}
+      .accountAddressActions .btn.btn-default,.accountAddressToolbar .btn.btn-default,.accountAddressFormActions .btn.btn-default{display:inline-flex;min-height:36px;align-items:center;justify-content:center;border:1px solid #111;background:#fff;padding:0 13px;color:#111;font-size:12px;font-weight:900;text-decoration:none;text-transform:none}
+      .accountAddressActions .btn.btn-default:hover,.accountAddressToolbar .btn.btn-default:hover,.accountAddressFormActions .btn.btn-default:hover{background:#111;color:#fff!important}
+      .accountAddressActions .btn.btn-default.danger{border-color:#b00020;color:#b00020}
+      .accountAddressActions .btn.btn-default.danger:hover{background:#b00020;color:#fff!important}
+      .accountAddressEmpty{border:1px dashed #cfcfcf;background:#fafafa;padding:18px;color:#555;font-size:13px;line-height:1.55}
+      .accountAddressForm.is-hidden{display:none}
+      .accountAddressFormActions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+      .accountDashboard .legalRequirementMessage{margin-top:22px;border-top:0;padding-top:0}
+      .accountDashboard .privacyNotice{text-align:left}
+      .clr{clear:both}
+      @media(max-width:760px){
+        #accountContent{grid-template-columns:1fr}
+        .fs-row{grid-template-columns:1fr;gap:7px}
+        .fs-row label{padding-top:0}
+        .accountCreate .inputErr{margin-left:0}
+        .btn.btn-level1.large{width:100%;min-width:0}
+        #accountLeft{float:none;width:100%;padding-right:0;margin-bottom:20px}
+        #accountRight.splitRight{overflow:visible}
+        .dashboard-list-item{align-items:flex-start;flex-direction:column}
+        .dashboard-list-item-right .btn.btn-default{width:100%}
+        .accountAddressToolbar,.accountAddressCardHeader{align-items:flex-start;flex-direction:column}
+        .accountAddressActions,.accountAddressToolbar .btn.btn-default{width:100%}
+        .accountAddressActions .btn.btn-default{flex:1}
       }
-    }
+      @media(max-width:520px){
+        #accountPage #breads{display:none}
+        #accountPageContent{padding-top:18px;padding-bottom:32px}
+        .maxWidth{padding:0 12px}
+        #accountTitle h1{margin-bottom:18px;font-size:28px}
+        .fs-mod-ttl{padding:14px 14px 12px}
+        .fs-mod-cnt{padding:14px}
+        .fs-mod-ttl h3{font-size:18px}
+      }
+    </style>`);
+  }
 
-    function writeStoredProfile(value) {
-      try {
-        window.localStorage.setItem(profileKey, JSON.stringify(value));
-      } catch (_error) {}
-    }
-
-    function updateLegacyUserRecord(nextUser) {
-      try {
-        const users = JSON.parse(window.localStorage.getItem("auctio_users")) || [];
-        const nextUsers = Array.isArray(users)
-          ? users.map(function (entry) {
-              if (entry.id !== nextUser.id) return entry;
-              return {
-                id: nextUser.id,
-                firstName: nextUser.firstName || "",
-                lastName: nextUser.lastName || "",
-                email: nextUser.email || "",
-                phone: nextUser.phone || "",
-                password: entry.password || "__supabase__",
-                createdAt: nextUser.createdAt || entry.createdAt || "",
-              };
-            })
-          : [];
-        window.localStorage.setItem("auctio_users", JSON.stringify(nextUsers));
-      } catch (_error) {}
-    }
-
-    function getAccountState() {
-      const currentUser = window.AuctioAuth.getCurrentUser() || user;
-      resetCacheForUser(currentUser.id);
-      const storedUsers = (() => {
-        try {
-          const users = JSON.parse(window.localStorage.getItem("auctio_users")) || [];
-          return Array.isArray(users) ? users : [];
-        } catch (_error) {
-          return [];
-        }
-      })();
-      const storedUser = storedUsers.find(function (entry) { return entry && entry.id === currentUser.id; }) || {};
-      const stored = readStoredProfile();
-      const profile = cache.profile || {};
-      const initials = escapeHtml(
-        [(profile.first_name || currentUser.firstName || storedUser.firstName), (profile.last_name || currentUser.lastName || storedUser.lastName)]
-          .filter(Boolean)
-          .map(function (part) {
-            return String(part).trim().charAt(0).toUpperCase();
-          })
-          .join("")
-          .slice(0, 2) || (currentUser.fullName || currentUser.email).slice(0, 1).toUpperCase()
-      );
-      const memberSince = currentUser.createdAt
-        ? new Date(currentUser.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
-        : "Recently joined";
-
-      return {
-        id: currentUser.id,
-        fullName: `${profile.first_name || currentUser.firstName || storedUser.firstName || ""} ${profile.last_name || currentUser.lastName || storedUser.lastName || ""}`.trim() || profile.email || currentUser.email,
-        firstName: profile.first_name || currentUser.firstName || storedUser.firstName || "",
-        lastName: profile.last_name || currentUser.lastName || storedUser.lastName || "",
-        email: profile.email || currentUser.email || "",
-        phone: profile.phone || currentUser.phone || storedUser.phone || "",
-        createdAt: profile.created_at || currentUser.createdAt || "",
-        initials,
-        memberSince,
-        country: profile.country || stored.country || "United States",
-        street: profile.address || stored.street || "",
-        city: profile.city || stored.city || "",
-        state: profile.state || stored.state || "",
-        zip: profile.postal_code || stored.zip || "",
-      };
-    }
-
-	    function buildNavButton(view, currentView, mobile) {
-	      const isActive = currentView === view.id;
-	      const baseClass = mobile
-	        ? "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors "
-	        : "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ";
-	      const stateClass = isActive
-	        ? mobile
-	          ? "bg-primary text-primary-foreground"
-	          : "bg-primary/10 text-primary"
-	        : mobile
-	          ? "bg-muted text-muted-foreground"
-	          : "hover:bg-muted text-muted-foreground hover:text-foreground";
-	      const badgeCount = getNavBadgeCount(view.id);
-	      const badgeHtml = badgeCount && badgeCount > 0
-	        ? `<span data-slot="badge" class="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90 ${mobile ? "" : "ml-auto"}">${badgeCount}</span>`
-	        : "";
-	      return `<button class="${baseClass}${stateClass}" type="button" data-account-view="${view.id}">${view.icon.replace("w-5 h-5", mobile ? "w-4 h-4" : "w-5 h-5")}<span class="font-medium">${view.label}</span>${badgeHtml}</button>`;
-	    }
-
-    function buildPlaceholderContent(title, copy) {
-      const emptyStates = {
-        "My Bids": {
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 text-muted-foreground mb-4"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"></path><path d="m16 16 6-6"></path><path d="m8 8 6-6"></path><path d="m9 7 8 8"></path><path d="m21 11-8-8"></path></svg>',
-          heading: "No bids yet",
-          body: "You haven't placed any bids yet. Start exploring our auctions!",
-          cta: "Start Bidding",
-        },
-        Watchlist: {
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 text-muted-foreground mb-4"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>',
-          heading: "Your watchlist is empty",
-          body: "Save favorite lots to your watchlist so you can follow them in one place.",
-          cta: "Browse Lots",
-        },
-        "Viewing History": {
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 text-muted-foreground mb-4"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>',
-          heading: "No viewing history",
-          body: "Recently viewed lots and auctions will appear here once you start browsing.",
-          cta: "Explore Auctions",
-        },
-      };
-      const state = emptyStates[title] || {
-        icon: "",
-        heading: `No ${title.toLowerCase()} yet`,
-        body: copy,
-        cta: "Browse Auctions",
-      };
-      return `
-        <div class="flex-1 min-w-0">
-          <div class="space-y-6">
-            <div>
-              <h1 class="text-2xl lg:text-3xl font-serif mb-2">${title}</h1>
-              <p class="text-muted-foreground">${copy}</p>
+  function renderGuestAccountPage(basePath) {
+    return `
+      <div id="accountPage" class="accountLogin">
+        <div id="accountPageContent">
+          <div class="maxWidth">
+            <div id="accountTitle">
+              <h1>Login</h1>
             </div>
-            <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-12">
-              <div class="flex flex-col items-center justify-center text-center">
-                ${state.icon}
-                <h3 class="text-xl font-semibold mb-2">${state.heading}</h3>
-                <p class="text-muted-foreground mb-6 max-w-md">${state.body}</p>
-                <a class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2" href="${basePath}auctions.html">${state.cta}</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function buildOverviewContent(state) {
-      return `
-        <div class="flex-1 min-w-0">
-          <div class="space-y-6">
-            <div>
-              <h1 class="text-2xl lg:text-3xl font-serif mb-2">Overview</h1>
-              <p class="text-muted-foreground">Welcome back, ${escapeHtml(state.fullName)}</p>
-            </div>
-            <div class="grid grid-cols-3 gap-4">
-              <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-4 lg:p-6 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 lg:w-8 lg:h-8 mx-auto mb-2 text-muted-foreground"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"></path><path d="m16 16 6-6"></path><path d="m8 8 6-6"></path><path d="m9 7 8 8"></path><path d="m21 11-8-8"></path></svg>
-                <p class="text-2xl lg:text-3xl font-bold">${cache.counts ? cache.counts.bids : "…"}</p>
-                <p class="text-xs lg:text-sm text-muted-foreground">Active Bids</p>
-              </div>
-              <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-4 lg:p-6 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 lg:w-8 lg:h-8 mx-auto mb-2 text-muted-foreground"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
-                <p class="text-2xl lg:text-3xl font-bold">${cache.counts ? cache.counts.watchlist : "…"}</p>
-                <p class="text-xs lg:text-sm text-muted-foreground">Watchlist</p>
-              </div>
-              <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-4 lg:p-6 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 lg:w-8 lg:h-8 mx-auto mb-2 text-muted-foreground"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                <p class="text-2xl lg:text-3xl font-bold">${cache.counts ? cache.counts.history : "…"}</p>
-                <p class="text-xs lg:text-sm text-muted-foreground">Viewed</p>
-              </div>
-            </div>
-            <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
-              <h2 class="text-xl font-semibold mb-4">Account Information</h2>
-              <div class="space-y-4">
-                <div class="flex items-start gap-4">
-                  <div class="p-2 rounded-lg bg-muted">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+            <div id="accountContent">
+              <form class="fs" id="loginForm">
+                <div class="fs-mod">
+                  <div class="fs-mod-ttl">
+                    <h3>Existing Customers</h3>
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm text-muted-foreground">Email</p>
-                    <p class="font-medium truncate">${escapeHtml(state.email)}</p>
-                  </div>
-                </div>
-                <div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px"></div>
-                <div class="flex items-start gap-4">
-                  <div class="p-2 rounded-lg bg-muted">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm text-muted-foreground">Phone</p>
-                    <p class="font-medium">${escapeHtml(state.phone || "Not set")}</p>
-                  </div>
-                </div>
-                <div data-orientation="horizontal" role="none" data-slot="separator" class="bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px"></div>
-                <div class="flex items-start gap-4">
-                  <div class="p-2 rounded-lg bg-muted">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm text-muted-foreground">Address</p>
-                    <p class="font-medium">${escapeHtml(state.street || "Not set")}</p>
-                  </div>
-                </div>
-              </div>
-              <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 mt-6 bg-transparent" type="button" data-account-view="settings">Edit Profile</button>
-            </div>
-            <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
-              <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 justify-between bg-transparent" type="button" data-account-view="bids">
-                  <span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"></path><path d="m16 16 6-6"></path><path d="m8 8 6-6"></path><path d="m9 7 8 8"></path><path d="m21 11-8-8"></path></svg>View My Bids</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>
-                </button>
-                <button class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 justify-between bg-transparent" type="button" data-account-view="watchlist">
-                  <span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>View Watchlist</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>
-                </button>
-                <a class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 justify-between bg-transparent" href="${basePath}auctions.html">
-                  <span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Browse Auctions</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>
-                </a>
-                <button class="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 justify-between bg-transparent" type="button" data-account-view="settings">
-                  <span class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>Settings</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function buildSettingsContent(state) {
-      const profileMessage = flash.profile
-        ? `<p class="rounded-md border px-3 py-2 text-sm ${flash.profile.type === "success" ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}">${escapeHtml(flash.profile.text)}</p>`
-        : "";
-      const passwordMessage = flash.password
-        ? `<p class="rounded-md border px-3 py-2 text-sm ${flash.password.type === "success" ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}">${escapeHtml(flash.password.text)}</p>`
-        : "";
-      const dangerMessage = flash.danger
-        ? `<p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">${escapeHtml(flash.danger.text)}</p>`
-        : "";
-
-      return `
-        <div class="flex-1 min-w-0">
-          <div class="space-y-6">
-            <div>
-              <h1 class="text-2xl lg:text-3xl font-serif mb-2">Account Settings</h1>
-              <p class="text-muted-foreground">Manage your account settings and preferences</p>
-            </div>
-            ${flash.profile && flash.profile.type === "success" ? `
-            <div class="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-600 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M20 6 9 17l-5-5"></path></svg>
-              ${escapeHtml(flash.profile.text)}
-            </div>` : ""}
-            ${flash.profile && flash.profile.type === "error" ? `
-            <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-              ${escapeHtml(flash.profile.text)}
-            </div>` : ""}
-            <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
-              <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">${views[0].icon}Personal Information</h2>
-              <div class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-first-name">First Name</label>
-                    <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-first-name" placeholder="Enter first name" value="${escapeHtml(state.firstName)}">
-                  </div>
-                  <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-last-name">Last Name</label>
-                    <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-last-name" placeholder="Enter last name" value="${escapeHtml(state.lastName)}">
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-email">Email</label>
-                  <input class="border-input bg-muted ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-base md:text-sm" id="account-email" disabled type="email" value="${escapeHtml(state.email)}">
-                  <p class="text-xs text-muted-foreground">Email cannot be changed</p>
-                </div>
-                <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-phone">Phone</label>
-                  <input autocomplete="tel" class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-phone" placeholder="+1" type="tel" value="${escapeHtml(state.phone)}">
-                </div>
-              </div>
-            </div>
-            <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
-              <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>Shipping Address</h2>
-              <div class="space-y-4">
-                <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-country">Country</label>
-                  <select id="account-country" class="border-input bg-background ring-offset-background focus:ring-ring flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2">
-                    ${renderCountryOptions(state.country || "United States")}
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-street">Street Address</label>
-                  <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-street" placeholder="Enter street address" value="${escapeHtml(state.street)}">
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-city">City</label>
-                    <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-city" placeholder="Enter city" value="${escapeHtml(state.city)}">
-                  </div>
-                  <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-state">State</label>
-                    <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-state" placeholder="Enter state" value="${escapeHtml(state.state)}">
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-zip">ZIP Code</label>
-                  <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full max-w-[200px] rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-zip" placeholder="Enter postal code" value="${escapeHtml(state.zip)}">
-                </div>
-              </div>
-              <button data-save-profile="address" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 mt-6">Save Changes</button>
-            </div>
-            <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
-              <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Security</h2>
-              ${passwordMessage}
-              <div class="space-y-4">
-                <div class="space-y-2">
-                  <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-current-password">Current Password</label>
-                  <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-current-password" placeholder="Enter current password" type="password">
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-new-password">New Password</label>
-                    <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-new-password" placeholder="Enter new password" type="password">
-                  </div>
-                  <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-sm leading-none font-medium" for="account-confirm-password">Confirm New Password</label>
-                    <input class="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:text-sm" id="account-confirm-password" placeholder="Confirm new password" type="password">
-                  </div>
-                </div>
-              </div>
-              <button data-change-password class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 mt-6">Change Password</button>
-            </div>
-            <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6 border-destructive/50">
-              <h2 class="text-lg font-semibold mb-2 text-destructive">Danger Zone</h2>
-              <p class="text-sm text-muted-foreground mb-4">Once you delete your account, there is no going back. Please be certain.</p>
-              ${dangerMessage}
-              <button data-delete-account class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all bg-destructive text-white hover:bg-destructive/90 h-9 px-4 py-2">Delete Account</button>
-            </div>
-            <div class="lg:hidden">
-              <button data-account-logout class="inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 w-full justify-center gap-2 text-muted-foreground bg-transparent" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
-                Log Out
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function formatCurrency(v) { return "€" + Number(v || 0).toLocaleString("en-US", { maximumFractionDigits: 0 }); }
-    function timeAgo(iso) {
-      if (!iso) return "";
-      var d = new Date(iso), now = new Date(), diff = Math.floor((now - d) / 1000);
-      if (diff < 60) return "just now";
-      if (diff < 3600) return Math.floor(diff / 60) + "m ago";
-      if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
-      return Math.floor(diff / 86400) + "d ago";
-    }
-
-    function formatDate(iso) {
-      if (!iso) return "—";
-      return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    }
-
-    function buildWonInvoiceBlock(item) {
-      if (!item || item.status !== "won") return "";
-      var invoiceNumber = item.invoiceNumber || "INV-2026-1048";
-      var issuedAt = item.invoiceIssuedAt || item.placedAt;
-      var dueAt = item.invoiceDueAt || item.placedAt;
-      var amountDue = Number(item.invoiceAmount || item.currentBid || item.bidAmount || 0);
-      return `
-        <details class="mt-3 rounded-lg border border-blue-200 bg-blue-50/70">
-          <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-blue-900">
-            <span>Payment by invoice</span>
-            <span class="text-xs text-blue-700">View details</span>
-          </summary>
-          <div class="space-y-3 border-t border-blue-200 px-3 py-3">
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <p class="text-blue-700/80">Invoice</p>
-                <p class="font-semibold text-blue-950">${escapeHtml(invoiceNumber)}</p>
-              </div>
-              <div>
-                <p class="text-blue-700/80">Amount due</p>
-                <p class="font-semibold text-blue-950">${formatCurrency(amountDue)}</p>
-              </div>
-              <div>
-                <p class="text-blue-700/80">Issued</p>
-                <p class="font-semibold text-blue-950">${formatDate(issuedAt)}</p>
-              </div>
-              <div>
-                <p class="text-blue-700/80">Due date</p>
-                <p class="font-semibold text-blue-950">${formatDate(dueAt)}</p>
-              </div>
-            </div>
-            <div class="rounded-md bg-white/80 p-3 text-xs text-blue-950">
-              <p class="font-semibold mb-1">Bank transfer / invoice payment</p>
-              <p class="text-blue-800">Use the invoice number as payment reference. Settlement is made by bank transfer after the auction win, not by card.</p>
-            </div>
-          </div>
-        </details>`;
-    }
-
-    function buildBidInvoiceCommitmentBlock(item) {
-      if (!item || item.status !== "active") return "";
-      var paymentMethod = item.paymentMethod === "revolut" ? "revolut" : (item.paymentMethod === "invoice" ? "iban" : item.paymentMethod);
-      if (paymentMethod !== "iban" && paymentMethod !== "revolut") return "";
-      var amount = Number(item.invoiceAmount || item.bidAmount || item.currentBid || 0);
-      var recipient = item.invoiceRecipient || "Verified bidder";
-      var reference = item.invoiceReference || "On file";
-      var invoiceNumber = item.invoiceNumber || "PFI-00000000";
-      var transferStatus = item.transferStatus || "pending_verification";
-      var isRevolut = paymentMethod === "revolut";
-      return `
-        <details class="mt-3 rounded-lg border border-amber-200 bg-amber-50/80">
-          <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-amber-950">
-            <span>${isRevolut ? "Revolut payment selected" : "Bank transfer submitted"}</span>
-            <span class="text-xs text-amber-700">${escapeHtml(transferStatus.replace(/_/g, " "))}</span>
-          </summary>
-          <div class="space-y-3 border-t border-amber-200 px-3 py-3">
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <p class="text-amber-700/80">Invoice</p>
-                <p class="font-semibold text-amber-950">${escapeHtml(invoiceNumber)}</p>
-              </div>
-              <div>
-                <p class="text-amber-700/80">Transfer amount</p>
-                <p class="font-semibold text-amber-950">${formatCurrency(amount)}</p>
-              </div>
-              <div>
-                <p class="text-amber-700/80">${isRevolut ? "Recipient" : "Sender"}</p>
-                <p class="font-semibold text-amber-950">${escapeHtml(recipient)}</p>
-              </div>
-              <div>
-                <p class="text-amber-700/80">Reference</p>
-                <p class="font-semibold text-amber-950">${escapeHtml(reference)}</p>
-              </div>
-              <div>
-                <p class="text-amber-700/80">Authorized</p>
-                <p class="font-semibold text-amber-950">${formatDate(item.invoiceAuthorizedAt || item.placedAt)}</p>
-              </div>
-            </div>
-            <div class="rounded-md bg-white/80 p-3 text-xs text-amber-950">
-              <p class="font-semibold mb-1">${isRevolut ? "Selected settlement method" : "Bank details used for payment"}</p>
-              <p class="text-amber-900">${isRevolut ? "Revolut was selected for this bid. Payment coordination will be shared with the bidder directly." : "Beneficiary: Auctio Holdings Ltd. IBAN: DE89 3704 0044 0532 0130 00. SWIFT/BIC: DEUTDEBBXXX."}</p>
-            </div>
-          </div>
-        </details>`;
-    }
-
-    function buildLotCard(item, actions) {
-      var img = item.lotImage
-        ? `<img src="${escapeHtml(item.lotImage)}" alt="${escapeHtml(item.lotTitle)}" class="w-full h-full object-cover">`
-        : `<div class="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-xs">No image</div>`;
-      var href = item.lotSlug ? `${basePath}lot/index.html?slug=${escapeHtml(item.lotSlug)}` : "#";
-      return `
-        <div class="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col" data-lot-id="${escapeHtml(item.lotId)}">
-          <a href="${href}" class="block aspect-[4/3] overflow-hidden bg-muted flex-shrink-0">${img}</a>
-          <div class="p-4 flex flex-col gap-2 flex-1">
-            <a href="${href}" class="text-sm font-medium line-clamp-2 hover:underline">${escapeHtml(item.lotTitle)}</a>
-            <p class="text-xs text-muted-foreground">Current bid: <span class="font-semibold text-foreground">${formatCurrency(item.currentBid || item.bidAmount)}</span></p>
-            ${actions || ""}
-          </div>
-        </div>`;
-    }
-
-    function buildWatchlistContent() {
-      var items = cache.watchlist;
-      if (!items) return `<div class="flex-1 min-w-0"><div class="flex items-center justify-center py-20 text-muted-foreground">Loading…</div></div>`;
-      if (!items.length) return buildPlaceholderContent("Watchlist", "Save lots you want to follow closely.");
-      return `
-        <div class="flex-1 min-w-0">
-          <div class="space-y-6">
-            <div><h1 class="text-2xl lg:text-3xl font-serif mb-2">Watchlist</h1><p class="text-muted-foreground">${items.length} saved lot${items.length !== 1 ? "s" : ""}</p></div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              ${items.map(function(item) {
-                return buildLotCard(item, `<button type="button" data-remove-watchlist="${escapeHtml(item.lotId)}" class="mt-auto text-xs text-muted-foreground hover:text-destructive transition-colors">Remove from watchlist</button>`);
-              }).join("")}
-            </div>
-          </div>
-        </div>`;
-    }
-
-	    function buildHistoryContent() {
-      var items = cache.history;
-      if (!items) return `<div class="flex-1 min-w-0"><div class="flex items-center justify-center py-20 text-muted-foreground">Loading…</div></div>`;
-      if (!items.length) return buildPlaceholderContent("Viewing History", "Review recently viewed lots and auctions.");
-      return `
-        <div class="flex-1 min-w-0">
-          <div class="space-y-6">
-            <div class="flex items-center justify-between">
-              <div><h1 class="text-2xl lg:text-3xl font-serif mb-2">Viewing History</h1><p class="text-muted-foreground">${items.length} recently viewed</p></div>
-              <button type="button" data-clear-history class="text-xs text-muted-foreground hover:text-destructive transition-colors">Clear history</button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              ${items.map(function(item) {
-                return buildLotCard(item, `<p class="mt-auto text-xs text-muted-foreground">Viewed ${timeAgo(item.viewedAt)}</p>`);
-              }).join("")}
-            </div>
-          </div>
-	        </div>`;
-	    }
-
-	    function buildBidStatusSection(title, iconHtml, items, renderItem) {
-	      if (!items.length) return "";
-	      return `
-	        <div>
-	          <div class="flex items-center gap-2 mb-4">
-	            <div class="p-1.5 rounded bg-muted">${iconHtml}</div>
-	            <h2 class="text-lg font-semibold">${title} (${items.length})</h2>
-	          </div>
-	          <div class="space-y-3">
-	            ${items.map(renderItem).join("")}
-	          </div>
-	        </div>`;
-	    }
-
-	    function buildBidRowCard(item, options) {
-	      var href = item.lotSlug ? `${basePath}lot/index.html?slug=${escapeHtml(item.lotSlug)}` : "#";
-	      var actionHref = item.lotSlug ? `${basePath}bidding/index.html?slug=${escapeHtml(item.lotSlug)}` : href;
-	      var imageHtml = item.lotImage
-	        ? `<img alt="${escapeHtml(item.lotTitle)}" class="object-cover" src="${escapeHtml(item.lotImage)}" style="position:absolute;height:100%;width:100%;inset:0;color:transparent;">`
-	        : `<div class="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">No image</div>`;
-	      var actionHtml = options.actionLabel
-	        ? `<a data-slot="button" class="items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 self-center hidden sm:flex bg-transparent" href="${actionHref}">${options.actionLabel}</a>`
-	        : "";
-	      return `
-	        <div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm overflow-hidden">
-	          <div class="flex gap-4 p-4">
-	            <div class="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted">${imageHtml}</div>
-	            <div class="flex-1 min-w-0">
-	              <a class="font-semibold hover:text-primary transition-colors line-clamp-1" href="${href}">${escapeHtml(item.lotTitle)}</a>
-	              <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
-	                <span>Your bid: ${formatCurrency(item.bidAmount)}</span>
-	                <span>Current Bid: ${formatCurrency(item.currentBid || item.bidAmount)}</span>
-	              </div>
-	              <div class="flex items-center gap-2 mt-2">
-	                <span data-slot="badge" class="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden ${options.badgeClass}">${options.badgeLabel}</span>
-	                <span class="text-xs text-muted-foreground flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock w-3 h-3"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>${timeAgo(item.placedAt)}</span>
-	              </div>
-	              ${buildBidInvoiceCommitmentBlock(item)}
-	              ${buildWonInvoiceBlock(item)}
-	            </div>
-	            ${actionHtml}
-	          </div>
-	        </div>`;
-	    }
-
-	    function buildBidsContent() {
-	      var items = cache.bids;
-	      if (!items) return `<div class="flex-1 min-w-0"><div class="flex items-center justify-center py-20 text-muted-foreground">Loading…</div></div>`;
-	      if (!items.length) return buildPlaceholderContent("My Bids", "Track your live and past bidding activity.");
-	      var outbidItems = items.filter(function(item) { return item.status === "outbid"; });
-	      var activeItems = items.filter(function(item) { return item.status === "active"; });
-	      var wonItems = items.filter(function(item) { return item.status === "won"; });
-	      var lostItems = items.filter(function(item) { return item.status === "lost"; });
-	      return `
-	        <div class="flex-1 min-w-0">
-	          <div class="space-y-6">
-	            <div><h1 class="text-2xl lg:text-3xl font-serif mb-2">My Bids</h1><p class="text-muted-foreground">Track all your auction activity</p></div>
-	            <div class="space-y-6">
-	              ${buildBidStatusSection(
-	                "Outbid",
-	                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-down w-4 h-4 text-orange-600"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>',
-	                outbidItems,
-	                function(item) {
-	                  return buildBidRowCard(item, {
-	                    badgeLabel: "Outbid",
-	                    badgeClass: "border-orange-500/50 text-orange-600",
-	                    actionLabel: "Bid Again"
-	                  });
-	                }
-	              )}
-	              ${buildBidStatusSection(
-	                "Active",
-	                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gavel w-4 h-4 text-emerald-600"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"></path><path d="m16 16 6-6"></path><path d="m8 8 6-6"></path><path d="m9 7 8 8"></path><path d="m21 11-8-8"></path></svg>',
-	                activeItems,
-	                function(item) {
-	                  return buildBidRowCard(item, {
-	                    badgeLabel: "Active",
-	                    badgeClass: "border-emerald-500/50 text-emerald-600",
-	                    actionLabel: ""
-	                  });
-	                }
-	              )}
-	              ${buildBidStatusSection(
-	                "Won",
-	                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy w-4 h-4 text-blue-600"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"></path><path d="M17 5h3a2 2 0 0 1 2 2v1a4 4 0 0 1-4 4h-1"></path><path d="M7 5H4a2 2 0 0 0-2 2v1a4 4 0 0 0 4 4h1"></path></svg>',
-	                wonItems,
-	                function(item) {
-	                  return buildBidRowCard(item, {
-	                    badgeLabel: "Won",
-	                    badgeClass: "border-blue-500/50 text-blue-600",
-	                    actionLabel: ""
-	                  });
-	                }
-	              )}
-	              ${buildBidStatusSection(
-	                "Lost",
-	                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x w-4 h-4 text-rose-600"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>',
-	                lostItems,
-	                function(item) {
-	                  return buildBidRowCard(item, {
-	                    badgeLabel: "Lost",
-	                    badgeClass: "border-rose-500/50 text-rose-600",
-	                    actionLabel: ""
-	                  });
-	                }
-	              )}
-	            </div>
-	          </div>
-	        </div>`;
-	    }
-
-    function buildMainContent(state) {
-      if (activeView === "settings") return buildSettingsContent(state);
-      if (activeView === "bids") return buildBidsContent();
-      if (activeView === "watchlist") return buildWatchlistContent();
-      if (activeView === "history") return buildHistoryContent();
-      return buildOverviewContent(state);
-    }
-
-    function render() {
-      const state = getAccountState();
-      renderWideShell(
-        `
-          <div class="flex flex-col lg:flex-row gap-8">
-            <aside class="hidden lg:block w-72 flex-shrink-0">
-              <div class="sticky top-24 space-y-6">
-                <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-6">
-                  <div class="flex items-center gap-4 mb-4">
-                    <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xl">${state.initials}</div>
-                    <div class="flex-1 min-w-0">
-                      <h2 class="font-semibold text-lg truncate">${escapeHtml(state.fullName)}</h2>
-                      <p class="text-sm text-muted-foreground truncate">${escapeHtml(state.email)}</p>
+                  <div class="fs-mod-cnt">
+                    <div class="fs-grp">
+                      <div class="fs-row inp req">
+                        <label>Email address</label>
+                        <span><input class="" type="email" id="username" value="" data-e2e="login-loginForm-email"></span>
+                      </div>
+                      <div class="fs-row inp req">
+                        <label>Password</label>
+                        <span><input class="" type="password" id="password" data-e2e="login-loginForm-password"></span>
+                      </div>
+                    </div>
+                    <div class="fs-grp">
+                      <div class="fs-row but act hlb">
+                        <label></label>
+                        <span><p data-auth-error class="hidden" role="alert" aria-live="polite"></p><button type="submit" class="btn btn-level1 large" id="doLogin" data-e2e="login-loginForm-submitBtn">Sign In</button></span>
+                      </div>
+                      <div class="fs-row lnk hlb">
+                        <label></label>
+                        <span><a href="${basePath}forgot-password.html" class="forgotPasswordLink">Forgotten your password?</a></span>
+                      </div>
                     </div>
                   </div>
-                  <p class="text-xs text-muted-foreground">Member since ${escapeHtml(state.memberSince)}</p>
                 </div>
-                <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border shadow-sm p-2">
-                  <nav class="space-y-1">${views.map(function (view) { return buildNavButton(view, activeView, false); }).join("")}</nav>
-                </div>
-                <button data-account-logout class="inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent h-9 px-4 py-2 w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:border-destructive bg-transparent" type="button">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
-                  Log Out
-                </button>
-              </div>
-            </aside>
-            <div class="lg:hidden">
-              <div class="px-4 py-4 mb-2">
-                <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">${state.initials}</div>
-                  <div class="flex-1 min-w-0">
-                    <h2 class="font-semibold truncate">${escapeHtml(state.fullName)}</h2>
-                    <p class="text-xs text-muted-foreground">Member since ${escapeHtml(state.memberSince)}</p>
+              </form>
+              <form class="fs" id="createForm" action="/myaccount/register">
+                <div class="fs-mod">
+                  <div class="fs-mod-ttl">
+                    <h3>New to Hip Store?</h3>
+                  </div>
+                  <div class="fs-mod-cnt">
+                    <div class="fs-grp">
+                      <div class="fs-row inf">
+                        <p>
+                          Get our latest product recommendations for you.<br>
+                          Personalise your experience on mobile, tablet and desktop.<br>
+                          Manage your orders and preferences.<br>
+                          Access your saved items.<br>
+                          Create and share gift lists.
+                        </p>
+                      </div>
+                    </div>
+                    <div class="fs-grp">
+                      <div class="fs-row but act nlb">
+                        <label></label>
+                        <span><button type="submit" data-e2e="login-register-registerButton" class="btn btn-level1 large" id="">Register for an account</button></span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="flex gap-2 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">${views.map(function (view) { return buildNavButton(view, activeView, true); }).join("")}</div>
+              </form>
             </div>
-            ${buildMainContent(state)}
           </div>
-        `,
-        "My account",
-        "Manage your collector profile and account details."
-      );
-
-      document.querySelectorAll("[data-account-view]").forEach(function (button) {
-        button.addEventListener("click", async function () {
-          const nextView = button.getAttribute("data-account-view");
-          activeView = allowedTabs.has(nextView) ? nextView : "overview";
-          const nextUrl = new URL(window.location.href);
-          nextUrl.searchParams.set("tab", activeView);
-          window.history.replaceState({}, "", nextUrl.toString());
-          render(); // show loading state immediately
-          await loadDataForView(activeView);
-          render(); // re-render with real data
-        });
-      });
-
-      // Watchlist remove button
-      document.querySelectorAll("[data-remove-watchlist]").forEach(function(btn) {
-        btn.addEventListener("click", async function() {
-          const lotId = btn.getAttribute("data-remove-watchlist");
-          if (window.SupabaseAPI) {
-            btn.disabled = true;
-            await window.SupabaseAPI.removeFromWatchlist(lotId).catch(function(){});
-            cache.watchlist = null; cache.counts = null;
-            await loadDataForView("watchlist");
-            await loadDataForView("overview");
-            render();
-          }
-        });
-      });
-
-      // Clear history button
-      const clearHistoryBtn = document.querySelector("[data-clear-history]");
-      if (clearHistoryBtn) {
-        clearHistoryBtn.addEventListener("click", async function() {
-          if (window.SupabaseAPI) {
-            clearHistoryBtn.disabled = true;
-            await window.SupabaseAPI.clearViewingHistory().catch(function(){});
-            cache.history = null; cache.counts = null;
-            await loadDataForView("history");
-            await loadDataForView("overview");
-            render();
-          }
-        });
-      }
-
-      document.querySelectorAll("[data-account-logout]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          Promise.resolve(window.AuctioAuth.logout()).then(function () {
-            window.location.href = basePath + "index.html";
-          });
-        });
-      });
-
-      const saveProfileButtons = Array.from(document.querySelectorAll("[data-save-profile]"));
-      if (saveProfileButtons.length) {
-        saveProfileButtons.forEach(function (saveProfileButton) {
-          saveProfileButton.addEventListener("click", async function () {
-            const saveMode = saveProfileButton.getAttribute("data-save-profile");
-            setActionButtonState(saveProfileButton, true, "Save Changes", "Saving...");
-
-            const personalState = {
-              firstName: document.querySelector("#account-first-name")?.value.trim() || "",
-              lastName: document.querySelector("#account-last-name")?.value.trim() || "",
-              phone: document.querySelector("#account-phone")?.value.trim() || "",
-            };
-            const addressState = {
-              country: document.querySelector("#account-country")?.value || "United States",
-              street: document.querySelector("#account-street")?.value.trim() || "",
-              city: document.querySelector("#account-city")?.value.trim() || "",
-              state: document.querySelector("#account-state")?.value.trim() || "",
-              zip: document.querySelector("#account-zip")?.value.trim() || "",
-            };
-
-            if (saveMode === "personal") {
-              const hasAnyPersonalValue = Object.values(personalState).some(function (value) {
-                return String(value || "").trim() !== "";
-              });
-
-              if (!hasAnyPersonalValue) {
-                flash.profile = { type: "error", text: "Fill in your personal information before saving." };
-                setActionButtonState(saveProfileButton, false, "Save Changes", "Saving...");
-                render();
-                return;
-              }
-
-              if (!personalState.firstName || !personalState.lastName) {
-                flash.profile = { type: "error", text: "First name and last name cannot be empty." };
-                setActionButtonState(saveProfileButton, false, "Save Changes", "Saving...");
-                render();
-                return;
-              }
-
-	              try {
-	                if (window.SupabaseAPI) {
-	                  await window.SupabaseAPI.updateProfile({
-	                    firstName: personalState.firstName,
-	                    lastName: personalState.lastName,
-	                    phone: personalState.phone,
-	                  });
-	                }
-	                cache.profile = Object.assign({}, cache.profile || {}, {
-	                  first_name: personalState.firstName,
-	                  last_name: personalState.lastName,
-	                  email: state.email,
-	                  phone: personalState.phone,
-	                  created_at: (cache.profile && cache.profile.created_at) || state.createdAt || "",
-	                });
-	                updateLegacyUserRecord({
-	                  id: state.id,
-	                  firstName: personalState.firstName,
-	                  lastName: personalState.lastName,
-                  fullName: `${personalState.firstName} ${personalState.lastName}`.trim() || state.email || "Collector",
-                  email: state.email,
-                  phone: personalState.phone,
-                  createdAt: state.createdAt,
-                });
-                if (window.AuctioAuth && typeof window.AuctioAuth.refreshCurrentUser === "function") {
-                  await window.AuctioAuth.refreshCurrentUser();
-                }
-                flash.profile = { type: "success", text: "Personal information updated." };
-              } catch (error) {
-                flash.profile = { type: "error", text: error.message || "Unable to save personal information." };
-              }
-
-              render();
-              return;
-            }
-
-            const hasAnyAddressValue = Object.values(addressState).some(function (value) {
-              return String(value || "").trim() !== "";
-            });
-
-            if (!hasAnyAddressValue) {
-              flash.profile = { type: "error", text: "Fill in your address before saving." };
-              setActionButtonState(saveProfileButton, false, "Save Changes", "Saving...");
-              render();
-              return;
-            }
-
-              try {
-                if (window.SupabaseAPI) {
-                  await window.SupabaseAPI.updateProfile({
-                    firstName: personalState.firstName,
-                    lastName: personalState.lastName,
-                    phone: personalState.phone,
-                    address: addressState.street,
-                    city: addressState.city,
-                    state: addressState.state,
-                    postalCode: addressState.zip,
-                    country: addressState.country,
-                  });
-                }
-                writeStoredProfile({
-                  country: addressState.country,
-                  street: addressState.street,
-                  city: addressState.city,
-                  state: addressState.state,
-                  zip: addressState.zip,
-                });
-                cache.profile = Object.assign({}, cache.profile || {}, {
-                  first_name: personalState.firstName,
-                  last_name: personalState.lastName,
-                  phone: personalState.phone,
-                  country: addressState.country,
-                  address: addressState.street,
-                  city: addressState.city,
-                  state: addressState.state,
-                  postal_code: addressState.zip,
-                });
-                updateLegacyUserRecord({
-                  id: state.id,
-                  firstName: personalState.firstName,
-                  lastName: personalState.lastName,
-                  email: state.email,
-                  phone: personalState.phone,
-                  createdAt: state.createdAt,
-                });
-                flash.profile = { type: "success", text: "Settings saved." };
-              } catch (error) {
-                flash.profile = { type: "error", text: error.message || "Unable to save settings." };
-              }
-
-            render();
-          });
-        });
-      }
-
-      const changePasswordButton = document.querySelector("[data-change-password]");
-      if (changePasswordButton) {
-        changePasswordButton.addEventListener("click", async function () {
-          setActionButtonState(changePasswordButton, true, "Change Password", "Updating...");
-          const currentPassword = document.querySelector("#account-current-password")?.value || "";
-          const newPassword = document.querySelector("#account-new-password")?.value || "";
-          const confirmPassword = document.querySelector("#account-confirm-password")?.value || "";
-
-          if (!currentPassword) {
-            flash.password = { type: "error", text: "Enter your current password." };
-            setActionButtonState(changePasswordButton, false, "Change Password", "Updating...");
-            render();
-            return;
-          }
-          if (newPassword.length < 8) {
-            flash.password = { type: "error", text: "New password must be at least 8 characters." };
-            setActionButtonState(changePasswordButton, false, "Change Password", "Updating...");
-            render();
-            return;
-          }
-          if (newPassword !== confirmPassword) {
-            flash.password = { type: "error", text: "New passwords do not match." };
-            setActionButtonState(changePasswordButton, false, "Change Password", "Updating...");
-            render();
-            return;
-          }
-
-          try {
-            if (!window.SupabaseAPI) throw new Error("Supabase is not available.");
-            await window.SupabaseAPI.changePassword(currentPassword, newPassword);
-            const currentField = document.querySelector("#account-current-password");
-            const newField = document.querySelector("#account-new-password");
-            const confirmField = document.querySelector("#account-confirm-password");
-            if (currentField) currentField.value = "";
-            if (newField) newField.value = "";
-            if (confirmField) confirmField.value = "";
-            flash.password = { type: "success", text: "Password updated successfully." };
-          } catch (error) {
-            flash.password = { type: "error", text: error.message || "Unable to change password." };
-          }
-
-          render();
-        });
-      }
-
-      const deleteAccountButton = document.querySelector("[data-delete-account]");
-      if (deleteAccountButton) {
-        deleteAccountButton.addEventListener("click", function () {
-          flash.danger = { text: "Account deletion is not available in this static copy." };
-          render();
-        });
-      }
-    }
-
-    // Async init: load data for initial view, then render
-    (async function initAccount() {
-      render(); // immediate render with loading placeholders
-      await loadDataForView(activeView);
-      render(); // re-render with real data
-    })();
+          <div class="legalRequirementMessage">
+            <p class="privacyNotice">We will use your information in accordance with our <a href="privacy.html" class="privacy-statement" target="_blank">Privacy Policy</a>.</p>
+          </div>
+        </div>
+      </div>`;
   }
 
-  function init() {
-    const page = document.body.getAttribute("data-auth-page");
-    const basePath = getBasePath();
-    if (!window.AuctioAuth) return;
+  function getAccountView() {
+    var path = window.location.pathname.replace(/\/+/g, "/").toLowerCase();
+    var tab = new URLSearchParams(window.location.search || "").get("tab");
+    if (path.indexOf("/myaccount/info") !== -1 || tab === "settings") return "info";
+    if (path.indexOf("/myaccount/addressbook") !== -1) return "addressbook";
+    if (path.indexOf("/myaccount/orders") !== -1 || tab === "orders") return "orders";
+    if (path.indexOf("/myaccount/promotional-preferences") !== -1) return "promotional-preferences";
+    if (path.indexOf("/myaccount/password") !== -1) return "password";
+    if (path.indexOf("/myaccount/logout") !== -1) return "logout";
+    return "dashboard";
+  }
 
-    if (page === "login") {
-      bindLoginPage(basePath);
-    } else if (page === "register") {
-      bindRegisterPage(basePath);
-    } else if (page === "account") {
-      bindAccountPage(basePath);
+  function accountPath(basePath, view) {
+    var routes = {
+      dashboard: "myaccount/dashboard/",
+      info: "myaccount/info/",
+      addressbook: "myaccount/addressbook/",
+      orders: "myaccount/orders/",
+      "promotional-preferences": "myaccount/promotional-preferences/",
+      password: "myaccount/password/",
+      logout: "myaccount/logout/",
+    };
+    return basePath + (routes[view] || routes.dashboard);
+  }
+
+  function accountTitle(view) {
+    return {
+      dashboard: "My Account",
+      info: "Contact Details",
+      addressbook: "My Addresses",
+      orders: "My Orders",
+      "promotional-preferences": "Promotional Preferences",
+      password: "Change Password",
+    }[view] || "My Account";
+  }
+
+  function profileField(profile, user, key, fallbackKey) {
+    profile = profile || {};
+    user = user || {};
+    return profile[key] || user[fallbackKey || key] || "";
+  }
+
+  function fullNameFromProfile(user, profile) {
+    var firstName = profileField(profile, user, "first_name", "firstName");
+    var lastName = profileField(profile, user, "last_name", "lastName");
+    return String((firstName + " " + lastName).trim() || (user && user.email) || "Customer");
+  }
+
+  function addressSummary(profile) {
+    profile = profile || {};
+    return [profile.address, profile.city, profile.state, profile.postal_code, countryLabel(profile.country)].filter(Boolean).join(", ") || "No saved address.";
+  }
+
+  function countryLabel(value) {
+    return String(value || "").split("|")[0] || "";
+  }
+
+  function addressValue(address, key) {
+    address = address || {};
+    if (key === "address2") return address.address_2 || address.address2 || "";
+    if (key === "postalCode") return address.postal_code || address.postalCode || "";
+    if (key === "firstName") return address.first_name || address.firstName || "";
+    if (key === "lastName") return address.last_name || address.lastName || "";
+    if (key === "isDefault") return address.is_default === true || address.isDefault === true;
+    return address[key] || "";
+  }
+
+  function hasAddressValue(address) {
+    return ["address", "address2", "city", "state", "postalCode", "country"].some(function (key) {
+      return String(addressValue(address, key) || "").trim();
+    });
+  }
+
+  function normalizeAccountAddress(address, user, profile, index) {
+    address = address || {};
+    profile = profile || {};
+    user = user || {};
+    return {
+      id: address.id || "",
+      label: address.label || (index === 0 ? "Default Address" : "Delivery Address"),
+      first_name: addressValue(address, "firstName") || profileField(profile, user, "first_name", "firstName"),
+      last_name: addressValue(address, "lastName") || profileField(profile, user, "last_name", "lastName"),
+      phone: address.phone || profileField(profile, user, "phone", "phone"),
+      address: address.address || "",
+      address_2: addressValue(address, "address2"),
+      city: address.city || "",
+      state: address.state || "",
+      postal_code: addressValue(address, "postalCode"),
+      country: address.country || "",
+      is_default: addressValue(address, "isDefault") || index === 0,
+      is_profile_fallback: address.is_profile_fallback === true,
+    };
+  }
+
+  function accountAddresses(user, profile, addresses) {
+    var rows = Array.isArray(addresses) ? addresses : [];
+    var normalized = rows
+      .map(function (address, index) { return normalizeAccountAddress(address, user, profile, index); })
+      .filter(hasAddressValue);
+    if (!normalized.length && hasAddressValue(profile || {})) {
+      normalized.push(normalizeAccountAddress({
+        id: "profile",
+        label: "Default Address",
+        first_name: profileField(profile, user, "first_name", "firstName"),
+        last_name: profileField(profile, user, "last_name", "lastName"),
+        phone: profileField(profile, user, "phone", "phone"),
+        address: profile.address || "",
+        city: profile.city || "",
+        state: profile.state || "",
+        postal_code: profile.postal_code || "",
+        country: profile.country || "",
+        is_default: true,
+        is_profile_fallback: true,
+      }, user, profile, 0));
     }
+    return normalized;
+  }
+
+  function defaultAccountAddress(user, profile, addresses) {
+    var rows = accountAddresses(user, profile, addresses);
+    return rows.find(function (address) { return address.is_default; }) || rows[0] || null;
+  }
+
+  function addressSummaryFromAddress(address) {
+    if (!address) return "No saved address.";
+    return [address.address, address.address_2, address.city, address.state, address.postal_code, countryLabel(address.country)].filter(Boolean).join(", ") || "No saved address.";
+  }
+
+  function addressName(user, profile, address) {
+    var firstName = addressValue(address, "firstName") || profileField(profile, user, "first_name", "firstName");
+    var lastName = addressValue(address, "lastName") || profileField(profile, user, "last_name", "lastName");
+    return String((firstName + " " + lastName).trim());
+  }
+
+  function addressJson(address) {
+    return escapeHtml(JSON.stringify(address || {}));
+  }
+
+  function readMarketingPreferences(profile) {
+    profile = profile || {};
+    return {
+      email: profile.marketing_email !== false,
+      sms: profile.marketing_sms === true,
+      personalized: profile.marketing_personalized !== false,
+    };
+  }
+
+  function accountNavHtml(basePath, activeView) {
+    function item(view, label, attrs) {
+      var active = activeView === view ? " active" : "";
+      var current = active ? ' aria-current="page"' : "";
+      return '<li><a class="btn btn-default' + active + '" href="' + accountPath(basePath, view) + '"' + current + (attrs || "") + '><span class="accountNavLabel">' + escapeHtml(label) + '</span><i class="fa fa-angle-right"></i></a></li>';
+    }
+    return '' +
+      '<ul class="splitLeftList">' +
+      item("dashboard", "Dashboard") +
+      item("info", "Contact Details") +
+      item("addressbook", "My Addresses") +
+      item("orders", "My Orders", ' data-e2e="dashboard-orders-tab"') +
+      '<li><a class="btn btn-default" target="_blank" href="https://returns.thehipstore.co.uk"><span class="accountNavLabel">My Returns</span><i class="fa fa-external-link"></i></a></li>' +
+      item("promotional-preferences", "Promotional Preferences") +
+      item("password", "Change Password") +
+      item("logout", "Sign Out", " data-account-signout") +
+      '</ul>';
+  }
+
+  function inputRow(label, name, value, type, autocomplete, attrs) {
+    return '<div class="fs-row inp"><label>' + escapeHtml(label) + '</label><span><input type="' + (type || "text") + '" name="' + escapeHtml(name) + '" value="' + escapeHtml(value || "") + '" autocomplete="' + escapeHtml(autocomplete || "") + '"' + (attrs || "") + '></span></div>';
+  }
+
+  function renderContactDetailsView(user, profile) {
+    return '' +
+      '<form class="fs" data-account-contact-form>' +
+      '<div class="fs-mod"><div class="fs-mod-ttl"><h3>Contact Details</h3></div><div class="fs-mod-cnt">' +
+      '<div class="fs-grp">' +
+      inputRow("First name", "firstName", profileField(profile, user, "first_name", "firstName"), "text", "given-name") +
+      inputRow("Surname", "lastName", profileField(profile, user, "last_name", "lastName"), "text", "family-name") +
+      inputRow("Email address", "email", profileField(profile, user, "email", "email"), "email", "email", " readonly") +
+      inputRow("Telephone", "phone", profileField(profile, user, "phone", "phone"), "tel", "tel") +
+      '</div>' +
+      '<div class="fs-grp"><div class="fs-row but act hlb"><label></label><span><button type="submit" class="btn btn-level1 large">Save contact details</button></span></div></div>' +
+      '</div></div>' +
+      '</form>';
+  }
+
+  function renderAddressCard(user, profile, address) {
+    var name = addressName(user, profile, address);
+    var label = address.label || (address.is_default ? "Default Address" : "Delivery Address");
+    var lines = [address.address, address.address_2, address.city, address.state, address.postal_code, countryLabel(address.country)].filter(Boolean);
+    return '' +
+      '<li class="accountAddressCard" data-address-card data-address-id="' + escapeHtml(address.id || "") + '" data-address-json="' + addressJson(address) + '">' +
+      '<div class="accountAddressCardHeader">' +
+      '<div><h3>' + escapeHtml(label) + (address.is_default ? '<span class="accountAddressBadge">Default</span>' : "") + '</h3>' +
+      (name ? '<p class="muted">' + escapeHtml(name) + '</p>' : "") + '</div>' +
+      '<div class="accountAddressActions">' +
+      '<button type="button" class="btn btn-default" data-address-edit>Edit</button>' +
+      '<button type="button" class="btn btn-default danger" data-address-delete>Delete</button>' +
+      '</div></div>' +
+      '<address>' + (lines.length ? lines.map(escapeHtml).join("<br>") : "No address details saved.") + (address.phone ? '<br><span class="muted">' + escapeHtml(address.phone) + '</span>' : "") + '</address>' +
+      '</li>';
+  }
+
+  function renderAddressBookView(user, profile, addresses) {
+    var rows = accountAddresses(user, profile, addresses);
+    var hasRows = rows.length > 0;
+    return '' +
+      '<div class="fs-mod"><div class="fs-mod-ttl"><h3>My Addresses</h3></div><div class="fs-mod-cnt">' +
+      '<div class="accountAddressToolbar"><p>Save delivery addresses here so checkout can reuse your details.</p><button type="button" class="btn btn-default" data-address-add>Add New Address</button></div>' +
+      (hasRows
+        ? '<ul class="accountAddressList">' + rows.map(function (address) { return renderAddressCard(user, profile, address); }).join("") + '</ul>'
+        : '<div class="accountAddressEmpty">You do not have any saved addresses yet.</div>') +
+      '<form class="fs accountAddressForm' + (hasRows ? ' is-hidden' : '') + '" data-account-address-form>' +
+      '<input type="hidden" name="addressId" value="">' +
+      '<div class="fs-mod-ttl"><h3 data-address-form-title>' + (hasRows ? "Add New Address" : "Add Your Address") + '</h3></div><div class="fs-mod-cnt">' +
+      '<div class="fs-grp">' +
+      inputRow("Label", "label", "Delivery Address", "text", "section-address") +
+      inputRow("First name", "firstName", profileField(profile, user, "first_name", "firstName"), "text", "given-name") +
+      inputRow("Surname", "lastName", profileField(profile, user, "last_name", "lastName"), "text", "family-name") +
+      inputRow("Telephone", "phone", profileField(profile, user, "phone", "phone"), "tel", "tel") +
+      inputRow("Address line 1", "address", "", "text", "street-address") +
+      inputRow("Address line 2", "address2", "", "text", "address-line2") +
+      inputRow("Town/City", "city", "", "text", "address-level2") +
+      inputRow("County/State", "state", "", "text", "address-level1") +
+      inputRow("Postcode", "postalCode", "", "text", "postal-code") +
+      inputRow("Country", "country", "", "text", "country-name") +
+      '<div class="fs-row chk hlb"><label></label><span><input type="checkbox" id="addressDefault" name="isDefault" checked="checked"><label for="addressDefault"><span class="chkbox"><i class="fa fa-check"></i></span><span class="label">Use as default delivery address.</span></label></span></div>' +
+      '</div>' +
+      '<div class="fs-grp"><div class="fs-row but act hlb"><label></label><span class="accountAddressFormActions"><button type="submit" class="btn btn-level1 large">Save address</button><button type="button" class="btn btn-default" data-address-cancel>Cancel</button></span></div></div>' +
+      '</div></form>' +
+      '</div></div>';
+  }
+
+  function renderOrdersView(basePath, orders) {
+    return orders && orders.length
+      ? '<div class="accountOrdersList">' + orders.map(function (order) { return orderCard(order, basePath); }).join("") + '</div>'
+      : '<div class="dashboard-list"><ul><li class="dashboard-list-item"><div class="dashboard-list-item-left"><h3>No orders yet</h3><p>You currently have no orders on record.</p></div><div class="dashboard-list-item-right"><a class="btn btn-default" href="' + basePath + 'shop.html">Start Shopping</a></div></li></ul></div>';
+  }
+
+  function renderPromotionalPreferencesView(profile) {
+    var prefs = readMarketingPreferences(profile);
+    function checked(value) { return value ? ' checked="checked"' : ""; }
+    return '' +
+      '<form class="fs" data-account-prefs-form>' +
+      '<div class="fs-mod"><div class="fs-mod-ttl"><h3>Promotional Preferences</h3></div><div class="fs-mod-cnt">' +
+      '<div class="fs-grp">' +
+      '<div class="fs-row chk hlb"><label></label><span><input type="checkbox" id="prefEmail" name="email"' + checked(prefs.email) + '><label for="prefEmail"><span class="chkbox"><i class="fa fa-check"></i></span><span class="label">Email me about new drops, launches and offers.</span></label></span></div>' +
+      '<div class="fs-row chk hlb"><label></label><span><input type="checkbox" id="prefSms" name="sms"' + checked(prefs.sms) + '><label for="prefSms"><span class="chkbox"><i class="fa fa-check"></i></span><span class="label">Send me SMS updates about important offers.</span></label></span></div>' +
+      '<div class="fs-row chk hlb"><label></label><span><input type="checkbox" id="prefPersonalized" name="personalized"' + checked(prefs.personalized) + '><label for="prefPersonalized"><span class="chkbox"><i class="fa fa-check"></i></span><span class="label">Use my browsing and order activity to personalise recommendations.</span></label></span></div>' +
+      '</div>' +
+      '<div class="fs-grp"><div class="fs-row but act hlb"><label></label><span><button type="submit" class="btn btn-level1 large">Save preferences</button></span></div></div>' +
+      '</div></div>' +
+      '</form>';
+  }
+
+  function renderPasswordView() {
+    return '' +
+      '<form class="fs" data-account-password-form>' +
+      '<div class="fs-mod"><div class="fs-mod-ttl"><h3>Change Password</h3></div><div class="fs-mod-cnt">' +
+      '<div class="fs-grp infoBasic"><div class="fs-row inf"><p>Password must be at least 8 characters.</p></div></div>' +
+      '<div class="fs-grp">' +
+      inputRow("New password", "newPassword", "", "password", "new-password") +
+      inputRow("Confirm password", "confirmPassword", "", "password", "new-password") +
+      '</div>' +
+      '<div class="fs-grp"><div class="fs-row but act hlb"><label></label><span><button type="submit" class="btn btn-level1 large">Update password</button></span></div></div>' +
+      '</div></div>' +
+      '</form>';
+  }
+
+  function renderDashboardView(basePath, user, profile, orders, addresses) {
+    var fullName = fullNameFromProfile(user, profile).toLowerCase();
+    var email = profileField(profile, user, "email", "email") || "Not set";
+    var phone = profileField(profile, user, "phone", "phone") || "Not set";
+    var address = defaultAccountAddress(user, profile, addresses);
+    return '' +
+      '<div class="dashboard-list"><ul><li class="dashboard-list-item"><div class="dashboard-list-item-left"><h3>' + escapeHtml(fullName) + '</h3><p>' + escapeHtml(email) + '<br>' + escapeHtml(phone) + '</p></div><div class="dashboard-list-item-right"><a class="btn btn-default" href="' + accountPath(basePath, "info") + '"><i class="fa fa-pencil"></i>Edit</a></div></li></ul></div>' +
+      '<div class="dashboard-list"><ul><li class="dashboard-list-item"><div class="dashboard-list-item-left"><h3>My Addresses</h3><p>' + escapeHtml(addressSummaryFromAddress(address)) + '</p></div><div class="dashboard-list-item-right"><a class="btn btn-default" href="' + accountPath(basePath, "addressbook") + '"><i class="fa fa-pencil"></i>Edit</a></div></li></ul></div>' +
+      '<div class="dashboard-list"><ul><li class="dashboard-list-item"><div class="dashboard-list-item-left"><h3>My Orders</h3><p>' + (orders && orders.length ? "You have " + orders.length + " order" + (orders.length === 1 ? "" : "s") + " on record." : "You currently have no orders on record.") + '</p></div><div class="dashboard-list-item-right"><a class="btn btn-default" href="' + accountPath(basePath, "orders") + '">View</a></div></li></ul></div>';
+  }
+
+  function renderDashboardAccountPage(basePath, user, data, activeView, flash) {
+    data = data || {};
+    user = user || {};
+    activeView = activeView || "dashboard";
+    var profile = data.profile || {};
+    var orders = data.orders || [];
+    var addresses = data.addresses || [];
+    var privacyHref = basePath + "privacy.html";
+    var content = "";
+
+    if (activeView === "info") content = renderContactDetailsView(user, profile);
+    else if (activeView === "addressbook") content = renderAddressBookView(user, profile, addresses);
+    else if (activeView === "orders") content = renderOrdersView(basePath, orders);
+    else if (activeView === "promotional-preferences") content = renderPromotionalPreferencesView(profile);
+    else if (activeView === "password") content = renderPasswordView();
+    else content = renderDashboardView(basePath, user, profile, orders, addresses);
+
+    return `
+      <div id="accountPage" class="accountDashboard">
+        <div id="breads" class="searchCrumbs" style="display: none;">
+          <div class="maxWidth"></div>
+        </div>
+        <div id="breads" class="defaultBreadcrumbs">
+          <div class="maxWidth">
+            <span class="no">
+              <a href="/">
+                <span>Home</span>
+                <i></i>
+              </a>
+              <meta content="1">
+            </span>
+            <span class="active">
+              <a>
+                <span>${escapeHtml(accountTitle(activeView))}</span>
+              </a>
+              <meta content="2">
+            </span>
+          </div>
+        </div>
+        <div id="accountPageContent">
+          <div class="maxWidth">
+            <div id="accountLeft">
+              ${accountNavHtml(basePath, activeView)}
+            </div>
+            <div id="accountRight" class="splitRight">
+              <div class="splitRightContainer">
+                <div id="accountTitle" class="splitTitle">
+                  <h1>${escapeHtml(accountTitle(activeView))}</h1>
+                </div>
+                <div id="accountContent">
+                  ${flash ? '<p data-account-flash class="' + (/(saved|updated)/i.test(flash) ? "success" : "") + '">' + escapeHtml(flash) + '</p>' : ""}
+                  ${content}
+                </div>
+                <div class="legalRequirementMessage">
+                  <p class="privacyNotice">We will use your information in accordance with our <a href="${escapeHtml(privacyHref)}" class="privacy-statement" target="_blank">Privacy Policy</a>.</p>
+                </div>
+              </div>
+            </div>
+            <div class="clr"></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function bindDashboardAccountPage(basePath, user, data, helpers) {
+    var signOut = document.querySelector("[data-account-signout]");
+    if (signOut) {
+      signOut.addEventListener("click", async function (event) {
+        event.preventDefault();
+        await window.AuctioAuth.logout();
+        window.location.href = basePath + "index.html";
+      });
+    }
+
+    function profilePayloadFromCurrent(values) {
+      var profile = (data && data.profile) || {};
+      return {
+        firstName: values.firstName != null ? values.firstName : profileField(profile, user, "first_name", "firstName"),
+        lastName: values.lastName != null ? values.lastName : profileField(profile, user, "last_name", "lastName"),
+        phone: values.phone != null ? values.phone : profileField(profile, user, "phone", "phone"),
+        address: values.address != null ? values.address : profileField(profile, user, "address"),
+        city: values.city != null ? values.city : profileField(profile, user, "city"),
+        state: values.state != null ? values.state : profileField(profile, user, "state"),
+        postalCode: values.postalCode != null ? values.postalCode : profileField(profile, user, "postal_code"),
+        country: values.country != null ? values.country : profileField(profile, user, "country"),
+        marketingEmail: values.marketingEmail != null ? values.marketingEmail : profile.marketing_email !== false,
+        marketingSms: values.marketingSms != null ? values.marketingSms : profile.marketing_sms === true,
+        marketingPersonalized: values.marketingPersonalized != null ? values.marketingPersonalized : profile.marketing_personalized !== false,
+      };
+    }
+
+    var contactForm = document.querySelector("[data-account-contact-form]");
+    if (contactForm) {
+      contactForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = contactForm.querySelector("button[type=submit]");
+        var formData = new FormData(contactForm);
+        setButton(button, true, "Save contact details", "Saving...");
+        try {
+          await window.AuctioAuth.saveProfile(profilePayloadFromCurrent({
+            firstName: formData.get("firstName"),
+            lastName: formData.get("lastName"),
+            phone: formData.get("phone"),
+          }));
+          await helpers.reload("Contact details saved.");
+        } catch (error) {
+          helpers.flash(error.message || "Unable to save contact details.");
+        }
+      });
+    }
+
+    var addressForm = document.querySelector("[data-account-address-form]");
+    if (addressForm) {
+      var addressRows = accountAddresses(user, (data && data.profile) || {}, (data && data.addresses) || []);
+      var addressTitle = addressForm.querySelector("[data-address-form-title]");
+      var hasRenderedAddresses = addressRows.length > 0;
+
+      function setAddressField(name, value) {
+        var field = addressForm.querySelector('[name="' + name + '"]');
+        if (!field) return;
+        if (field.type === "checkbox") field.checked = Boolean(value);
+        else field.value = value == null ? "" : String(value);
+      }
+
+      function showAddressForm(address) {
+        address = address || {};
+        addressForm.classList.remove("is-hidden");
+        if (addressTitle) addressTitle.textContent = address.id ? "Edit Address" : "Add New Address";
+        setAddressField("addressId", address.id && address.id !== "profile" ? address.id : "");
+        setAddressField("label", address.label || "Delivery Address");
+        setAddressField("firstName", addressValue(address, "firstName") || profileField((data && data.profile) || {}, user, "first_name", "firstName"));
+        setAddressField("lastName", addressValue(address, "lastName") || profileField((data && data.profile) || {}, user, "last_name", "lastName"));
+        setAddressField("phone", address.phone || profileField((data && data.profile) || {}, user, "phone", "phone"));
+        setAddressField("address", address.address || "");
+        setAddressField("address2", addressValue(address, "address2"));
+        setAddressField("city", address.city || "");
+        setAddressField("state", address.state || "");
+        setAddressField("postalCode", addressValue(address, "postalCode"));
+        setAddressField("country", countryLabel(address.country));
+        setAddressField("isDefault", address.id ? addressValue(address, "isDefault") : true);
+        addressForm.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+
+      function hideAddressForm() {
+        if (hasRenderedAddresses) addressForm.classList.add("is-hidden");
+      }
+
+      document.querySelectorAll("[data-address-add]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          showAddressForm({});
+        });
+      });
+
+      document.querySelectorAll("[data-address-edit]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var card = button.closest("[data-address-card]");
+          var address = {};
+          try {
+            address = JSON.parse(card && card.getAttribute("data-address-json") || "{}");
+          } catch (_error) {
+            address = {};
+          }
+          showAddressForm(address);
+        });
+      });
+
+      document.querySelectorAll("[data-address-delete]").forEach(function (button) {
+        button.addEventListener("click", async function () {
+          var card = button.closest("[data-address-card]");
+          var addressId = card && card.getAttribute("data-address-id");
+          if (!addressId) return;
+          if (!window.confirm("Delete this address?")) return;
+          setButton(button, true, "Delete", "Deleting...");
+          try {
+            if (window.AuctioAuth.deleteCustomerAddress) await window.AuctioAuth.deleteCustomerAddress(addressId);
+            else await window.AuctioAuth.saveProfile(profilePayloadFromCurrent({ address: "", city: "", state: "", postalCode: "", country: "" }));
+            await helpers.reload("Address deleted.");
+          } catch (error) {
+            helpers.flash(error.message || "Unable to delete address.");
+          }
+        });
+      });
+
+      var cancelAddress = addressForm.querySelector("[data-address-cancel]");
+      if (cancelAddress) {
+        cancelAddress.addEventListener("click", function () {
+          hideAddressForm();
+        });
+      }
+
+      addressForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = addressForm.querySelector("button[type=submit]");
+        var formData = new FormData(addressForm);
+        setButton(button, true, "Save address", "Saving...");
+        try {
+          var addressPayload = {
+            id: formData.get("addressId"),
+            label: formData.get("label"),
+            firstName: formData.get("firstName"),
+            lastName: formData.get("lastName"),
+            phone: formData.get("phone"),
+            address: formData.get("address"),
+            address2: formData.get("address2"),
+            city: formData.get("city"),
+            state: formData.get("state"),
+            postalCode: formData.get("postalCode"),
+            country: formData.get("country"),
+            isDefault: Boolean(addressForm.querySelector("[name=isDefault]") && addressForm.querySelector("[name=isDefault]").checked),
+          };
+          if (window.AuctioAuth.saveCustomerAddress) await window.AuctioAuth.saveCustomerAddress(addressPayload);
+          else {
+            await window.AuctioAuth.saveProfile(profilePayloadFromCurrent({
+              firstName: addressPayload.firstName,
+              lastName: addressPayload.lastName,
+              phone: addressPayload.phone,
+              address: addressPayload.address,
+              city: addressPayload.city,
+              state: addressPayload.state,
+              postalCode: addressPayload.postalCode,
+              country: addressPayload.country,
+            }));
+          }
+          await helpers.reload("Address saved.");
+        } catch (error) {
+          helpers.flash(error.message || "Unable to save address.");
+        }
+      });
+    }
+
+    var prefsForm = document.querySelector("[data-account-prefs-form]");
+    if (prefsForm) {
+      prefsForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = prefsForm.querySelector("button[type=submit]");
+        setButton(button, true, "Save preferences", "Saving...");
+        try {
+          await window.AuctioAuth.saveProfile(profilePayloadFromCurrent({
+            marketingEmail: Boolean(prefsForm.querySelector("[name=email]") && prefsForm.querySelector("[name=email]").checked),
+            marketingSms: Boolean(prefsForm.querySelector("[name=sms]") && prefsForm.querySelector("[name=sms]").checked),
+            marketingPersonalized: Boolean(prefsForm.querySelector("[name=personalized]") && prefsForm.querySelector("[name=personalized]").checked),
+          }));
+          await helpers.reload("Preferences saved.");
+        } catch (error) {
+          helpers.flash(error.message || "Unable to save preferences.");
+        }
+      });
+    }
+
+    var passwordForm = document.querySelector("[data-account-password-form]");
+    if (passwordForm) {
+      passwordForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var button = passwordForm.querySelector("button[type=submit]");
+        var formData = new FormData(passwordForm);
+        var nextPassword = String(formData.get("newPassword") || "");
+        var confirmPassword = String(formData.get("confirmPassword") || "");
+        if (nextPassword.length < 8) {
+          helpers.flash("Password must be at least 8 characters.");
+          return;
+        }
+        if (nextPassword !== confirmPassword) {
+          helpers.flash("Passwords do not match.");
+          return;
+        }
+        setButton(button, true, "Update password", "Updating...");
+        try {
+          await window.AuctioAuth.updatePassword(nextPassword);
+          helpers.flash("Password updated.");
+        } catch (error) {
+          helpers.flash(error.message || "Unable to update password.");
+        }
+      });
+    }
+  }
+
+  function addressRows(prefix, autocompletePrefix, hidden) {
+    var style = hidden ? ' style="display: none;"' : "";
+    return `
+      <div class="fs-grp infoAddress">
+        <div class="fs-row inp req PCA_autocompletable"${style}>
+          <label for="${prefix}Address1">Address Line 1</label>
+          <span>
+            <input class="address1" type="text" value="" id="${prefix}Address1" name="${prefix}Address1" autocomplete="${autocompletePrefix} address-line1" maxlength="30">
+            <span class="tooltipIcon" data-info="Address is a required field."></span>
+          </span>
+        </div>
+        <div class="fs-row inp PCA_autocompletable"${style}>
+          <label for="${prefix}Address2">Address Line 2</label>
+          <span>
+            <input class="address2" type="text" value="" id="${prefix}Address2" name="${prefix}Address2" autocomplete="${autocompletePrefix} address-line2" maxlength="30">
+            <span class="tooltipIcon" data-info="Optionally provide extra address details."></span>
+          </span>
+        </div>
+        <div class="fs-row inp req PCA_autocompletable"${style}>
+          <label for="${prefix}Town">Town/City</label>
+          <span>
+            <input class="town" type="text" value="" id="${prefix}Town" name="${prefix}Town" autocomplete="${autocompletePrefix} address-level2" maxlength="30">
+            <span class="tooltipIcon" data-info="Address is a required field."></span>
+          </span>
+        </div>
+        <div class="fs-row county-row inp PCA_autocompletable"${style}>
+          <label class="addressFormCountyLabel" for="${prefix}CountyInp">County</label>
+          <span>
+            <input class="county county-inp" type="text" value="" id="${prefix}CountyInp" name="${prefix}County" autocomplete="${autocompletePrefix} address-level1" maxlength="30">
+            <span class="tooltipIcon" data-info="Optionally provide extra address details."></span>
+          </span>
+        </div>
+      </div>`;
+  }
+
+  function renderForgotPasswordPage(basePath, mode, message, success) {
+    var recovery = mode === "recovery";
+    var complete = mode === "complete";
+    var sent = mode === "sent";
+    var title = recovery ? "Reset password" : "Forgotten your password?";
+    var formTitle = recovery ? "Choose a new password" : "Password reset";
+    var formHtml = "";
+
+    if (complete) {
+      formHtml =
+        '<div class="fs-mod">' +
+        '<div class="fs-mod-ttl"><h3>Password updated</h3></div>' +
+        '<div class="fs-mod-cnt">' +
+        '<div class="fs-grp"><div class="fs-row inf"><p>Your password has been updated. You can now open your account.</p></div></div>' +
+        '<div class="fs-grp"><div class="fs-row but act hlb"><label></label><span><a class="btn btn-level1 large" href="' + basePath + 'account.html">Go to my account</a></span></div></div>' +
+        '</div>' +
+        '</div>';
+    } else if (sent) {
+      formHtml =
+        '<div class="fs-mod">' +
+        '<div class="fs-mod-ttl"><h3>Check your email</h3></div>' +
+        '<div class="fs-mod-cnt">' +
+        '<div class="fs-grp"><div class="fs-row inf"><p>If an account exists for this email, we have sent a secure password reset link.</p></div></div>' +
+        '<div class="fs-grp"><div class="fs-row but act hlb"><label></label><span><a class="btn btn-level1 large" href="' + basePath + 'login.html">Back to sign in</a></span></div></div>' +
+        '</div>' +
+        '</div>';
+    } else if (recovery) {
+      formHtml =
+        '<form class="fs" id="resetPasswordForm">' +
+        '<div class="fs-mod">' +
+        '<div class="fs-mod-ttl"><h3>' + formTitle + '</h3></div>' +
+        '<div class="fs-mod-cnt">' +
+        '<div class="fs-grp">' +
+        '<div class="fs-row inp req"><label>New password</label><span><input type="password" id="newPassword" autocomplete="new-password" data-e2e="forgot-newPassword"></span></div>' +
+        '<div class="fs-row inp req"><label>Confirm password</label><span><input type="password" id="confirmNewPassword" autocomplete="new-password" data-e2e="forgot-confirmPassword"></span></div>' +
+        '</div>' +
+        '<div class="fs-grp">' +
+        '<div class="fs-row but act hlb"><label></label><span><p data-auth-error class="' + (message ? (success ? "success" : "") : "hidden") + '" role="alert" aria-live="polite">' + escapeHtml(message || "") + '</p><button type="submit" class="btn btn-level1 large" data-e2e="forgot-updatePassword">Update password</button></span></div>' +
+        '<div class="fs-row lnk hlb"><label></label><span><a href="' + basePath + 'login.html" class="forgotPasswordLink">Back to sign in</a></span></div>' +
+        '</div>' +
+        '</div>' +
+        '</div>' +
+        '</form>';
+    } else {
+      formHtml =
+        '<form class="fs" id="forgotPasswordForm">' +
+        '<div class="fs-mod">' +
+        '<div class="fs-mod-ttl"><h3>' + formTitle + '</h3></div>' +
+        '<div class="fs-mod-cnt">' +
+        '<div class="fs-grp"><div class="fs-row inf"><p>Enter the email address linked to your account and we will send you a secure password reset link.</p></div></div>' +
+        '<div class="fs-grp"><div class="fs-row inp req"><label>Email address</label><span><input type="email" id="forgotEmail" autocomplete="email" data-e2e="forgot-email"></span></div></div>' +
+        '<div class="fs-grp">' +
+        '<div class="fs-row but act hlb"><label></label><span><p data-auth-error class="' + (message ? (success ? "success" : "") : "hidden") + '" role="alert" aria-live="polite">' + escapeHtml(message || "") + '</p><button type="submit" class="btn btn-level1 large" data-e2e="forgot-submit">Send reset link</button></span></div>' +
+        '<div class="fs-row lnk hlb"><label></label><span><a href="' + basePath + 'login.html" class="forgotPasswordLink">Back to sign in</a></span></div>' +
+        '</div>' +
+        '</div>' +
+        '</div>' +
+        '</form>';
+    }
+
+    return `
+      <div id="accountPage" class="accountPasswordReset">
+        <div id="accountPageContent">
+          <div class="maxWidth">
+            <div id="accountTitle"><h1>${title}</h1></div>
+            <div id="accountContent">${formHtml}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function addressPredictBlock(prefix, addressId) {
+    return `
+      <div id="${prefix}AddressPredictHolder" class="fs-grp">
+        <div class="formInputInactiveOverlay"></div>
+        <div class="fs-row inp">
+          <label>Address</label>
+          <span>
+            <input type="text" id="${addressId}" data-e2e="delivery-addressForm-addressPredictLook" class="addressPredictLook" name="${prefix}AddressPredict" value="" placeholder="Start typing your address or postcode" autocomplete="off" data-locale="gb">
+            <span id="${addressId}-results" data-e2e="delivery-addressForm-addressPredictLookResults"></span>
+          </span>
+        </div>
+      </div>
+      <div id="${prefix}AddressPredictFindAnother" class="fs-grp" style="display: none">
+        <div class="fs-row but hlb">
+          <label>&nbsp;</label>
+          <span><button id="${prefix}AddressPredictAnotherBtn" class="btn btn-level3" type="button">Find a different address</button></span>
+        </div>
+      </div>
+      <div class="fs-grp enterManually" id="${prefix}EnterManually">
+        <div class="fs-row but hlb">
+          <label>&nbsp;</label>
+          <span><button type="button" class="btn btn-level3" data-address-manual>Or enter address manually</button></span>
+        </div>
+      </div>`;
+  }
+
+  function renderRegisterAccountPage(basePath) {
+    var countries = countryOptionsHtml("gb");
+    return `
+      <div id="accountPage" class="accountCreate">
+        <div id="breads">
+          <div class="maxWidth">
+            <span class="no"><a href="${basePath}index.html">Home</a><i class="fa fa-caret-right"></i></span>
+            <span class="no"><a href="${basePath}account.html">My Account</a><i class="fa fa-caret-right"></i></span>
+            <span class="active"><span>Register</span></span>
+          </div>
+        </div>
+        <div id="accountPageContent">
+          <div class="maxWidth">
+            <div id="accountTitle"><h1>Register</h1></div>
+            <div id="accountContent">
+              <form id="registerCustomerForm" class="fs" method="post">
+                <div class="fs-mod">
+                  <div class="fs-mod-ttl"><h2>Your Details</h2></div>
+                  <div class="fs-mod-cnt">
+                    <input type="hidden" name="saveDetails" value="on">
+                    <div class="fs-grp">
+                      <div class="fs-row inp req tooltip">
+                        <label>First name</label>
+                        <span><input class="required" type="text" id="firstName" name="firstName" value="" autocomplete="given-name" data-e2e="register-registerForm-firstName" maxlength=""><span class="tooltipIcon" data-info="Please provide your first name. This cannot contain numbers."></span></span>
+                      </div>
+                      <div class="fs-row inp req tooltip">
+                        <label>Surname</label>
+                        <span><input class="required" type="text" id="lastName" name="lastName" value="" autocomplete="family-name" data-e2e="register-registerForm-lastName" maxlength=""><span class="tooltipIcon" data-info="Please provide your surname. This cannot contain numbers."></span></span>
+                      </div>
+                      <div class="fs-row inp req tooltip">
+                        <label>Email address</label>
+                        <span><input class="required" type="email" id="username" name="email" value="" autocomplete="username" data-e2e="register-registerForm-email"><span class="tooltipIcon" data-info="Email must be entered in the correct format."></span></span>
+                        <div class="inputErr"><i></i><p>The email address you entered is incorrect please enter a valid email</p></div>
+                      </div>
+                      <div class="fs-row inp req tooltip">
+                        <label>Telephone</label>
+                        <span><input class="required" type="tel" id="phone" name="phone" value="" autocomplete="tel" data-e2e="register-registerForm-phone" maxlength=""><span class="tooltipIcon" data-info="Please provide your contact telephone number. This should be 8-14 characters long and should only contain numbers or a '+' symbol"></span></span>
+                      </div>
+                    </div>
+                    <div class="fs-grp infoBasic">
+                      <div class="fs-row inf"><p>Password must be 8 characters long and include at least one number. No special characters allowed.</p></div>
+                      <div class="fs-row inp req tooltip">
+                        <label>Password</label>
+                        <span><input class="required" type="password" id="password" name="password" value="" autocomplete="new-password" data-linked="#confirmPassword" data-e2e="register-registerForm-password"><span class="tooltipIcon" data-info="Password must be 8 characters long and include at least one number. No special characters allowed."></span></span>
+                        <div class="inputErr"><i></i><p>Password must be 8 characters long and include at least one number. No special characters allowed.</p></div>
+                      </div>
+                      <div class="fs-row inp req tooltip">
+                        <label>Confirm password</label>
+                        <span><input class="required" type="password" id="confirmPassword" name="confirmPassword" value="" data-validate="matchValue" data-matches="#password" data-e2e="register-registerForm-confirmPassword"><span class="tooltipIcon" data-info="Passwords do not match."></span></span>
+                        <div class="inputErr"><i></i><p>Passwords do not match.</p></div>
+                      </div>
+                      <div id="marketingOptInCheckboxDiv" class="fs-row chk hlb">
+                        <label for="marketingOptIn"></label>
+                        <span>
+                          <input class="valid" type="checkbox" name="marketingOptIn" id="marketingOptIn">
+                          <label for="marketingOptIn"><span id="marketingOptInSpan" class="chkbox"><i class="fa fa-check"></i></span><span class="label">We'd like to share our latest launches, offers and new drops with you. Please tick this box if you'd like to hear from us.</span></label>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="fs-mod gb register-billing">
+                  <div class="fs-mod-ttl"><h2>Your Billing Address</h2></div>
+                  <input type="hidden" name="addressPredictflag" id="addressPredictFlag" value="false">
+                  <div class="fs-mod-cnt">
+                    <div class="fs-grp">
+                      <div class="fs-row sel PCA_autocompletable shippingCountry">
+                        <label for="country">Country</label>
+                        <span><select name="billingCountry" id="country" class="wider valid">${countries}</select></span>
+                      </div>
+                    </div>
+                    <div class="fs-grp" id="billingPostcodeHolder">
+                      <div class="fs-row inp req" id="postcodeHolder" style="display: none;">
+                        <label for="postcode">Postcode</label>
+                        <span><input class="postcode inputAdvancer" type="text" id="postcode" name="billingPostcode" value="" autocomplete="billing postal-code" maxlength=""></span>
+                      </div>
+                    </div>
+                    ${addressRows("billing", "billing", true)}
+                    ${addressPredictBlock("billing", "addressPredictLook")}
+                    <div class="fs-grp infoAddress">
+                      <div id="checkboxDiv" class="fs-row chk hlb">
+                        <label for="useBillingAddress" class="useBillingAddressLabel"></label>
+                        <span>
+                          <input class="valid" type="checkbox" name="useBillingAddress" id="useBillingAddress" checked="checked" value="on">
+                          <label for="useBillingAddress"><span id="useBillingAddressSpan" class="chkbox" style="cursor: pointer;"><i class="fa fa-check"></i></span><span class="label">Use Billing Address for Delivery</span></label>
+                          <span class="tooltipIcon info" data-info="Allowed delivery countries"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="shippingAddressHolder" class="fs-mod differentAddress register-delivery gb" style="max-height: 0px; display: block;">
+                  <div class="fs-mod-ttl"><h2>Your Delivery Address</h2></div>
+                  <div class="fs-mod-cnt">
+                    <input type="hidden" name="deliveryAddressPredictFlag" id="deliveryAddressPredictFlag" value="false">
+                    <div class="fs-grp infoAddress">
+                      <div class="fs-row sel PCA_autocompletable shippingCountry">
+                        <label>Country</label>
+                        <span><select name="shippingCountry" id="shippingCountry" class="wider valid">${countries}</select></span>
+                      </div>
+                    </div>
+                    <div class="fs-grp" id="shippingPostcodeHolder">
+                      <div class="fs-row inp req" id="shippingPostcodeHolderRow" style="display: none;">
+                        <label for="shippingPostcode">Postcode</label>
+                        <span><input class="postcode inputAdvancer" type="text" id="shippingPostcode" name="shippingPostcode" value="" autocomplete="shipping postal-code" maxlength=""></span>
+                      </div>
+                    </div>
+                    ${addressRows("shipping", "shipping", true)}
+                    ${addressPredictBlock("shipping", "shippingAddressPredictLook")}
+                  </div>
+                </div>
+                <div class="fs-mod accountCreateButton">
+                  <div class="fs-mod-cnt">
+                    <div class="fs-grp">
+                      <div class="fs-row but act hlb">
+                        <label></label>
+                        <span><div class="legalRequirementMessage"><p class="privacyNotice">We will use your information in accordance with our <a href="${basePath}privacy.html" class="privacy-statement" target="_blank">Privacy Policy</a>.</p></div></span>
+                      </div>
+                      <div class="fs-row but act hlb">
+                        <label></label>
+                        <span><p data-auth-error class="hidden"></p><button type="submit" data-e2e="register-registerForm-registerButton" class="btn btn-level1 large">Register</button></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function bindGuestAccountForm(basePath) {
+    var form = document.getElementById("loginForm");
+    var registerForm = document.getElementById("createForm");
+    var button = document.getElementById("doLogin");
+    var errorNode = form && form.querySelector("[data-auth-error]");
+    if (registerForm) {
+      registerForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        window.location.href = window.AuctioAuth.buildAuthPageUrl("register", basePath);
+      });
+    }
+    if (!form) return;
+
+    function clearLoginError() {
+      form.querySelectorAll(".has-error").forEach(function (node) {
+        node.classList.remove("has-error");
+      });
+      if (errorNode) {
+        errorNode.textContent = "";
+        errorNode.className = "hidden";
+      }
+    }
+
+    function showLoginError(message, fieldId) {
+      if (fieldId) {
+        var field = document.getElementById(fieldId);
+        var row = field && field.closest(".fs-row");
+        if (row) row.classList.add("has-error");
+      }
+      if (!errorNode) return;
+      errorNode.textContent = message || "Unable to sign in.";
+      errorNode.className = "";
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      clearLoginError();
+      var email = document.getElementById("username");
+      var password = document.getElementById("password");
+      var emailValue = String((email && email.value) || "").trim();
+      var passwordValue = String((password && password.value) || "");
+      if (!emailValue || emailValue.indexOf("@") === -1) {
+        showLoginError("Please enter a valid email address.", "username");
+        if (email) email.focus();
+        return;
+      }
+      if (!passwordValue) {
+        showLoginError("Please enter your password.", "password");
+        if (password) password.focus();
+        return;
+      }
+      setButton(button, true, "Sign In", "Signing In...");
+      try {
+        await window.AuctioAuth.login(emailValue, passwordValue);
+        await refreshUser();
+        window.location.href = window.AuctioAuth.getPostAuthRedirect(basePath);
+      } catch (error) {
+        showLoginError(normalizeAuthError(error, "Unable to sign in."), "password");
+        setButton(button, false, "Sign In", "Signing In...");
+      }
+    });
+  }
+
+  function authBox(title, subtitle, formHtml, asideHtml) {
+    return (
+      '<div class="min-h-[calc(100vh-160px)] grid gap-10 lg:grid-cols-2 lg:items-center">' +
+      '<div class="mx-auto w-full max-w-md space-y-7">' +
+      '<div class="space-y-2"><h1 class="text-4xl font-serif font-bold tracking-tight">' + escapeHtml(title) + '</h1>' +
+      '<p class="text-muted-foreground">' + escapeHtml(subtitle) + '</p></div>' +
+      formHtml +
+      '</div>' +
+      '<div class="hidden min-h-[460px] items-center rounded-lg border border-border/60 bg-secondary/30 p-10 lg:flex">' +
+      '<div class="max-w-lg space-y-5">' + asideHtml + '</div>' +
+      '</div>' +
+      '</div>'
+    );
+  }
+
+  function input(id, label, type, autocomplete, required) {
+    return (
+      '<label class="block space-y-2" for="' + id + '">' +
+      '<span class="text-sm font-medium">' + label + '</span>' +
+      '<input id="' + id + '" name="' + id + '" type="' + type + '" autocomplete="' + autocomplete + '" ' + (required ? "required" : "") + ' class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-11 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" />' +
+      '</label>'
+    );
+  }
+
+  function setError(node, message, success) {
+    if (!node) return;
+    node.textContent = message || "";
+    node.className = "rounded-md border px-3 py-2 text-sm " + (success ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700");
+    node.classList.toggle("hidden", !message);
+  }
+
+  function setButton(button, loading, idleLabel, loadingLabel) {
+    if (!button) return;
+    button.disabled = !!loading;
+    button.textContent = loading ? loadingLabel : idleLabel;
+  }
+
+  function normalizeAuthError(error, fallback) {
+    var message = String((error && error.message) || fallback || "Unable to sign in.").trim();
+    if (/invalid login credentials/i.test(message)) return "Password is incorrect.";
+    if (/email not confirmed|confirm your email|confirmation/i.test(message)) return "Please confirm your email address, then sign in.";
+    if (/failed to fetch|network/i.test(message)) return "Unable to reach the login service. Please try again.";
+    return message;
+  }
+
+  async function refreshUser() {
+    if (!window.AuctioAuth || !window.AuctioAuth.refreshCurrentUser) return null;
+    try {
+      return await window.AuctioAuth.refreshCurrentUser();
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  async function bindLoginPage(basePath) {
+    var current = await refreshUser();
+    if (current) {
+      window.location.replace(window.AuctioAuth.getPostAuthRedirect(basePath));
+      return;
+    }
+    document.title = "Login | The Hip Store";
+    ensureClassicAccountStyles();
+    renderRaw(renderGuestAccountPage(basePath));
+    bindGuestAccountForm(basePath);
+  }
+
+  function getRecoveryMode() {
+    var candidates = [
+      String(window.location.search || "") + String(window.location.hash || ""),
+      String(window.__AUCTIO_INITIAL_AUTH_URL || ""),
+    ];
+    for (var index = 0; index < candidates.length; index += 1) {
+      var value = candidates[index];
+      var queryPart = value.split("#")[0] || "";
+      var hashPart = value.indexOf("#") >= 0 ? value.slice(value.indexOf("#") + 1) : "";
+      var search = new URLSearchParams(queryPart.replace(/^\?/, ""));
+      if (search.get("mode") === "recovery" || search.get("type") === "recovery") return "recovery";
+      var hash = new URLSearchParams(hashPart.replace(/^#/, ""));
+      if (hash.get("type") === "recovery" || hash.has("access_token") || hash.has("refresh_token")) return "recovery";
+    }
+    return "request";
+  }
+
+  async function waitForPasswordRecoverySession() {
+    if (!window.HipStoreBackend || typeof window.HipStoreBackend.getClient !== "function") return;
+    try {
+      var client = await window.HipStoreBackend.getClient();
+      await new Promise(function (resolve) {
+        var done = false;
+        var subscription = null;
+        function finish() {
+          if (done) return;
+          done = true;
+          if (subscription && typeof subscription.unsubscribe === "function") subscription.unsubscribe();
+          resolve();
+        }
+        var listener = client.auth.onAuthStateChange(function (event, session) {
+          if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) finish();
+        });
+        subscription = listener && listener.data && listener.data.subscription;
+        client.auth.getSession().then(function (result) {
+          if (result && result.data && result.data.session) finish();
+        }).catch(function () {});
+        window.setTimeout(finish, 1200);
+      });
+    } catch (_error) {
+      // The submit handler will show a concrete message if the recovery link is invalid.
+    }
+  }
+
+  function setAuthMessage(errorNode, message, success) {
+    if (!errorNode) return;
+    errorNode.textContent = message || "";
+    errorNode.className = message ? (success ? "success" : "") : "hidden";
+  }
+
+  function getPasswordResetRedirect(basePath) {
+    var target = new URL(basePath + "forgot-password.html", window.location.href);
+    target.searchParams.set("mode", "recovery");
+    return target.toString();
+  }
+
+  async function bindForgotPasswordPage(basePath) {
+    var mode = getRecoveryMode();
+    document.title = mode === "recovery" ? "Reset Password | The Hip Store" : "Forgotten Password | The Hip Store";
+    ensureClassicAccountStyles();
+    renderRaw(renderForgotPasswordPage(basePath, mode));
+
+    if (mode === "recovery") {
+      await waitForPasswordRecoverySession();
+      var resetForm = document.getElementById("resetPasswordForm");
+      var resetButton = resetForm && resetForm.querySelector("button[type=submit]");
+      var resetError = resetForm && resetForm.querySelector("[data-auth-error]");
+      if (!resetForm) return;
+      resetForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        setAuthMessage(resetError, "");
+        var nextPassword = String((document.getElementById("newPassword") || {}).value || "");
+        var confirmPassword = String((document.getElementById("confirmNewPassword") || {}).value || "");
+        if (nextPassword.length < 8) {
+          setAuthMessage(resetError, "Password must be at least 8 characters.");
+          return;
+        }
+        if (nextPassword !== confirmPassword) {
+          setAuthMessage(resetError, "Passwords do not match.");
+          return;
+        }
+        setButton(resetButton, true, "Update password", "Updating...");
+        try {
+          await window.AuctioAuth.updatePassword(nextPassword);
+          renderRaw(renderForgotPasswordPage(basePath, "complete"));
+        } catch (error) {
+          setAuthMessage(resetError, normalizeAuthError(error, "This reset link is invalid or expired. Please request a new link."));
+          setButton(resetButton, false, "Update password", "Updating...");
+        }
+      });
+      return;
+    }
+
+    function switchToRecoveryIfReady() {
+      if (getRecoveryMode() === "recovery" && !document.getElementById("resetPasswordForm")) {
+        bindForgotPasswordPage(basePath);
+      }
+    }
+    window.addEventListener("hashchange", switchToRecoveryIfReady, { once: true });
+    window.setTimeout(switchToRecoveryIfReady, 50);
+    window.setTimeout(switchToRecoveryIfReady, 300);
+    window.setTimeout(switchToRecoveryIfReady, 1000);
+
+    var form = document.getElementById("forgotPasswordForm");
+    var button = form && form.querySelector("button[type=submit]");
+    var errorNode = form && form.querySelector("[data-auth-error]");
+    if (!form) return;
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      setAuthMessage(errorNode, "");
+      var email = document.getElementById("forgotEmail");
+      var emailValue = String((email && email.value) || "").trim();
+      if (!emailValue || emailValue.indexOf("@") === -1) {
+        setAuthMessage(errorNode, "Please enter a valid email address.");
+        if (email) email.focus();
+        return;
+      }
+      setButton(button, true, "Send reset link", "Sending...");
+      try {
+        await window.AuctioAuth.requestPasswordReset(emailValue, getPasswordResetRedirect(basePath));
+        renderRaw(renderForgotPasswordPage(basePath, "sent"));
+      } catch (error) {
+        setAuthMessage(errorNode, normalizeAuthError(error, "Unable to send a password reset link."));
+        setButton(button, false, "Send reset link", "Sending...");
+      }
+    });
+  }
+
+  async function bindRegisterPage(basePath) {
+    var current = await refreshUser();
+    if (current) {
+      window.location.replace(window.AuctioAuth.getPostAuthRedirect(basePath));
+      return;
+    }
+
+    document.title = "Register | The Hip Store";
+    ensureClassicAccountStyles();
+    renderRaw(renderRegisterAccountPage(basePath));
+
+    var form = document.getElementById("registerCustomerForm");
+    var errorNode = document.querySelector("[data-auth-error]");
+    var button = form && form.querySelector("button[type=submit]");
+    if (!form) return;
+
+    function clearFieldErrors() {
+      form.querySelectorAll(".has-error").forEach(function (node) {
+        node.classList.remove("has-error");
+      });
+      if (errorNode) {
+        errorNode.textContent = "";
+        errorNode.className = "hidden";
+      }
+    }
+
+    function showRegisterError(message, fieldId, success) {
+      if (fieldId) {
+        var field = document.getElementById(fieldId);
+        var row = field && field.closest(".fs-row");
+        if (row) row.classList.add("has-error");
+      }
+      if (!errorNode) return;
+      errorNode.textContent = message || "";
+      errorNode.className = message ? (success ? "success" : "") : "hidden";
+    }
+
+    function showManualAddress(buttonNode) {
+      var module = buttonNode && buttonNode.closest(".fs-mod");
+      if (!module) return;
+      module.querySelectorAll(".PCA_autocompletable").forEach(function (row) {
+        row.style.display = "";
+      });
+      module.querySelectorAll("[id$='PostcodeHolderRow'],#postcodeHolder").forEach(function (row) {
+        row.style.display = "";
+      });
+      var predict = module.querySelector("[id$='AddressPredictHolder']");
+      var manual = buttonNode.closest(".enterManually");
+      if (predict) predict.style.display = "none";
+      if (manual) manual.style.display = "none";
+    }
+
+    form.querySelectorAll("[data-address-manual]").forEach(function (manualButton) {
+      manualButton.addEventListener("click", function () {
+        showManualAddress(manualButton);
+      });
+    });
+
+    var useBillingAddress = document.getElementById("useBillingAddress");
+    var shippingHolder = document.getElementById("shippingAddressHolder");
+    if (useBillingAddress && shippingHolder) {
+      useBillingAddress.addEventListener("change", function () {
+        shippingHolder.classList.toggle("is-open", !useBillingAddress.checked);
+      });
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      clearFieldErrors();
+      var data = new FormData(form);
+      if (!String(data.get("firstName") || "").trim()) {
+        showRegisterError("Please provide your first name. This cannot contain numbers.", "firstName");
+        return;
+      }
+      if (!String(data.get("lastName") || "").trim()) {
+        showRegisterError("Please provide your surname. This cannot contain numbers.", "lastName");
+        return;
+      }
+      var email = String(data.get("email") || "").trim();
+      var password = String(data.get("password") || "");
+      if (!email || email.indexOf("@") === -1) {
+        showRegisterError("The email address you entered is incorrect please enter a valid email", "username");
+        return;
+      }
+      if (!String(data.get("phone") || "").trim()) {
+        showRegisterError("Please provide your contact telephone number. This should be 8-14 characters long and should only contain numbers or a '+' symbol", "phone");
+        return;
+      }
+      if (!/^(?=.*\d)[A-Za-z0-9]{8,}$/.test(password)) {
+        showRegisterError("Password must be 8 characters long and include at least one number. No special characters allowed.", "password");
+        return;
+      }
+      if (password !== String(data.get("confirmPassword") || "")) {
+        showRegisterError("Passwords do not match.", "confirmPassword");
+        return;
+      }
+      setButton(button, true, "Register", "Registering...");
+      try {
+        await window.AuctioAuth.register({
+          firstName: data.get("firstName"),
+          lastName: data.get("lastName"),
+          email: email,
+          phone: data.get("phone"),
+          password: password,
+          country: data.get("billingCountry"),
+          address: data.get("billingAddress1"),
+          address2: data.get("billingAddress2"),
+          city: data.get("billingTown"),
+          state: data.get("billingCounty"),
+          postalCode: data.get("billingPostcode"),
+        });
+        try {
+          await window.AuctioAuth.saveProfile({
+            firstName: data.get("firstName"),
+            lastName: data.get("lastName"),
+            phone: data.get("phone"),
+            country: data.get("billingCountry"),
+            address: data.get("billingAddress1"),
+            city: data.get("billingTown"),
+            state: data.get("billingCounty"),
+            postalCode: data.get("billingPostcode"),
+          });
+          if (window.AuctioAuth.saveCustomerAddress) {
+            await window.AuctioAuth.saveCustomerAddress({
+              label: "Default Address",
+              firstName: data.get("firstName"),
+              lastName: data.get("lastName"),
+              phone: data.get("phone"),
+              country: data.get("billingCountry"),
+              address: data.get("billingAddress1"),
+              address2: data.get("billingAddress2"),
+              city: data.get("billingTown"),
+              state: data.get("billingCounty"),
+              postalCode: data.get("billingPostcode"),
+              isDefault: true,
+            });
+          }
+        } catch (_profileError) {
+          // Registration is the primary action; profile fields can be completed later.
+        }
+        window.location.href = window.AuctioAuth.getPostAuthRedirect(basePath);
+      } catch (error) {
+        showRegisterError(error.message || "Unable to create account.", "", Boolean(error.isConfirmEmail));
+        setButton(button, false, "Register", "Registering...");
+      }
+    });
+  }
+
+  function formatCurrency(value, currency) {
+    var amount = Number(value || 0);
+    try {
+      return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: currency || "GBP",
+        maximumFractionDigits: amount % 1 ? 2 : 0,
+      }).format(amount);
+    } catch (_error) {
+      return (currency || "GBP") + " " + amount.toLocaleString("en-US");
+    }
+  }
+
+  function formatDate(value) {
+    if (!value) return "-";
+    var date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "-";
+    return date.toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function normalizeOrder(order) {
+    var item = Array.isArray(order.order_items) ? order.order_items[0] : order.item || {};
+    return {
+      id: order.id || order.order_id || "",
+      orderNumber: order.order_number || order.orderId || "",
+      createdAt: order.created_at || order.createdAt || "",
+      status: order.status || "payment_pending",
+      paymentStatus: order.payment_status || "payment_not_configured",
+      paymentMethod: order.payment_method || "manual_payment",
+      currency: order.currency || "GBP",
+      total: Number(order.total || 0),
+      title: item.title || order.title || "Product",
+      brand: item.brand || order.brand || "",
+      sku: item.sku || order.sku || "",
+      routeSlug: item.route_slug || order.routeSlug || "",
+      size: item.selected_size || order.size || "",
+      quantity: Number(item.quantity || order.quantity || 1),
+      image: item.image_url || order.image || "",
+    };
+  }
+
+  function statusBadge(status) {
+    var color = status === "completed"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : status === "cancelled"
+        ? "bg-gray-100 text-gray-600 border-gray-200"
+        : "bg-amber-50 text-amber-700 border-amber-200";
+    return '<span class="rounded-md border px-2 py-1 text-xs font-medium ' + color + '">' + escapeHtml(status.replace(/_/g, " ")) + '</span>';
+  }
+
+  function orderCard(order, basePath) {
+    var href = order.routeSlug ? basePath + "product/index.html?slug=" + encodeURIComponent(order.routeSlug) : basePath + "shop.html";
+    return (
+      '<div class="rounded-lg border border-border/60 bg-background p-4">' +
+      '<div class="flex gap-4">' +
+      '<a href="' + href + '" class="h-20 w-20 shrink-0 rounded-md border border-border/50 bg-white">' +
+      (order.image ? '<img class="h-full w-full object-contain p-2" src="' + escapeHtml(order.image) + '" alt="' + escapeHtml(order.title) + '" />' : '') +
+      '</a>' +
+      '<div class="min-w-0 flex-1 space-y-2">' +
+      '<div class="flex flex-wrap items-center gap-2">' + statusBadge(order.status) + '<span class="text-xs text-muted-foreground">' + escapeHtml(formatDate(order.createdAt)) + '</span></div>' +
+      '<div><p class="text-sm text-muted-foreground">Order ' + escapeHtml(order.orderNumber) + '</p><a class="font-semibold hover:underline line-clamp-1" href="' + href + '">' + escapeHtml(order.title) + '</a></div>' +
+      '<p class="text-sm text-muted-foreground">' + escapeHtml(order.brand || "Product") + ' · SKU ' + escapeHtml(order.sku || "N/A") + ' · Size ' + escapeHtml(order.size || "N/A") + '</p>' +
+      '<div class="flex flex-wrap gap-4 text-sm"><span>Quantity: ' + escapeHtml(String(order.quantity || 1)) + '</span><span class="font-semibold">Total: ' + formatCurrency(order.total, order.currency) + '</span><span>Payment: ' + escapeHtml(order.paymentStatus.replace(/_/g, " ")) + '</span></div>' +
+      '</div></div></div>'
+    );
+  }
+
+  async function loadAccountData() {
+    var profile = null;
+    var orders = [];
+    var addresses = [];
+    try {
+      profile = await window.AuctioAuth.getProfile();
+    } catch (error) {
+      if (error.isBackendConfigError) throw error;
+    }
+    try {
+      if (window.AuctioAuth.getCustomerAddresses) addresses = await window.AuctioAuth.getCustomerAddresses();
+    } catch (error) {
+      if (error.isBackendConfigError) throw error;
+    }
+    try {
+      var result = await window.AuctioAuth.getCustomerOrders();
+      orders = (result.orders || []).map(normalizeOrder);
+    } catch (error) {
+      if (error.isBackendConfigError) throw error;
+    }
+    return { profile: profile || {}, orders: orders, addresses: addresses || [] };
+  }
+
+  async function bindAccountPage(basePath) {
+    var activeView = getAccountView();
+    if (activeView === "logout") {
+      await window.AuctioAuth.logout();
+      window.location.replace(basePath + "index.html");
+      return;
+    }
+    var user = await refreshUser();
+    if (!user) {
+      document.title = "My Account | The Hip Store";
+      window.location.replace(window.AuctioAuth.buildAuthPageUrl("login", basePath));
+      return;
+    }
+
+    document.title = accountTitle(activeView) + " | The Hip Store";
+    ensureClassicAccountStyles();
+    var dashboardData = { profile: {}, orders: [], addresses: [] };
+    var flash = "";
+
+    async function reloadAccountData(nextFlash) {
+      flash = nextFlash || "";
+      try {
+        dashboardData = await loadAccountData();
+      } catch (_error) {
+        dashboardData = { profile: {}, orders: [], addresses: [] };
+      }
+      renderAccount();
+    }
+
+    function showFlash(message) {
+      flash = message || "";
+      renderAccount();
+    }
+
+    function renderAccount() {
+      renderRaw(renderDashboardAccountPage(basePath, user, dashboardData, activeView, flash));
+      bindDashboardAccountPage(basePath, user, dashboardData, {
+        reload: reloadAccountData,
+        flash: showFlash,
+      });
+    }
+
+    try {
+      dashboardData = await loadAccountData();
+    } catch (_error) {
+      dashboardData = { profile: {}, orders: [], addresses: [] };
+    }
+    renderAccount();
+    return;
+
+    var activeTab = new URLSearchParams(window.location.search).get("tab") || "overview";
+    if (!/^(overview|orders|settings)$/.test(activeTab)) activeTab = "overview";
+    var flash = "";
+
+    function tabButton(tab, label) {
+      var active = activeTab === tab;
+      return '<button type="button" data-account-tab="' + tab + '" class="rounded-md px-4 py-2 text-sm font-medium transition-all ' + (active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground") + '">' + label + '</button>';
+    }
+
+    function profileValue(profile, key, fallback) {
+      return escapeHtml(profile[key] || fallback || "");
+    }
+
+    async function render(data) {
+      data = data || await loadAccountData();
+      var profile = data.profile || {};
+      var orders = data.orders || [];
+      var fullName = [profile.first_name || user.firstName, profile.last_name || user.lastName].filter(Boolean).join(" ") || user.email;
+      var initials = fullName.split(/\s+/).map(function (part) { return part.charAt(0).toUpperCase(); }).join("").slice(0, 2) || "C";
+      var content = "";
+
+      if (activeTab === "orders") {
+        content = orders.length
+          ? '<div class="space-y-3">' + orders.map(function (order) { return orderCard(order, basePath); }).join("") + '</div>'
+          : '<div class="rounded-lg border border-border/60 p-10 text-center"><h2 class="font-serif text-2xl">No orders yet</h2><p class="mt-2 text-muted-foreground">Backend orders will appear here after checkout.</p><a class="mt-5 inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" href="' + basePath + 'shop.html">Start shopping</a></div>';
+      } else if (activeTab === "settings") {
+        content =
+          '<div class="grid gap-6 lg:grid-cols-2">' +
+          '<form data-profile-form class="space-y-4 rounded-lg border border-border/60 p-5">' +
+          '<h2 class="font-serif text-2xl">Profile</h2>' +
+          '<div class="grid gap-4 sm:grid-cols-2">' +
+          '<label class="space-y-2"><span class="text-sm font-medium">First name</span><input name="firstName" value="' + profileValue(profile, "first_name", user.firstName) + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '<label class="space-y-2"><span class="text-sm font-medium">Last name</span><input name="lastName" value="' + profileValue(profile, "last_name", user.lastName) + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '</div>' +
+          '<label class="space-y-2"><span class="text-sm font-medium">Phone</span><input name="phone" value="' + profileValue(profile, "phone", user.phone) + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '<label class="space-y-2"><span class="text-sm font-medium">Address</span><input name="address" value="' + profileValue(profile, "address", "") + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '<div class="grid gap-4 sm:grid-cols-2">' +
+          '<label class="space-y-2"><span class="text-sm font-medium">City</span><input name="city" value="' + profileValue(profile, "city", "") + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '<label class="space-y-2"><span class="text-sm font-medium">State</span><input name="state" value="' + profileValue(profile, "state", "") + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '</div>' +
+          '<div class="grid gap-4 sm:grid-cols-2">' +
+          '<label class="space-y-2"><span class="text-sm font-medium">Postcode</span><input name="postalCode" value="' + profileValue(profile, "postal_code", "") + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '<label class="space-y-2"><span class="text-sm font-medium">Country</span><input name="country" value="' + profileValue(profile, "country", "") + '" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '</div>' +
+          '<button class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" type="submit">Save profile</button>' +
+          '</form>' +
+          '<form data-password-form class="space-y-4 rounded-lg border border-border/60 p-5">' +
+          '<h2 class="font-serif text-2xl">Security</h2>' +
+          '<label class="space-y-2"><span class="text-sm font-medium">New password</span><input name="newPassword" type="password" autocomplete="new-password" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '<label class="space-y-2"><span class="text-sm font-medium">Confirm password</span><input name="confirmPassword" type="password" autocomplete="new-password" class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>' +
+          '<button class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" type="submit">Update password</button>' +
+          '<p class="text-xs text-muted-foreground">Password changes are sent to Supabase Auth.</p>' +
+          '</form>' +
+          '</div>';
+      } else {
+        content =
+          '<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">' +
+          '<div class="rounded-lg border border-border/60 p-5"><p class="text-sm text-muted-foreground">Orders</p><p class="mt-2 text-3xl font-semibold">' + orders.length + '</p></div>' +
+          '<div class="rounded-lg border border-border/60 p-5"><p class="text-sm text-muted-foreground">Payment mode</p><p class="mt-2 text-base font-semibold">Manual</p></div>' +
+          '<div class="rounded-lg border border-border/60 p-5"><p class="text-sm text-muted-foreground">Member since</p><p class="mt-2 text-base font-semibold">' + escapeHtml(formatDate(user.createdAt)) + '</p></div>' +
+          '</div>' +
+          '<div class="rounded-lg border border-border/60 p-5"><h2 class="font-serif text-2xl">Account information</h2><dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2"><div><dt class="text-muted-foreground">Email</dt><dd class="font-medium">' + escapeHtml(user.email) + '</dd></div><div><dt class="text-muted-foreground">Phone</dt><dd class="font-medium">' + escapeHtml(profile.phone || user.phone || "Not set") + '</dd></div><div class="sm:col-span-2"><dt class="text-muted-foreground">Address</dt><dd class="font-medium">' + escapeHtml([profile.address, profile.city, profile.postal_code, profile.country].filter(Boolean).join(", ") || "Not set") + '</dd></div></dl></div>';
+      }
+
+      renderShell(
+        '<div class="space-y-6">' +
+        '<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">' +
+        '<div class="flex items-center gap-4"><div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">' + escapeHtml(initials) + '</div><div><h1 class="font-serif text-3xl">My account</h1><p class="text-muted-foreground">' + escapeHtml(fullName) + '</p></div></div>' +
+        '<button data-account-logout class="inline-flex h-10 items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted">Log out</button>' +
+        '</div>' +
+        '<nav class="flex flex-wrap gap-2">' + tabButton("overview", "Overview") + tabButton("orders", "Orders") + tabButton("settings", "Settings") + '</nav>' +
+        (flash ? '<p class="rounded-md border px-3 py-2 text-sm ' + (flash.indexOf("saved") !== -1 || flash.indexOf("updated") !== -1 ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700") + '">' + escapeHtml(flash) + '</p>' : "") +
+        content +
+        '</div>'
+      );
+
+      document.querySelectorAll("[data-account-tab]").forEach(function (button) {
+        button.addEventListener("click", async function () {
+          activeTab = button.getAttribute("data-account-tab") || "overview";
+          var nextUrl = new URL(window.location.href);
+          nextUrl.searchParams.set("tab", activeTab);
+          window.history.replaceState({}, "", nextUrl.toString());
+          flash = "";
+          await render(data);
+        });
+      });
+
+      var logout = document.querySelector("[data-account-logout]");
+      if (logout) {
+        logout.addEventListener("click", async function () {
+          await window.AuctioAuth.logout();
+          window.location.href = basePath + "index.html";
+        });
+      }
+
+      var profileForm = document.querySelector("[data-profile-form]");
+      if (profileForm) {
+        profileForm.addEventListener("submit", async function (event) {
+          event.preventDefault();
+          var values = new FormData(profileForm);
+          try {
+            await window.AuctioAuth.saveProfile({
+              firstName: values.get("firstName"),
+              lastName: values.get("lastName"),
+              phone: values.get("phone"),
+              address: values.get("address"),
+              city: values.get("city"),
+              state: values.get("state"),
+              postalCode: values.get("postalCode"),
+              country: values.get("country"),
+            });
+            flash = "Profile saved.";
+            await render(await loadAccountData());
+          } catch (error) {
+            flash = error.message || "Unable to save profile.";
+            await render(data);
+          }
+        });
+      }
+
+      var passwordForm = document.querySelector("[data-password-form]");
+      if (passwordForm) {
+        passwordForm.addEventListener("submit", async function (event) {
+          event.preventDefault();
+          var values = new FormData(passwordForm);
+          var nextPassword = String(values.get("newPassword") || "");
+          if (nextPassword !== String(values.get("confirmPassword") || "")) {
+            flash = "Passwords do not match.";
+            await render(data);
+            return;
+          }
+          try {
+            await window.AuctioAuth.updatePassword(nextPassword);
+            flash = "Password updated.";
+            await render(data);
+          } catch (error) {
+            flash = error.message || "Unable to update password.";
+            await render(data);
+          }
+        });
+      }
+    }
+
+    try {
+      await render(await loadAccountData());
+    } catch (error) {
+      renderShell(
+        '<div class="mx-auto max-w-2xl rounded-lg border border-border/60 p-8 text-center">' +
+        '<h1 class="font-serif text-3xl">Account backend is not configured</h1>' +
+        '<p class="mt-3 text-muted-foreground">' + escapeHtml(error.message || "Supabase configuration is required for account data.") + '</p>' +
+        '<a class="mt-6 inline-flex h-10 items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium" href="' + basePath + 'index.html">Back home</a>' +
+        '</div>'
+      );
+    }
+  }
+
+  async function init() {
+    var page = document.body.getAttribute("data-auth-page");
+    var basePath = getBasePath();
+    if (!window.AuctioAuth) return;
+    if (page === "login") await bindLoginPage(basePath);
+    if (page === "register") await bindRegisterPage(basePath);
+    if (page === "forgot-password") await bindForgotPasswordPage(basePath);
+    if (page === "account") await bindAccountPage(basePath);
   }
 
   if (document.readyState === "loading") {

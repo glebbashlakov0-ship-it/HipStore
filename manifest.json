@@ -1,7 +1,7 @@
 {
-  "name": "Sotheby's Auction House",
-  "short_name": "Sotheby's",
-  "description": "Premier auction house for art, luxury goods, and collectibles",
+  "name": "The Hip Store",
+  "short_name": "HIP Store",
+  "description": "Mens and womens footwear, clothing, and accessories from The Hip Store.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -1,0 +1,17 @@
+.DS_Store
+.agents/
+.git/
+.github/
+.vercel/
+node_modules/
+
+backup/
+verification/
+data/legacy-unused/
+scripts/legacy-unused/
+supabase/legacy-unused/
+supabase/.temp/
+
+*.code-workspace
+*.md
+supabase/

@@ -1,0 +1,17 @@
+.DS_Store
+.agents/
+.vercel/
+node_modules/
+
+# Local-only generated or archival folders.
+backup/
+verification/
+data/legacy-unused/
+scripts/legacy-unused/
+supabase/legacy-unused/
+supabase/.temp/
+
+# Local workspace and deployment notes.
+*.code-workspace
+FINAL_PRODUCTION_MINUS_PAYMENTS_REPORT.md
+SUPABASE_DEPLOYMENT.md

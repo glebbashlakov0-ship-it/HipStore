@@ -1,20 +1,66 @@
 (function () {
+  var FALLBACK_COLLECTIONS = [
+    {
+      slug: "mens-footwear",
+      title: "Mens Footwear",
+      description: "Current sneakers, shoes, and seasonal footwear from The Hip Store catalog.",
+      href: "shop.html?plp=mens-footwear",
+    },
+    {
+      slug: "womens-footwear",
+      title: "Womens Footwear",
+      description: "Browse women's footwear with live prices, sizes, and availability.",
+      href: "shop.html?plp=womens-footwear",
+    },
+    {
+      slug: "mens-clothing",
+      title: "Mens Clothing",
+      description: "Shop men's clothing across jackets, tops, trousers, and everyday layers.",
+      href: "shop.html?plp=mens-clothing",
+    },
+    {
+      slug: "womens-clothing",
+      title: "Womens Clothing",
+      description: "Shop women's clothing from the current catalog, including sale styles.",
+      href: "shop.html?plp=womens-clothing",
+    },
+    {
+      slug: "accessories",
+      title: "Accessories",
+      description: "Finish the look with bags, caps, socks, and everyday accessories.",
+      href: "shop.html?plp=accessories",
+    },
+    {
+      slug: "sale",
+      title: "Sale",
+      description: "Browse reduced products with current product pricing and stock.",
+      href: "shop.html?plp=sale",
+    },
+    {
+      slug: "new-balance",
+      title: "New Balance",
+      description: "Shop New Balance footwear and apparel from the product catalog.",
+      href: "shop.html?brand=new-balance",
+    },
+    {
+      slug: "nike",
+      title: "Nike",
+      description: "Shop Nike footwear, clothing, and accessories.",
+      href: "shop.html?brand=nike",
+    },
+    {
+      slug: "adidas",
+      title: "Adidas",
+      description: "Shop Adidas products with current size and price information.",
+      href: "shop.html?brand=adidas",
+    },
+  ];
+
   function loadJson(path) {
     return fetch(path, { cache: "no-store" }).then(function (response) {
       if (!response.ok) throw new Error("Failed to load " + path);
       return response.json();
     });
-  }
-
-  function getCountdown(endTime) {
-    var diff = new Date(endTime).getTime() - Date.now();
-    if (!Number.isFinite(diff) || diff <= 0) return "Ended";
-    var days = Math.floor(diff / 86400000);
-    var hours = Math.floor((diff % 86400000) / 3600000);
-    var minutes = Math.floor((diff % 3600000) / 60000);
-    if (days > 0) return days + "d " + hours + "h";
-    if (hours > 0) return hours + "h " + minutes + "m";
-    return minutes + "m";
   }
 
   function escapeHtml(value) {
@@ -26,88 +72,120 @@
       .replaceAll("'", "&#39;");
   }
 
-  function buildCard(item) {
-    var countdown = "";
-    if (item.expires_at && item.show_countdown) {
-      countdown =
-        '<div class="absolute top-3 right-3">' +
-        '<span class="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 bg-blue-500 text-white border-0">' +
-        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 mr-1"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>' +
-        "Ends in " +
-        escapeHtml(getCountdown(item.expires_at)) +
-        "</span></div>";
-    }
+  function normalizeHref(item) {
+    var slug = item && (item.slug || item.id) ? String(item.slug || item.id) : "";
+    var map = {
+      "mens-footwear": "shop.html?plp=mens-footwear",
+      "womens-footwear": "shop.html?plp=womens-footwear",
+      "mens-clothing": "shop.html?plp=mens-clothing",
+      "womens-clothing": "shop.html?plp=womens-clothing",
+      accessories: "shop.html?plp=accessories",
+      sale: "shop.html?plp=sale",
+      adidas: "shop.html?brand=adidas",
+      nike: "shop.html?brand=nike",
+      "new-balance": "shop.html?brand=new-balance",
+    };
+    if (map[slug]) return map[slug];
+    if (item && item.href) return item.href;
+    return "shop.html";
+  }
 
+  function buildHeader() {
     return (
-      '<a href="collections/' +
-      escapeHtml(item.slug) +
-      '.html" class="group">' +
-      '<div class="bg-card text-card-foreground flex flex-col rounded-xl border overflow-hidden h-full hover:shadow-lg transition-all duration-300 border-2 hover:border-primary">' +
-      '<div class="relative aspect-[16/9] overflow-hidden">' +
-      '<img src="' +
-      escapeHtml(item.local_cover_image || item.cover_image) +
-      '" alt="' +
-      escapeHtml(item.title) +
-      '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>' +
-      (item.cover_text
-        ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center p-4"><h3 class="text-white text-xl md:text-2xl font-bold text-center text-balance">' +
-          escapeHtml(item.cover_text) +
-          "</h3></div>"
-        : "") +
-      countdown +
-      "</div>" +
-      '<div class="px-6 py-6">' +
-      '<h2 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">' +
-      escapeHtml(item.title) +
-      "</h2>" +
-      '<p class="text-muted-foreground text-sm line-clamp-3">' +
-      escapeHtml(item.description || "") +
-      "</p></div></div></a>"
+      '<header class="sticky top-0 z-[100] w-full border-b border-border/40 bg-background/95 backdrop-blur">' +
+      '<div class="container mx-auto px-4 lg:px-8">' +
+      '<div class="flex h-16 md:h-20 items-center justify-between gap-4">' +
+      '<a class="flex items-center shrink-0" href="index.html" aria-label="The Hip Store home"><img alt="The Hip Store" width="160" height="33" class="block h-7 md:h-8 w-auto max-w-none" src="logo1.svg?v=20260608a"/></a>' +
+      '<nav class="hidden xl:flex items-center space-x-8">' +
+      '<a class="text-sm font-medium hover:underline underline-offset-4" href="shop.html">Shop All</a>' +
+      '<a class="text-sm font-medium hover:underline underline-offset-4" href="collections.html">Collections</a>' +
+      '<a class="text-sm font-medium hover:underline underline-offset-4" href="about.html">About</a>' +
+      '<a class="text-sm font-medium hover:underline underline-offset-4" href="contact.html">Contact</a>' +
+      "</nav>" +
+      '<div class="hidden xl:flex items-center gap-2" data-auth-controls></div>' +
+      "</div></div></header>"
     );
   }
 
-  function mountStaticShell() {
+  function buildFooter() {
+    return (
+      '<footer class="border-t border-border/40 bg-secondary/30">' +
+      '<div class="container mx-auto px-4 lg:px-8 py-12">' +
+      '<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">' +
+      '<p class="text-sm text-muted-foreground">&copy; 2026 The Hip Store. All rights reserved</p>' +
+      '<div class="flex flex-wrap gap-4"><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4" href="privacy.html">Privacy Policy</a><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4" href="terms.html">Terms of Service</a><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4" href="contact.html">Contact</a></div>' +
+      "</div></div></footer>"
+    );
+  }
+
+  function normalizeCollection(item, index) {
+    return {
+      title: item && item.title ? item.title : FALLBACK_COLLECTIONS[index % FALLBACK_COLLECTIONS.length].title,
+      description: item && item.description ? item.description : "",
+      href: normalizeHref(item),
+      displayOrder: Number(item && item.display_order ? item.display_order : index + 1),
+    };
+  }
+
+  function buildCard(item) {
+    return (
+      '<a href="' +
+      escapeHtml(item.href) +
+      '" class="group block rounded-lg border border-border/60 bg-background p-6 shadow-sm transition-all hover:border-foreground/40 hover:shadow-md">' +
+      '<div class="mb-5 flex h-10 w-10 items-center justify-center rounded-md bg-secondary text-sm font-semibold text-foreground">' +
+      escapeHtml(String(item.title || "P").slice(0, 1).toUpperCase()) +
+      "</div>" +
+      '<h2 class="mb-2 text-xl font-semibold group-hover:underline underline-offset-4">' +
+      escapeHtml(item.title) +
+      "</h2>" +
+      '<p class="min-h-[3.75rem] text-sm leading-6 text-muted-foreground">' +
+      escapeHtml(item.description) +
+      "</p>" +
+      '<span class="mt-6 inline-flex items-center text-sm font-medium">Shop All<span class="ml-2" aria-hidden="true">-&gt;</span></span>' +
+      "</a>"
+    );
+  }
+
+  function mountShell() {
     Array.from(document.body.children).forEach(function (node) {
       if (node.tagName !== "SCRIPT") node.remove();
     });
 
     var app = document.createElement("div");
-    app.className = "flex min-h-screen flex-col";
+    app.className = "flex min-h-screen flex-col bg-background text-foreground";
     app.innerHTML =
+      buildHeader() +
       '<main class="flex-1">' +
-      '<div class="min-h-screen bg-background">' +
-      '<div class="bg-gradient-to-b from-muted/50 to-background py-12 md:py-20">' +
-      '<div class="container mx-auto px-4">' +
-      '<h1 class="text-3xl md:text-5xl font-bold text-center mb-4">Collections</h1>' +
-      '<p class="text-center text-muted-foreground max-w-2xl mx-auto text-sm md:text-base">Discover our curated collections of exceptional items</p>' +
-      "</div></div>" +
-      '<div class="container mx-auto px-4 py-8 md:py-12">' +
-      '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="collections-grid"></div>' +
-      "</div></div></main>" +
-      '<footer class="border-t border-border/40 bg-secondary/30"><div class="container mx-auto px-4 lg:px-8 py-16"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"><div><div class="mb-6"><img alt="Sotheby&#39;s" width="160" height="33" class="block h-8 w-auto max-w-none" src="logo1.svg"/></div><p class="text-sm text-muted-foreground leading-relaxed">A distinguished auction house specializing in rare collectibles, fine art, and luxury items. Experience the pinnacle of curated auctions.</p></div><div><h3 class="font-medium mb-4">Quick Links</h3><ul class="space-y-3"><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="auctions.html">Current Auctions</a></li><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="auctions.html">Shop All</a></li><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="collections.html">Collections</a></li><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="sell.html">Sell With Us</a></li><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="about.html">About Us</a></li></ul></div><div><h3 class="font-medium mb-4">Support</h3><ul class="space-y-3"><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="how-to-bid.html">How to Bid</a></li><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="shipping.html">Shipping &amp; Delivery</a></li><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="faq.html">FAQ</a></li><li><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="contact.html">Contact Us</a></li></ul></div><div><h3 class="font-medium mb-4">Stay Updated</h3><p class="text-sm text-muted-foreground mb-4 leading-relaxed">Subscribe to receive updates on new auctions and exclusive offers.</p><form class="flex gap-2 mb-6"><input type="email" class="border-input bg-background ring-offset-background file:text-foreground placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-sm h-10" placeholder="Enter your email" required="" value=""/><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border shadow-xs hover:bg-accent hover:text-accent-foreground px-4 py-2 shrink-0 bg-transparent h-10" type="submit">Subscribe</button></form></div></div><div class="mt-12 pt-8 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-4"><p class="text-sm text-muted-foreground">© 2026 Sotheby&#39;s. All rights reserved</p><div class="flex flex-wrap justify-center gap-4 md:gap-6"><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="privacy.html">Privacy Policy</a><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="terms.html">Terms of Service</a><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="cookie-policy.html">Cookie Policy</a><a class="text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4 transition-all" href="accessibility.html">Accessibility</a></div></div></div></footer>';
+      '<section class="border-b border-border/40 bg-secondary/20">' +
+      '<div class="container mx-auto px-4 lg:px-8 py-14 md:py-20">' +
+      '<h1 class="font-serif text-4xl md:text-5xl mb-4 text-balance">Product Collections</h1>' +
+      '<p class="text-lg text-muted-foreground max-w-2xl text-pretty">Browse The Hip Store catalog by department, brand, and sale edits.</p>' +
+      "</div></section>" +
+      '<section class="py-10 md:py-14"><div class="container mx-auto px-4 lg:px-8">' +
+      '<div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" id="collections-grid"></div>' +
+      "</div></section>" +
+      "</main>" +
+      buildFooter();
 
     document.body.insertBefore(app, document.body.firstChild);
     return app;
   }
 
-  var app = mountStaticShell();
+  var app = mountShell();
   var grid = app.querySelector("#collections-grid");
 
   loadJson("data/collections.json")
     .then(function (items) {
-      if (!grid) return;
-      items.sort(function (a, b) {
-        var orderDiff = Number(a.display_order || 0) - Number(b.display_order || 0);
-        if (orderDiff !== 0) return orderDiff;
+      var source = Array.isArray(items) && items.length ? items : FALLBACK_COLLECTIONS;
+      var cleanItems = source.map(normalizeCollection).sort(function (a, b) {
+        if (a.displayOrder !== b.displayOrder) return a.displayOrder - b.displayOrder;
         return String(a.title || "").localeCompare(String(b.title || ""));
       });
-      grid.innerHTML = items.map(buildCard).join("");
+      grid.innerHTML = cleanItems.map(buildCard).join("");
     })
-    .catch(function (error) {
-      console.error("Collections page render failed:", error);
-      if (grid) {
-        grid.innerHTML =
-          '<div class="col-span-full text-center py-20"><p class="text-muted-foreground text-lg">No active collections at the moment</p></div>';
-      }
+    .catch(function () {
+      grid.innerHTML = FALLBACK_COLLECTIONS.map(function (item, index) {
+        return buildCard(normalizeCollection(item, index));
+      }).join("");
     });
 })();

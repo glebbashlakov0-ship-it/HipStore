@@ -1,11 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta http-equiv="refresh" content="0; url=../auctions.html"/>
-  <title>Redirecting...</title>
-  <script>location.replace('../auctions.html');</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Opening Shop | The Hip Store</title>
+  <meta name="description" content="Opening The Hip Store product catalog." />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="icon" href="../favicon.ico" sizes="any" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="../favicon-96x96.png" sizes="96x96" type="image/png" />
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png" sizes="180x180" type="image/png" />
 </head>
-<body><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="../header-fix.js?v=20260422e"></script><script src="../supabase-auth.js"></script><script src="../supabase-api.js"></script></body>
+<body>
+  <main>
+    <p>Opening The Hip Store catalog...</p>
+    <p><a id="redirect-link" href="../shop.html">Continue to the catalog</a></p>
+  </main>
+  <script>
+    (function () {
+      var target = "../shop.html" + window.location.search + window.location.hash;
+      var link = document.getElementById("redirect-link");
+      if (link) link.href = target;
+      window.location.replace(target);
+    })();
+  </script>
+</body>
 </html>

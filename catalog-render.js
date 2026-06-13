@@ -1,7 +1,38 @@
 (function () {
-  var REMOTE_SUPABASE_URL = "https://pwihhhbomwxzznekueok.supabase.co";
-  var REMOTE_SUPABASE_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3aWhoaGJvbXd4enpuZWt1ZW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NTgzNjMsImV4cCI6MjA4MTAzNDM2M30.S1aJOnJIdZY8WGVUUAbvMStxR4C5o2-3AkO6GgmkKYY";
+  var CATALOG_DATA_PATH = "data/products.normalized.json";
+  var PRODUCT_PAGE_PATH = "product/index.html";
+  var PLACEHOLDER_IMAGE = "placeholder.svg";
+  var DEFAULT_PER_PAGE = 24;
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function slugify(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function titleFromSlug(value) {
+    return String(value || "")
+      .split("-")
+      .filter(Boolean)
+      .map(function (part) {
+        if (/^(uk|usa|acg|xt|sl|gt)$/i.test(part)) return part.toUpperCase();
+        return part.charAt(0).toUpperCase() + part.slice(1);
+      })
+      .join(" ");
+  }
 
   function loadJson(path) {
     return fetch(path, { cache: "no-store" }).then(function (response) {
@@ -10,1176 +41,997 @@
     });
   }
 
-  function requestRemoteSupabase(path) {
-    return fetch(REMOTE_SUPABASE_URL + path, {
-      headers: {
-        apikey: REMOTE_SUPABASE_KEY,
-      },
-    }).then(function (response) {
-      if (!response.ok) throw new Error("Remote request failed: " + response.status);
-      return response.json();
-    });
-  }
-
-  function escapeHtml(value) {
-    return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function formatCurrency(value) {
-    return "EUR " + Math.round(Number(value || 0)).toLocaleString("en-US");
-  }
-
-  function hashString(value) {
-    var input = String(value || "");
-    var hash = 0;
-    for (var i = 0; i < input.length; i += 1) {
-      hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  function loadCatalog() {
+    var backend = window.HipStoreBackend;
+    if (backend && typeof backend.isConfigured === "function" && backend.isConfigured() && typeof backend.getCatalog === "function") {
+      return backend.getCatalog().catch(function (error) {
+        console.warn("Catalog backend unavailable, using local catalog file:", error);
+        return loadJson(CATALOG_DATA_PATH);
+      });
     }
-    return hash;
+    return loadJson(CATALOG_DATA_PATH);
   }
 
-  function refreshActiveEndTime(item) {
-    var status = String((item && item.status) || "").toLowerCase();
-    if (status && status !== "active") return item && item.endTime;
-
-    var rawEndTime = item && item.endTime;
-    var rawDiff = new Date(rawEndTime).getTime() - Date.now();
-    if (Number.isFinite(rawDiff) && rawDiff > 0) return rawEndTime;
-
-    var hash = hashString((item && (item.slug || item.id || item.title)) || "");
-    var days = 1 + (hash % 10);
-    var minutes = Math.floor(hash / 10) % 1440;
-    return new Date(Date.now() + days * 86400000 + minutes * 60000).toISOString();
+  function formatCurrency(value, currency) {
+    var amount = Number(value || 0);
+    try {
+      return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: currency || "GBP",
+        minimumFractionDigits: amount % 1 ? 2 : 0,
+        maximumFractionDigits: amount % 1 ? 2 : 0,
+      }).format(amount);
+    } catch (_error) {
+      return (currency || "GBP") + " " + amount.toLocaleString("en-US");
+    }
   }
 
-  function normalizeCatalogItems(items) {
-    return (Array.isArray(items) ? items : []).map(function (item) {
-      if (!item) return item;
-      var status = String(item.status || "").toLowerCase();
-      if (status && status !== "active") return item;
-      var nextEndTime = refreshActiveEndTime(item);
-      return nextEndTime !== item.endTime ? Object.assign({}, item, { endTime: nextEndTime }) : item;
-    });
-  }
-
-  function getLotHref(item) {
-    return "lot/index.html?slug=" + encodeURIComponent(item.slug || "");
-  }
-
-  function normalizeTitleKey(value) {
+  function getCategoryParts(value) {
     return String(value || "")
-      .toLowerCase()
-      .replace(/&/g, " and ")
-      .replace(/[^a-z0-9]+/g, " ")
-      .trim();
+      .split("/")
+      .map(function (part) { return part.trim(); })
+      .filter(Boolean);
   }
 
-  function getItemTimeValue(item) {
-    var value = new Date(item && (item.endTime || item.end_time) || "").getTime();
-    return Number.isFinite(value) ? value : 0;
+  function normalizeSize(size) {
+    if (typeof size === "string") return { label: size, value: size, available: true };
+    return {
+      label: (size && (size.label || size.size || size.name || size.value)) || "",
+      value: (size && (size.value || size.label || size.size || size.name)) || "",
+      available: !(size && size.available === false),
+    };
   }
 
-  function choosePreferredItem(current, candidate) {
-    if (!current) return candidate || null;
-    if (!candidate) return current;
+  function normalizeProduct(item, index) {
+    if (!item) return null;
+    var categoryPath = item.categoryPath || item.category_path || item.category || "";
+    var categoryParts = getCategoryParts(categoryPath);
+    var id = item.id || item.product_id || item.sku || item.routeSlug || item.slug || String(index + 1);
+    var sourceSlug = item.sourceSlug || item.slug || slugify(item.title || id);
+    var routeSlug = item.routeSlug || (sourceSlug && id ? sourceSlug + "-" + id : sourceSlug);
+    var images = Array.isArray(item.images) ? item.images.filter(Boolean) : [];
+    var image = item.mainImage || item.main_image || item.image || images[0] || PLACEHOLDER_IMAGE;
+    var oldPrice = item.oldPrice != null ? item.oldPrice : (item.old_price != null ? item.old_price : item.was_price);
+    var sizes = (Array.isArray(item.sizes) ? item.sizes : []).map(normalizeSize).filter(function (size) { return size.label; });
 
-    var currentStatus = getStatus(current);
-    var candidateStatus = getStatus(candidate);
-
-    if (currentStatus === "closed" && candidateStatus !== "closed") return candidate;
-    if (candidateStatus === "closed" && currentStatus !== "closed") return current;
-
-    var currentTime = getItemTimeValue(current);
-    var candidateTime = getItemTimeValue(candidate);
-    if (candidateTime > currentTime) return candidate;
-    if (currentTime > candidateTime) return current;
-
-    var currentBid = Number(current.currentBid || current.current_bid || 0);
-    var candidateBid = Number(candidate.currentBid || candidate.current_bid || 0);
-    if (candidateBid > currentBid) return candidate;
-    if (currentBid > candidateBid) return current;
-
-    return current;
-  }
-
-  function findBestCatalogMatch(item, catalogItems) {
-    var sourceItems = Array.isArray(catalogItems) ? catalogItems : [];
-    var wantedSlug = String((item && item.slug) || "");
-    var wantedTitleKey = normalizeTitleKey(item && item.title);
-    var bestBySlug = null;
-    var bestByTitle = null;
-
-    sourceItems.forEach(function (candidate) {
-      if (!candidate) return;
-      if (wantedSlug && String(candidate.slug || "") === wantedSlug) {
-        bestBySlug = choosePreferredItem(bestBySlug, candidate);
-      }
-      if (wantedTitleKey && normalizeTitleKey(candidate.title) === wantedTitleKey) {
-        bestByTitle = choosePreferredItem(bestByTitle, candidate);
-      }
-    });
-
-    return bestBySlug || bestByTitle || null;
-  }
-
-  function fetchRemoteLotBySlug(slug) {
-    var cleanSlug = String(slug || "").trim();
-    if (!cleanSlug) return Promise.resolve(null);
-    return requestRemoteSupabase(
-      "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status&slug=eq." + encodeURIComponent(cleanSlug) + "&limit=1"
-    ).then(function (rows) {
-      return Array.isArray(rows) && rows[0] ? rows[0] : null;
-    }).catch(function () {
-      return null;
+    return Object.assign({}, item, {
+      _index: index,
+      id: id,
+      sourceSlug: sourceSlug,
+      routeSlug: routeSlug,
+      title: item.title || item.full_name || "Untitled Product",
+      brand: item.brand || "",
+      sku: item.sku || item.product_id || "",
+      productCode: item.productCode || item.product_code || "",
+      categoryPath: categoryPath || categoryParts.join(" / ") || "Products",
+      categoryName: categoryParts[categoryParts.length - 1] || categoryPath || "Products",
+      price: Number(item.price || 0),
+      oldPrice: oldPrice != null ? Number(oldPrice) : null,
+      currency: item.currency || "GBP",
+      image: image,
+      images: images.length ? images : [image],
+      inStock: item.inStock != null ? Boolean(item.inStock) : item.in_stock !== false && item.status !== "out_of_stock",
+      sizes: sizes,
     });
   }
 
-  var _remoteLotCacheBySlug = new Map();
-
-  function chunkArray(items, size) {
-    var chunks = [];
-    for (var index = 0; index < items.length; index += size) {
-      chunks.push(items.slice(index, index + size));
-    }
-    return chunks;
+  function normalizeProducts(items) {
+    return (Array.isArray(items) ? items : [])
+      .map(normalizeProduct)
+      .filter(function (item) { return item && item.routeSlug; });
   }
 
-  function buildRemoteSlugMap(slugs) {
+  function isRealSale(item) {
+    return item && item.oldPrice != null && Number(item.oldPrice) > Number(item.price || 0);
+  }
+
+  function getProductHref(item) {
+    return PRODUCT_PAGE_PATH + "?slug=" + encodeURIComponent(item.routeSlug || item.id || item.sku || "");
+  }
+
+  function getDepartmentTags(item) {
+    var parts = getCategoryParts(item && item.categoryPath);
+    var first = slugify(parts[0] || item && item.gender || "");
+    var text = slugify((item && item.categoryPath) || "");
+    var tags = [];
+    if (first === "mens") tags.push("mens");
+    if (first === "womens") tags.push("womens");
+    if (/footwear|trainers|sneakers|shoes|boots|sandals|slippers/.test(text)) tags.push("footwear");
+    if (/clothing|jackets|t-shirts|shirts|trousers|shorts|jeans|sweatshirts|hoodies|knitwear|gilets|polo/.test(text)) tags.push("clothing");
+    if (/accessories|bags|caps|socks|care|wallets|hats|sunglasses|belts|jewellery|scarves|gloves/.test(text)) tags.push("accessories");
+    if (/living|homeware|fragrance|publications|outdoor/.test(text)) tags.push("living");
+    return tags;
+  }
+
+  function categoryStartsWith(item, expectedParts) {
+    var parts = getCategoryParts(item.categoryPath).map(slugify);
+    return expectedParts.every(function (part, index) {
+      return parts[index] === slugify(part);
+    });
+  }
+
+  function itemSearchText(item) {
+    return [
+      item.title,
+      item.brand,
+      item.sku,
+      item.productCode,
+      item.routeSlug,
+      item.sourceSlug,
+      item.categoryPath,
+      item.categoryName,
+      item.colour,
+      item.description,
+      item.shortDescription,
+    ].join(" ").toLowerCase();
+  }
+
+  function queryMatches(item, query) {
+    var clean = String(query || "").trim().toLowerCase();
+    if (!clean) return true;
+    var tokens = clean.split(/\s+/).filter(Boolean);
+    var text = itemSearchText(item);
+    return tokens.every(function (token) { return text.indexOf(token) !== -1; });
+  }
+
+  function link(label, href) {
+    return { label: label, href: href };
+  }
+
+  function saleTopLinks() {
+    return [
+      link("Men's Sale", "shop.html?plp=mens-sale"),
+      link("Women's Sale", "shop.html?plp=womens-sale"),
+      link("Footwear Sale", "shop.html?plp=footwear-sale"),
+      link("Clothing Sale", "shop.html?plp=clothing-sale"),
+      link("Accessories Sale", "shop.html?plp=accessories-sale"),
+      link("adidas Sale", "shop.html?brand=adidas&sale=1"),
+      link("Nike Sale", "shop.html?brand=nike&sale=1"),
+      link("New Balance Sale", "shop.html?brand=new-balance&sale=1"),
+      link("Salomon Sale", "shop.html?brand=salomon&sale=1"),
+    ];
+  }
+
+  var PRESETS = {
+    "shop-all": {
+      id: "shop-all",
+      title: "Shop All",
+      introText: "Browse footwear, clothing, accessories, brands, and sale edits from the current catalog.",
+      topLinks: [
+        link("Mens", "shop.html?plp=mens"),
+        link("Womens", "shop.html?plp=womens"),
+        link("Footwear", "shop.html?plp=footwear"),
+        link("Clothing", "shop.html?plp=clothing"),
+        link("Accessories", "shop.html?plp=accessories"),
+        link("Sale", "shop.html?plp=sale"),
+      ],
+      productQuery: {},
+    },
+    latest: {
+      id: "latest",
+      title: "Latest",
+      compactHeader: true,
+      activeFilters: ["Only show latest items"],
+      defaultSort: "latest",
+      productQuery: {},
+    },
+    "latest-footwear": {
+      id: "latest-footwear",
+      title: "Latest Footwear",
+      compactHeader: true,
+      activeFilters: ["Only show latest items", "Footwear"],
+      defaultSort: "latest",
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { tag: "footwear" },
+    },
+    "latest-clothing": {
+      id: "latest-clothing",
+      title: "Latest Clothing",
+      compactHeader: true,
+      activeFilters: ["Only show latest items", "Clothing"],
+      defaultSort: "latest",
+      productQuery: { tag: "clothing" },
+    },
+    mens: {
+      id: "mens",
+      title: "Mens",
+      introText: "Shop men's footwear, clothing, accessories, new arrivals, and sale products.",
+      topLinks: [
+        link("New In", "shop.html?plp=mens-new-in"),
+        link("Footwear", "shop.html?plp=mens-footwear"),
+        link("Clothing", "shop.html?plp=mens-clothing"),
+        link("Accessories", "shop.html?plp=mens-accessories"),
+        link("Sale", "shop.html?plp=mens-sale"),
+      ],
+      productQuery: { categoryPath: ["Mens"] },
+    },
+    "mens-new-in": {
+      id: "mens-new-in",
+      title: "Men's New In",
+      compactHeader: true,
+      activeFilters: ["Only show latest items"],
+      defaultSort: "latest",
+      productQuery: { categoryPath: ["Mens"] },
+    },
+    "mens-footwear": {
+      id: "mens-footwear",
+      title: "Men's Footwear",
+      introText: "Explore men's trainers, shoes, boots, sandals, and archive-inspired footwear.",
+      topLinks: [
+        link("Men's Trainers", "shop.html?plp=mens-footwear-trainers"),
+        link("Shoes", "shop.html?plp=mens-footwear-shoes"),
+        link("Boots", "shop.html?plp=mens-footwear-boots"),
+        link("Sandals", "shop.html?plp=mens-footwear-sandals"),
+        link("Nike Air Max", "shop.html?collection=nike-air-max"),
+        link("Salomon XT-6", "shop.html?collection=salomon-xt-6"),
+      ],
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { categoryPath: ["Mens", "Footwear"] },
+    },
+    "mens-footwear-trainers": {
+      id: "mens-footwear-trainers",
+      title: "Men's Trainers",
+      introText: "Men's trainers from adidas, Nike, New Balance, ASICS, Salomon, and more.",
+      topLinks: [
+        link("Men's Shoes", "shop.html?plp=mens-footwear-shoes"),
+        link("Men's Boots", "shop.html?plp=mens-footwear-boots"),
+        link("Men's Sandals", "shop.html?plp=mens-footwear-sandals"),
+        link("Nike Air Max", "shop.html?collection=nike-air-max"),
+        link("adidas Spezial", "shop.html?collection=adidas-spezial"),
+      ],
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { categoryPath: ["Mens", "Footwear", "Trainers"] },
+    },
+    "mens-footwear-shoes": {
+      id: "mens-footwear-shoes",
+      title: "Men's Shoes",
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { categoryPath: ["Mens", "Footwear", "Shoes"] },
+    },
+    "mens-footwear-boots": {
+      id: "mens-footwear-boots",
+      title: "Men's Boots",
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { categoryPath: ["Mens", "Footwear", "Boots"] },
+    },
+    "mens-footwear-sandals": {
+      id: "mens-footwear-sandals",
+      title: "Men's Sandals",
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { categoryPath: ["Mens", "Footwear", "Sandals"] },
+    },
+    "mens-clothing": {
+      id: "mens-clothing",
+      title: "Men's Clothing",
+      introText: "Shop jackets, shirts, tees, trousers, hoodies, sweats, and seasonal layers.",
+      topLinks: [
+        link("Jackets", "shop.html?plp=mens-clothing-jackets"),
+        link("T-Shirts", "shop.html?plp=mens-clothing-t-shirts"),
+        link("Shirts", "shop.html?plp=mens-clothing-shirts"),
+        link("Hoodies", "shop.html?plp=mens-clothing-hoodies"),
+        link("Trousers", "shop.html?plp=mens-clothing-trousers"),
+        link("Jeans", "shop.html?plp=mens-clothing-jeans"),
+        link("Shorts", "shop.html?plp=mens-clothing-shorts"),
+      ],
+      productQuery: { categoryPath: ["Mens", "Clothing"] },
+    },
+    "mens-clothing-jackets": { id: "mens-clothing-jackets", title: "Men's Jackets", productQuery: { categoryPath: ["Mens", "Clothing", "Jackets"] } },
+    "mens-clothing-hoodies": { id: "mens-clothing-hoodies", title: "Men's Hoodies", productQuery: { categoryPath: ["Mens", "Clothing", "Hoodies"] } },
+    "mens-clothing-jeans": { id: "mens-clothing-jeans", title: "Men's Jeans", productQuery: { categoryPath: ["Mens", "Clothing", "Jeans"] } },
+    "mens-clothing-shirts": { id: "mens-clothing-shirts", title: "Men's Shirts", productQuery: { categoryPath: ["Mens", "Clothing", "Shirts"] } },
+    "mens-clothing-shorts": { id: "mens-clothing-shorts", title: "Men's Shorts", productQuery: { categoryPath: ["Mens", "Clothing", "Shorts"] } },
+    "mens-clothing-sweatshirts": { id: "mens-clothing-sweatshirts", title: "Men's Sweatshirts", productQuery: { categoryPath: ["Mens", "Clothing", "Sweatshirts"] } },
+    "mens-clothing-t-shirts": {
+      id: "mens-clothing-t-shirts",
+      title: "Men's T-Shirts",
+      quickRefine: { type: "colour", label: "Pattern" },
+      productQuery: { categoryPath: ["Mens", "Clothing", "T-Shirts"] },
+    },
+    "mens-clothing-trousers": { id: "mens-clothing-trousers", title: "Men's Trousers", productQuery: { categoryPath: ["Mens", "Clothing", "Trousers"] } },
+    "mens-accessories": { id: "mens-accessories", title: "Men's Accessories", productQuery: { categoryPath: ["Mens", "Accessories"] } },
+    womens: {
+      id: "womens",
+      title: "Womens",
+      introText: "Shop women's footwear, clothing, accessories, new arrivals, and sale products.",
+      topLinks: [
+        link("New In", "shop.html?plp=womens-new-in"),
+        link("Footwear", "shop.html?plp=womens-footwear"),
+        link("Clothing", "shop.html?plp=womens-clothing"),
+        link("Accessories", "shop.html?plp=womens-accessories"),
+        link("Sale", "shop.html?plp=womens-sale"),
+      ],
+      productQuery: { categoryPath: ["Womens"] },
+    },
+    "womens-new-in": {
+      id: "womens-new-in",
+      title: "Women's New In",
+      compactHeader: true,
+      activeFilters: ["Only show latest items"],
+      defaultSort: "latest",
+      productQuery: { categoryPath: ["Womens"] },
+    },
+    "womens-footwear": {
+      id: "womens-footwear",
+      title: "Women's Footwear",
+      introText: "Women's trainers, shoes, boots, sandals, and seasonal footwear.",
+      topLinks: [
+        link("Trainers", "shop.html?plp=womens-footwear-trainers"),
+        link("Shoes", "shop.html?plp=womens-footwear-shoes"),
+        link("Boots", "shop.html?plp=womens-footwear-boots"),
+        link("Sandals", "shop.html?plp=womens-footwear-sandals"),
+      ],
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { categoryPath: ["Womens", "Footwear"] },
+    },
+    "womens-footwear-trainers": { id: "womens-footwear-trainers", title: "Women's Trainers", quickRefine: { type: "size", label: "Size" }, productQuery: { categoryPath: ["Womens", "Footwear", "Trainers"] } },
+    "womens-footwear-shoes": { id: "womens-footwear-shoes", title: "Women's Shoes", quickRefine: { type: "size", label: "Size" }, productQuery: { categoryPath: ["Womens", "Footwear", "Shoes"] } },
+    "womens-footwear-boots": { id: "womens-footwear-boots", title: "Women's Boots", quickRefine: { type: "size", label: "Size" }, productQuery: { categoryPath: ["Womens", "Footwear", "Boots"] } },
+    "womens-footwear-sandals": { id: "womens-footwear-sandals", title: "Women's Sandals", quickRefine: { type: "size", label: "Size" }, productQuery: { categoryPath: ["Womens", "Footwear", "Sandals"] } },
+    "womens-clothing": { id: "womens-clothing", title: "Women's Clothing", productQuery: { categoryPath: ["Womens", "Clothing"] } },
+    "womens-accessories": { id: "womens-accessories", title: "Women's Accessories", productQuery: { categoryPath: ["Womens", "Accessories"] } },
+    footwear: {
+      id: "footwear",
+      title: "Footwear",
+      introText: "Shop trainers, shoes, boots, sandals, and footwear care across mens and womens.",
+      topLinks: [
+        link("Men's Footwear", "shop.html?plp=mens-footwear"),
+        link("Women's Footwear", "shop.html?plp=womens-footwear"),
+        link("Trainers", "shop.html?plp=mens-footwear-trainers"),
+        link("Sale Footwear", "shop.html?plp=footwear-sale"),
+      ],
+      quickRefine: { type: "size", label: "Size" },
+      productQuery: { tag: "footwear" },
+    },
+    clothing: {
+      id: "clothing",
+      title: "Clothing",
+      introText: "Shop current clothing across jackets, shirts, sweats, trousers, tees, and seasonal layers.",
+      topLinks: [
+        link("Men's Clothing", "shop.html?plp=mens-clothing"),
+        link("Women's Clothing", "shop.html?plp=womens-clothing"),
+        link("Jackets", "shop.html?plp=mens-clothing-jackets"),
+        link("T-Shirts", "shop.html?plp=mens-clothing-t-shirts"),
+        link("Sale Clothing", "shop.html?plp=clothing-sale"),
+      ],
+      productQuery: { tag: "clothing" },
+    },
+    accessories: {
+      id: "accessories",
+      title: "Accessories",
+      introText: "Shop bags, caps, hats, socks, sunglasses, and daily accessories.",
+      topLinks: [
+        link("Bags", "shop.html?plp=accessories-bags"),
+        link("Caps", "shop.html?plp=accessories-caps"),
+        link("Hats", "shop.html?plp=accessories-hats"),
+        link("Socks", "shop.html?plp=accessories-socks"),
+        link("Living", "shop.html?plp=living"),
+      ],
+      productQuery: { tag: "accessories" },
+    },
+    "accessories-bags": { id: "accessories-bags", title: "Bags", productQuery: { tag: "accessories", categoryIncludes: ["bags"] } },
+    "accessories-caps": { id: "accessories-caps", title: "Caps", productQuery: { tag: "accessories", categoryIncludes: ["caps"] } },
+    "accessories-hats": { id: "accessories-hats", title: "Hats", productQuery: { tag: "accessories", categoryIncludes: ["hats"] } },
+    "accessories-socks": { id: "accessories-socks", title: "Socks", productQuery: { tag: "accessories", categoryIncludes: ["socks"] } },
+    "accessories-sunglasses": { id: "accessories-sunglasses", title: "Sunglasses", productQuery: { tag: "accessories", categoryIncludes: ["sunglasses"] } },
+    living: {
+      id: "living",
+      title: "Living",
+      introText: "Shop homeware, care, fragrance, publications, and lifestyle pieces.",
+      topLinks: [
+        link("Homeware", "shop.html?plp=living-homeware"),
+        link("Garment & Footwear Care", "shop.html?plp=living-care"),
+        link("Fragrance & Skincare", "shop.html?plp=living-fragrance"),
+      ],
+      productQuery: { tag: "living" },
+    },
+    "living-homeware": { id: "living-homeware", title: "Homeware", productQuery: { tag: "living", categoryIncludes: ["homeware"] } },
+    "living-care": { id: "living-care", title: "Garment & Footwear Care", productQuery: { tag: "living", categoryIncludes: ["care"] } },
+    "living-fragrance": { id: "living-fragrance", title: "Fragrance & Skincare", productQuery: { tag: "living", categoryIncludes: ["fragrance", "skincare"] } },
+    sale: {
+      id: "sale",
+      title: "Sale",
+      introText: "Browse reduced products calculated from current prices and old prices.",
+      topLinks: saleTopLinks(),
+      activeFilters: ["Sale"],
+      productQuery: { sale: true },
+    },
+    "mens-sale": { id: "mens-sale", title: "Men's Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, categoryPath: ["Mens"] } },
+    "mens-footwear-sale": { id: "mens-footwear-sale", title: "Men's Footwear Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], quickRefine: { type: "size", label: "Size" }, productQuery: { sale: true, categoryPath: ["Mens", "Footwear"] } },
+    "mens-clothing-sale": { id: "mens-clothing-sale", title: "Men's Clothing Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, categoryPath: ["Mens", "Clothing"] } },
+    "mens-accessories-sale": { id: "mens-accessories-sale", title: "Men's Accessories Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, categoryPath: ["Mens", "Accessories"] } },
+    "womens-sale": { id: "womens-sale", title: "Women's Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, categoryPath: ["Womens"] } },
+    "womens-footwear-sale": { id: "womens-footwear-sale", title: "Women's Footwear Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], quickRefine: { type: "size", label: "Size" }, productQuery: { sale: true, categoryPath: ["Womens", "Footwear"] } },
+    "womens-clothing-sale": { id: "womens-clothing-sale", title: "Women's Clothing Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, categoryPath: ["Womens", "Clothing"] } },
+    "womens-accessories-sale": { id: "womens-accessories-sale", title: "Women's Accessories Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, categoryPath: ["Womens", "Accessories"] } },
+    "footwear-sale": { id: "footwear-sale", title: "Footwear Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], quickRefine: { type: "size", label: "Size" }, productQuery: { sale: true, tag: "footwear" } },
+    "clothing-sale": { id: "clothing-sale", title: "Clothing Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, tag: "clothing" } },
+    "accessories-sale": { id: "accessories-sale", title: "Accessories Sale", topLinks: saleTopLinks(), activeFilters: ["Sale"], productQuery: { sale: true, tag: "accessories" } },
+  };
+
+  function buildBrandMap(items) {
     var map = new Map();
-    (Array.isArray(slugs) ? slugs : []).forEach(function (slug) {
-      if (_remoteLotCacheBySlug.has(slug)) {
-        map.set(slug, _remoteLotCacheBySlug.get(slug));
-      }
+    items.forEach(function (item) {
+      var slug = slugify(item.brand);
+      if (slug && !map.has(slug)) map.set(slug, item.brand);
     });
     return map;
   }
 
-  function fetchRemoteLotsBySlugs(slugs) {
-    var cleanSlugs = Array.from(
-      new Set(
-        (Array.isArray(slugs) ? slugs : [])
-          .map(function (slug) { return String(slug || "").trim(); })
-          .filter(Boolean)
-      )
-    );
-
-    if (!cleanSlugs.length) return Promise.resolve(new Map());
-
-    var missingSlugs = cleanSlugs.filter(function (slug) {
-      return !_remoteLotCacheBySlug.has(slug);
-    });
-
-    if (!missingSlugs.length) {
-      return Promise.resolve(buildRemoteSlugMap(cleanSlugs));
+  function brandPreset(slug, items, params) {
+    var brandMap = buildBrandMap(items);
+    var display = brandMap.get(slug) || titleFromSlug(slug);
+    var category = slugify(params.get("category") || "");
+    var productQuery = { brand: slug };
+    var activeFilters = ["Brand: " + display];
+    if (params.get("sale") === "1") {
+      productQuery.sale = true;
+      activeFilters.push("Sale");
     }
-
-    var slugBatches = chunkArray(missingSlugs, 20);
-
-    return Promise.allSettled(
-      slugBatches.map(function (batch) {
-        var batchFilter = "(" + batch.map(function (slug) {
-          return '"' + slug.replace(/"/g, "") + '"';
-        }).join(",") + ")";
-
-        return requestRemoteSupabase(
-          "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status&slug=in." + encodeURIComponent(batchFilter)
-        );
-      })
-    ).then(function (results) {
-      results.forEach(function (result) {
-        if (result.status !== "fulfilled" || !Array.isArray(result.value)) return;
-        result.value.forEach(function (lot) {
-          var lotSlug = String(lot && lot.slug || "").trim();
-          if (!lotSlug) return;
-          _remoteLotCacheBySlug.set(lotSlug, lot);
-        });
-      });
-
-      missingSlugs.forEach(function (slug) {
-        if (!_remoteLotCacheBySlug.has(slug)) {
-          _remoteLotCacheBySlug.set(slug, null);
-        }
-      });
-
-      return buildRemoteSlugMap(cleanSlugs);
-    }).catch(function () {
-      return buildRemoteSlugMap(cleanSlugs);
-    });
-  }
-
-  function mergeRemoteDataIntoItem(item, remoteLot) {
-    if (!item || !remoteLot) return item;
-
-    return Object.assign({}, item, {
-      title: remoteLot.title || item.title,
-      currentBid: remoteLot.current_bid != null ? Number(remoteLot.current_bid) : Number(item.currentBid || 0),
-      endTime: remoteLot.end_time || item.endTime,
-      status: remoteLot.status || item.status,
-    });
-  }
-
-  function hydrateItemsWithRemoteData(items) {
-    var sourceItems = Array.isArray(items) ? items.slice() : [];
-    var slugs = sourceItems.map(function (item) {
-      return item && item.slug;
-    });
-
-    return fetchRemoteLotsBySlugs(slugs).then(function (remoteLotsBySlug) {
-      return sourceItems.map(function (item) {
-        var itemSlug = String(item && item.slug || "").trim();
-        return mergeRemoteDataIntoItem(item, remoteLotsBySlug.get(itemSlug));
-      });
-    }).catch(function () {
-      return sourceItems;
-    });
-  }
-
-  function hydrateFeaturedItems(featuredItems, catalogItems) {
-    var items = Array.isArray(featuredItems) ? featuredItems : [];
-    return Promise.all(items.map(function (item) {
-      var bestLocal = findBestCatalogMatch(item, catalogItems);
-      var merged = Object.assign({}, item, bestLocal ? {
-        image: bestLocal.image || item.image,
-        currentBid: Number(bestLocal.currentBid || bestLocal.current_bid || item.currentBid || 0),
-        endTime: bestLocal.endTime || bestLocal.end_time || item.endTime,
-        category: bestLocal.category || item.category,
-        status: bestLocal.status || item.status,
-      } : null);
-
-      return fetchRemoteLotBySlug(merged.slug || item.slug).then(function (remoteLot) {
-        if (!remoteLot) return merged;
-        return Object.assign({}, merged, {
-          title: remoteLot.title || merged.title,
-          currentBid: Number(remoteLot.current_bid || merged.currentBid || 0),
-          endTime: remoteLot.end_time || merged.endTime,
-          status: remoteLot.status || merged.status,
-        });
-      });
-    }));
-  }
-
-  function getCountdown(endTime) {
-    var diff = new Date(endTime).getTime() - Date.now();
-    if (!Number.isFinite(diff) || diff <= 0) return "Ended";
-
-    var totalSeconds = Math.floor(diff / 1000);
-    var days = Math.floor(totalSeconds / 86400);
-    var hours = Math.floor((totalSeconds % 86400) / 3600);
-    var minutes = Math.floor((totalSeconds % 3600) / 60);
-    var seconds = totalSeconds % 60;
-
-    if (days > 0) {
-      return (
-        days +
-        "d " +
-        String(hours).padStart(2, "0") +
-        ":" +
-        String(minutes).padStart(2, "0") +
-        ":" +
-        String(seconds).padStart(2, "0")
-      );
+    if (category) {
+      productQuery.tag = category;
+      activeFilters.push(titleFromSlug(category));
     }
-
-    return (
-      String(hours).padStart(2, "0") +
-      ":" +
-      String(minutes).padStart(2, "0") +
-      ":" +
-      String(seconds).padStart(2, "0")
-    );
-  }
-
-  function renderCard(item) {
-    return (
-      '<a class="block h-full" href="' + getLotHref(item) + '"><div data-slot="card" class="text-card-foreground gap-6 rounded-xl border shadow-sm group overflow-hidden border-border/30 hover:border-border transition-all duration-300 bg-background cursor-pointer h-full flex flex-col p-0">' +
-      '<div class="relative aspect-square overflow-hidden bg-muted/20 rounded-t-lg">' +
-      '<img src="' +
-      escapeHtml(item.image) +
-      '" alt="' +
-      escapeHtml(item.title) +
-      '" class="w-full h-full object-cover pointer-events-none select-none" draggable="false"/>' +
-      '<div class="absolute top-1 right-1 bg-background/95 backdrop-blur-sm rounded-full px-1 py-0.5 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock h-2 w-2 sm:h-2.5 sm:w-2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span class="text-[8px] sm:text-[9px] font-medium" data-end-time="' +
-      escapeHtml(item.endTime) +
-      '">' +
-      getCountdown(item.endTime) +
-      "</span></div></div>" +
-      '<div data-slot="card-content" class="p-1.5 sm:p-2 space-y-1 sm:space-y-1.5 flex-1 flex flex-col">' +
-      '<span data-slot="badge" class="inline-flex items-center justify-center rounded-md border font-medium whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden text-secondary-foreground [a&]:hover:bg-secondary/90 text-[8px] sm:text-[9px] uppercase tracking-wider bg-muted/50 border-border/50 px-1 py-0.5 w-fit">' +
-      escapeHtml(item.category || "General") +
-      "</span>" +
-      '<h3 class="font-serif text-[10px] sm:text-xs leading-tight line-clamp-2 h-[28px] sm:h-[32px]">' +
-      escapeHtml(item.title) +
-      '</h3><div class="flex items-center gap-0.5 sm:gap-1 py-0.5 sm:py-1 px-1 sm:px-1.5 bg-muted/30 rounded text-[9px] sm:text-[10px] font-medium"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><div class="flex items-center gap-0.5 sm:gap-1 tabular-nums"><span class="font-semibold" data-end-time="' +
-      escapeHtml(item.endTime) +
-      '">' +
-      getCountdown(item.endTime) +
-      '</span></div></div><div><p class="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Current Bid</p><p class="text-xs sm:text-sm font-semibold tabular-nums">' +
-      formatCurrency(item.currentBid) +
-      '</p></div><button data-slot="button" class="inline-flex items-center justify-center whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\'size-\'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border shadow-xs dark:bg-input/30 dark:border-input dark:hover:bg-input/50 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 w-full hover:bg-foreground hover:text-background transition-colors bg-transparent text-[9px] sm:text-[10px] h-6 sm:h-7 mt-auto">View Auction</button></div></div></a>'
-    );
-  }
-
-  function getStatus(item) {
-    var s = String(item.status || "").toLowerCase();
-    if (s === "ended" || s === "closed" || s === "sold") return "closed";
-    var diff = new Date(item.endTime).getTime() - Date.now();
-    if (!Number.isFinite(diff) || diff <= 0) return "closed";
-    if (diff <= 48 * 60 * 60 * 1000) return "ending-soon";
-    return "active";
-  }
-
-  function getTopLevelCategory(item) {
-    var rawCategory = String(item.category || "").toLowerCase();
-    var haystack = (String(item.title || "") + " " + rawCategory).toLowerCase();
-
-    if (
-      rawCategory === "watches" ||
-      rawCategory === "rolex" ||
-      rawCategory === "patek philippe" ||
-      rawCategory === "cartier" ||
-      rawCategory === "audemars piguet" ||
-      rawCategory === "vacheron constantin" ||
-      haystack.includes("watch")
-    ) {
-      return "watches";
-    }
-
-    if (
-      rawCategory === "handbag" ||
-      rawCategory === "hermès" ||
-      rawCategory === "chanel" ||
-      rawCategory === "louis vuitton" ||
-      rawCategory === "goyard" ||
-      rawCategory === "apparel" ||
-      rawCategory === "precious accessory" ||
-      rawCategory === "sneaker" ||
-      haystack.includes("bag") ||
-      haystack.includes("birkin") ||
-      haystack.includes("kelly") ||
-      haystack.includes("handbag") ||
-      haystack.includes("wallet") ||
-      haystack.includes("sneaker")
-    ) {
-      return "bags-fashion";
-    }
-
-    if (
-      rawCategory === "earring" ||
-      rawCategory === "ring" ||
-      rawCategory === "bracelet" ||
-      rawCategory === "necklace" ||
-      rawCategory === "brooch" ||
-      rawCategory === "jewelry" ||
-      haystack.includes("earring") ||
-      haystack.includes("earclip") ||
-      haystack.includes("ring") ||
-      haystack.includes("bracelet") ||
-      haystack.includes("necklace") ||
-      haystack.includes("brooch") ||
-      haystack.includes("diamond") ||
-      haystack.includes("sapphire")
-    ) {
-      return "jewelry";
-    }
-
-    if (
-      rawCategory === "spirits" ||
-      rawCategory === "weller" ||
-      rawCategory === "van winkle" ||
-      rawCategory === "old fitzgerald" ||
-      rawCategory === "george t. stagg" ||
-      rawCategory === "four roses" ||
-      rawCategory === "elijah craig" ||
-      rawCategory === "elmer t." ||
-      rawCategory === "sazerac" ||
-      haystack.includes("whisky") ||
-      haystack.includes("whiskey") ||
-      haystack.includes("bourbon") ||
-      haystack.includes("scotch")
-    ) {
-      return "spirits";
-    }
-
-    if (
-      rawCategory === "books & manuscripts" ||
-      rawCategory === "pen" ||
-      haystack.includes("manuscript") ||
-      haystack.includes("book") ||
-      haystack.includes("edition") ||
-      haystack.includes("harry potter") ||
-      haystack.includes("bond")
-    ) {
-      return "collectibles-more";
-    }
-
-    if (
-      rawCategory === "collectible" ||
-      rawCategory === "vintage poster" ||
-      rawCategory === "photographs" ||
-      rawCategory === "decor" ||
-      haystack.includes("poster") ||
-      haystack.includes("collectible") ||
-      haystack.includes("record") ||
-      haystack.includes("t-shirt") ||
-      haystack.includes("movie") ||
-      haystack.includes("photograph")
-    ) {
-      return "collectibles-more";
-    }
-
-    if (
-      rawCategory === "painting" ||
-      rawCategory === "work on paper" ||
-      rawCategory === "sculpture" ||
-      haystack.includes("painting") ||
-      haystack.includes("canvas") ||
-      haystack.includes("oil on") ||
-      haystack.includes("watercolor") ||
-      haystack.includes("sculpture")
-    ) {
-      return "fine-art";
-    }
-
-    if (haystack.includes("abstract") || haystack.includes("contemporary")) {
-      return "contemporary-art";
-    }
-
-    if (rawCategory === "decor" || haystack.includes("chair") || haystack.includes("furniture") || haystack.includes("lamp")) {
-      return "furniture-decor";
-    }
-
-    return "collectibles-more";
-  }
-
-  function updateCountdowns(scope) {
-    scope.querySelectorAll("[data-end-time]").forEach(function (node) {
-      node.textContent = getCountdown(node.getAttribute("data-end-time"));
-    });
-  }
-
-  function sortItemsByEndTime(items) {
-    return (Array.isArray(items) ? items.slice() : []).sort(function (a, b) {
-      var aTime = new Date(a && (a.endTime || a.end_time) || "").getTime();
-      var bTime = new Date(b && (b.endTime || b.end_time) || "").getTime();
-      if (!Number.isFinite(aTime) && !Number.isFinite(bTime)) return 0;
-      if (!Number.isFinite(aTime)) return 1;
-      if (!Number.isFinite(bTime)) return -1;
-      return aTime - bTime;
-    });
-  }
-
-  function filterWatchItems(items) {
-    return (Array.isArray(items) ? items : []).filter(function (item) {
-      return getTopLevelCategory(item) === "watches";
-    });
-  }
-
-  function renderFeatured(items, fallbackItems) {
-    var main = document.querySelector("main.flex-1");
-    if (!main) return Promise.resolve();
-    var featuredItems = takeUnique(filterWatchItems(filterActiveItems(items)), 8);
-    var fallbackFeaturedItems = takeUnique(
-      featuredItems.concat(sortItemsByEndTime(filterWatchItems(filterActiveItems(fallbackItems)))),
-      8
-    );
-
-    var howItWorksHeading = Array.from(main.querySelectorAll("h2")).find(function (node) {
-      return node.textContent.trim() === "How It Works";
-    });
-    var howItWorksSection = howItWorksHeading && howItWorksHeading.closest("section");
-    if (!howItWorksSection) return Promise.resolve();
-
-    var existingHeading = Array.from(main.querySelectorAll("h2")).find(function (node) {
-      return node.textContent.trim() === "Featured Auctions";
-    });
-    var existingSection = existingHeading && existingHeading.closest("section");
-
-    if (!existingSection) {
-      howItWorksSection.insertAdjacentHTML(
-        "beforebegin",
-        '<section class="py-8 sm:py-12 lg:py-16 bg-background" data-featured-auctions-section="true">' +
-          '<div class="container mx-auto px-4 sm:px-6 lg:px-8">' +
-            '<div class="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">' +
-              '<div class="w-full sm:w-auto">' +
-                '<h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif mb-1 sm:mb-2 text-balance">Featured Auctions</h2>' +
-                '<p class="text-xs sm:text-sm md:text-base text-muted-foreground">Curated Selection of Exceptional Pieces</p>' +
-              "</div>" +
-              '<a class="text-xs sm:text-sm font-medium hover:underline underline-offset-4 flex items-center gap-1 transition-all whitespace-nowrap" href="auctions.html">View All<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right h-3 w-3 sm:h-4 sm:w-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a>' +
-            '</div>' +
-            '<div class="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory" style="scrollbar-width:none;-ms-overflow-style:none"></div>' +
-          "</div>" +
-        "</section>"
-      );
-      existingSection = howItWorksSection.previousElementSibling;
-    }
-
-    existingSection.className = "py-8 sm:py-12 lg:py-16 bg-background";
-
-    var row =
-      existingSection &&
-      existingSection.querySelector('.flex.gap-3.sm\\:gap-4.overflow-x-auto.pb-4.scrollbar-hide.snap-x.snap-mandatory');
-    if (!row) return Promise.resolve();
-
-    if (!fallbackFeaturedItems.length) {
-      existingSection.style.display = "none";
-      return Promise.resolve();
-    }
-
-    existingSection.style.display = "";
-
-    return hydrateItemsWithRemoteData(fallbackFeaturedItems).then(function (hydratedItems) {
-      row.innerHTML = hydratedItems
-        .map(function (item) {
-          return '<div class="flex-shrink-0 w-[240px] md:w-[260px] snap-start">' + renderCard(item) + "</div>";
-        })
-        .join("");
-
-      updateCountdowns(row);
-    });
-  }
-
-  function takeUnique(items, limit) {
-    var seen = new Set();
-    return items.filter(function (item) {
-      if (!item || !item.id || seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    }).slice(0, limit);
-  }
-
-  function filterActiveItems(items) {
-    return (Array.isArray(items) ? items : []).filter(function (item) {
-      return getStatus(item) !== "closed";
-    });
-  }
-
-  function pickLandingSectionItems(items, headingText) {
-    var normalizedHeading = headingText.toLowerCase();
-    var allItems = Array.isArray(items) ? items : [];
-    var remoteSources = arguments[2] || {};
-
-    function pickByMatcher(matcher, limit) {
-      var activeMatches = takeUnique(filterActiveItems(allItems).filter(matcher), limit);
-      if (activeMatches.length) return activeMatches;
-      return takeUnique(allItems.filter(matcher), limit);
-    }
-
-    if (normalizedHeading === "watches") {
-      if (Array.isArray(remoteSources.watches) && remoteSources.watches.length) return remoteSources.watches.slice(0, 10);
-      return pickByMatcher(function (item) {
-          var haystack = (item.title + " " + item.category).toLowerCase();
-          return haystack.includes("watch") || item.category === "Watches";
-        }, 10);
-    }
-
-    if (normalizedHeading === "handbag") {
-      if (Array.isArray(remoteSources.handbag) && remoteSources.handbag.length) return remoteSources.handbag.slice(0, 10);
-      return pickByMatcher(function (item) {
-          var haystack = (item.title + " " + item.category).toLowerCase();
-          return (
-            haystack.includes("bag") ||
-            haystack.includes("birkin") ||
-            haystack.includes("kelly") ||
-            haystack.includes("flap") ||
-            haystack.includes("handbag") ||
-            item.category === "Handbag" ||
-            item.category === "Hermès" ||
-            item.category === "Chanel" ||
-            item.category === "Louis Vuitton"
-          );
-        }, 10);
-    }
-
-    if (normalizedHeading === "earring") {
-      if (Array.isArray(remoteSources.earring) && remoteSources.earring.length) return remoteSources.earring.slice(0, 10);
-      return pickByMatcher(function (item) {
-          var haystack = (item.title + " " + item.category).toLowerCase();
-          return haystack.includes("earring") || haystack.includes("earclip") || item.category === "Earring";
-        }, 10);
-    }
-
-    if (normalizedHeading === "books & manuscripts") {
-      if (Array.isArray(remoteSources.books) && remoteSources.books.length) return remoteSources.books.slice(0, 10);
-      return pickByMatcher(function (item) {
-          return item.category === "Books & Manuscripts";
-        }, 10);
-    }
-
-    if (normalizedHeading === "collectible") {
-      if (Array.isArray(remoteSources.collectible) && remoteSources.collectible.length) return remoteSources.collectible.slice(0, 10);
-      return pickByMatcher(function (item) {
-          return item.category === "Collectible";
-        }, 10);
-    }
-
-    return [];
-  }
-
-  function renderLandingCategorySections(items, remoteSources) {
-    var headings = Array.from(document.querySelectorAll("h2"));
-
-    return Promise.all(headings.map(function (heading) {
-      var headingText = heading.textContent.trim();
-      var sectionItems = pickLandingSectionItems(items, headingText, remoteSources);
-      if (!sectionItems.length) return Promise.resolve();
-
-      var section = heading.closest("section");
-      var subtitle = section && section.querySelector("p");
-      var row =
-        section &&
-        section.querySelector('.flex.gap-3.sm\\:gap-4.overflow-x-auto.pb-4.scrollbar-hide.snap-x.snap-mandatory');
-
-      if (!section || !row || !subtitle) return Promise.resolve();
-      if (subtitle.textContent.trim() !== "Explore our curated collections") return Promise.resolve();
-
-      return hydrateItemsWithRemoteData(sectionItems).then(function (hydratedItems) {
-        row.innerHTML = hydratedItems
-          .map(function (item) {
-            return '<div class="flex-shrink-0 w-[240px] md:w-[260px] snap-start">' + renderCard(item) + "</div>";
-          })
-          .join("");
-      });
-    })).then(function () {});
-  }
-
-  function fetchRemoteClosedLotIds() {
-    // Fetch IDs of lots that exist in Supabase but are closed/sold or expired
-    // Used to exclude those from the local JSON catalog
-    return requestRemoteSupabase(
-      "/rest/v1/lots?select=id,status,end_time&limit=1000"
-    ).then(function (lots) {
-      if (!Array.isArray(lots)) return new Set();
-      var now = Date.now();
-      var closedIds = new Set();
-      lots.forEach(function (lot) {
-        var s = String(lot.status || "").toLowerCase();
-        var expired = lot.end_time && new Date(lot.end_time).getTime() <= now;
-        if (s === "closed" || s === "sold" || expired) {
-          closedIds.add(lot.id);
-        }
-      });
-      return closedIds;
-    }).catch(function () { return new Set(); });
-  }
-
-  function fetchRemoteActiveWhiskeyItems() {
-    var whiskeyCategoryIds = [
-      "bb1502a0-4c07-4cd8-9a18-9ae024ffe94c",
-      "20890301-f0f1-404f-b303-d3d25c301610",
-      "1b8ef0ea-838d-4737-a7b2-7faccf369504",
-      "81c6a96d-0a01-486e-b8f2-1d9b845a7010",
-      "46552fce-692b-4dcd-a95d-8de0bedefff2",
-      "002b85af-f997-46b7-9d4c-477fd6d0e131",
-      "51583006-74f2-41b4-b951-76c4c034dea9",
-      "4adfb3a1-4948-4abc-b967-da7a33b4dfa8",
-      "381105e0-5b02-43f8-8bcc-b62faf3b51f6",
-    ];
-    var now = new Date().toISOString();
-
-    return requestRemoteSupabase(
-      "/rest/v1/lots?select=id,slug,title,current_bid,end_time,category_id" +
-        "&category_id=in.(" +
-        whiskeyCategoryIds.join(",") +
-        ")" +
-        "&end_time=gt." +
-        encodeURIComponent(now) +
-        "&status=not.in.(closed,sold)" +
-        "&order=end_time.asc&limit=12"
-    ).then(function (lots) {
-      if (!Array.isArray(lots) || !lots.length) return [];
-
-      var lotIds = lots.map(function (item) {
-        return item.id;
-      });
-
-      return Promise.all([
-        requestRemoteSupabase(
-          "/rest/v1/lot_images?select=lot_id,image_url,is_primary,order_position" +
-            "&lot_id=in.(" +
-            lotIds.join(",") +
-            ")" +
-            "&order=lot_id.asc&order=is_primary.desc&order=order_position.asc"
-        ),
-        requestRemoteSupabase(
-          "/rest/v1/categories?select=id,name&or=(id.in.(" + whiskeyCategoryIds.join(",") + "))"
-        ),
-      ]).then(function (results) {
-        var images = results[0];
-        var categories = results[1];
-        var imageMap = new Map();
-        var categoryMap = new Map();
-
-        categories.forEach(function (category) {
-          categoryMap.set(category.id, category.name);
-        });
-
-        images.forEach(function (image) {
-          if (!imageMap.has(image.lot_id)) {
-            imageMap.set(image.lot_id, image.image_url);
-          }
-        });
-
-        return lots.map(function (lot) {
-          return {
-            id: lot.id,
-            slug: lot.slug,
-            title: lot.title,
-            image: imageMap.get(lot.id) || "logo1.svg",
-            currentBid: lot.current_bid,
-            endTime: lot.end_time,
-            category: categoryMap.get(lot.category_id) || "Spirits",
-          };
-        });
-      });
-    });
-  }
-
-  function fetchRemoteActiveCategoryItems(categoryIds, matcher, limit) {
-    var now = new Date().toISOString();
-
-    return requestRemoteSupabase(
-      "/rest/v1/lots?select=id,slug,title,current_bid,end_time,status,category_id" +
-        "&category_id=in.(" +
-        categoryIds.join(",") +
-        ")" +
-        "&end_time=gt." +
-        encodeURIComponent(now) +
-        "&status=not.in.(closed,sold)" +
-        "&order=end_time.asc&limit=60"
-    ).then(function (lots) {
-      var filteredLots = (Array.isArray(lots) ? lots : []).filter(function (lot) {
-        return typeof matcher === "function" ? matcher(lot) : true;
-      }).slice(0, limit || 10);
-
-      if (!filteredLots.length) return [];
-
-      var lotIds = filteredLots.map(function (item) {
-        return item.id;
-      });
-
-      return Promise.all([
-        requestRemoteSupabase(
-          "/rest/v1/lot_images?select=lot_id,image_url,is_primary,order_position" +
-            "&lot_id=in.(" +
-            lotIds.join(",") +
-            ")" +
-            "&order=lot_id.asc&order=is_primary.desc&order=order_position.asc"
-        ),
-        requestRemoteSupabase("/rest/v1/categories?select=id,name&id=in.(" + categoryIds.join(",") + ")"),
-      ]).then(function (results) {
-        var images = results[0];
-        var categories = results[1];
-        var imageMap = new Map();
-        var categoryMap = new Map();
-
-        categories.forEach(function (category) {
-          categoryMap.set(category.id, category.name);
-        });
-
-        images.forEach(function (image) {
-          if (!imageMap.has(image.lot_id)) {
-            imageMap.set(image.lot_id, image.image_url);
-          }
-        });
-
-        return filteredLots.map(function (lot) {
-          return {
-            id: lot.id,
-            slug: lot.slug,
-            title: lot.title,
-            image: imageMap.get(lot.id) || "logo1.svg",
-            currentBid: lot.current_bid,
-            endTime: lot.end_time,
-            category: categoryMap.get(lot.category_id) || "General",
-          };
-        });
-      });
-    });
-  }
-
-  function pickCollectionLandingItems(items, headingText, remoteSources) {
-    var normalizedHeading = headingText.toLowerCase();
-    var activeItems = filterActiveItems(items);
-    var allItems = Array.isArray(items) ? items : [];
-    var sources = remoteSources || {};
-
-    function pickByMatcher(matcher, limit) {
-      var activeMatches = takeUnique(activeItems.filter(matcher), limit);
-      if (activeMatches.length) return activeMatches;
-      return takeUnique(allItems.filter(matcher), limit);
-    }
-
-    if (normalizedHeading === "the great whiskey collection") {
-      if (Array.isArray(sources.whiskey) && sources.whiskey.length) {
-        return sources.whiskey.slice(0, 12);
-      }
-      return pickByMatcher(function (item) {
-          return getTopLevelCategory(item) === "spirits";
-        }, 12);
-    }
-
-    if (normalizedHeading === "the winter edit: icons of luxury") {
-      return pickByMatcher(function (item) {
-          var topLevel = getTopLevelCategory(item);
-          return topLevel === "bags-fashion" || topLevel === "jewelry" || topLevel === "watches";
-        }, 12);
-    }
-
-    return [];
-  }
-
-  function renderCollectionLandingSections(items, remoteSources) {
-    var sections = Array.from(document.querySelectorAll("section"));
-
-    return Promise.all(sections.map(function (section) {
-      var heading = section.querySelector("h2");
-      var headingText = heading ? heading.textContent.trim() : "";
-      var viewAllLink = section.querySelector('a[href$="collections/the-great-whiskey-collection.html"], a[href$="collections/the-winter-edit-icons-of-luxury.html"]');
-      var sectionItems = pickCollectionLandingItems(items, headingText, remoteSources);
-
-      if (!sectionItems.length && viewAllLink) {
-        if (viewAllLink.getAttribute("href").indexOf("the-great-whiskey-collection") !== -1) {
-          sectionItems = pickCollectionLandingItems(items, "The Great Whiskey Collection", remoteSources);
-        } else if (viewAllLink.getAttribute("href").indexOf("the-winter-edit-icons-of-luxury") !== -1) {
-          sectionItems = pickCollectionLandingItems(items, "The Winter Edit: Icons of Luxury", remoteSources);
-        }
-      }
-
-      if (!sectionItems.length) return Promise.resolve();
-
-      var stack = section && section.querySelector(".space-y-8");
-      if (!section || !stack) return Promise.resolve();
-
-      var existingRow = stack.querySelector("[data-home-collection-row]");
-      if (!existingRow) {
-        stack.insertAdjacentHTML(
-          "beforeend",
-          '<div data-home-collection-row="true">' +
-            '<div class="overflow-x-auto pb-4 -mx-4 px-4">' +
-              '<div class="flex gap-3 min-w-max"></div>' +
-            "</div>" +
-          "</div>"
-        );
-        existingRow = stack.querySelector("[data-home-collection-row]");
-      }
-
-      var row = existingRow && existingRow.querySelector(".flex.gap-3.min-w-max");
-      if (!row) return Promise.resolve();
-
-      return hydrateItemsWithRemoteData(sectionItems).then(function (hydratedItems) {
-        row.innerHTML = hydratedItems
-          .map(function (item) {
-            return '<div class="w-[200px] sm:w-[220px] flex-shrink-0">' + renderCard(item) + "</div>";
-          })
-          .join("");
-
-        updateCountdowns(row);
-      });
-    })).then(function () {});
-  }
-
-  function renderShopAll(items, meta, categoriesData) {
-    var loadingText = Array.from(document.querySelectorAll("p")).find(function (node) {
-      return node.textContent.trim() === "Loading auctions...";
-    });
-    if (!loadingText) return;
-
-    var resultsSection = loadingText.closest("section");
-    if (!resultsSection) return;
-
-    var controlsSection = resultsSection.previousElementSibling;
-    if (!controlsSection) return;
-
-    var state = {
-      category: "all",
-      status: "active",
-      sortBy: "featured",
-      page: 1,
-      perPage: 24,
+    return {
+      id: "brand-" + slug,
+      title: display,
+      introText: "Shop " + display + " footwear, clothing, accessories, and seasonal edits from the current catalog.",
+      topLinks: [
+        link(display + " Footwear", "shop.html?brand=" + encodeURIComponent(slug) + "&category=footwear"),
+        link(display + " Clothing", "shop.html?brand=" + encodeURIComponent(slug) + "&category=clothing"),
+        link(display + " Sale", "shop.html?brand=" + encodeURIComponent(slug) + "&sale=1"),
+        link(display + " New In", "shop.html?brand=" + encodeURIComponent(slug) + "&sort=latest"),
+        link(display + " Collections", "shop.html?collection=" + encodeURIComponent(slug)),
+      ],
+      quickRefine: { type: "size", label: "Size" },
+      activeFilters: activeFilters,
+      productQuery: productQuery,
     };
-    var shopRenderToken = 0;
+  }
 
-    function getFilteredItems() {
-      var filtered = items.slice();
+  function searchPreset(query) {
+    return {
+      id: "search",
+      title: "Search results",
+      compactHeader: true,
+      activeFilters: ['Search: "' + query + '"'],
+      productQuery: { search: query },
+    };
+  }
 
-      filtered = filtered.filter(function (item) {
-        var status = getStatus(item);
-        if (state.status === "ending-soon") return status === "ending-soon";
-        if (state.status === "closed") return status === "closed";
-        return status !== "closed";
-      });
+  function collectionPreset(slug) {
+    var title = titleFromSlug(slug);
+    return {
+      id: "collection-" + slug,
+      title: title,
+      compactHeader: true,
+      activeFilters: ["Collection: " + title],
+      quickRefine: /footwear|shoe|trainer|sneaker|boot|sandal|adidas|nike|salomon|asics|balance/i.test(title) ? { type: "size", label: "Size" } : null,
+      productQuery: { search: title },
+    };
+  }
 
-      if (state.category !== "all") {
-        filtered = filtered.filter(function (item) {
-          return getTopLevelCategory(item) === state.category;
-        });
-      }
-
-      if (state.sortBy !== "featured") {
-        filtered.sort(function (a, b) {
-          if (state.sortBy === "ending-soon") return new Date(a.endTime) - new Date(b.endTime);
-          if (state.sortBy === "price-low") return a.currentBid - b.currentBid;
-          if (state.sortBy === "price-high") return b.currentBid - a.currentBid;
-          if (state.sortBy === "newly-listed") return new Date(b.endTime) - new Date(a.endTime);
-          return 0;
-        });
-      }
-
-      return filtered;
+  function legacyCategoryPreset(params) {
+    var category = slugify(params.get("category") || "");
+    var search = slugify(params.get("search") || "");
+    var newest = params.get("sort") === "newest" || params.get("sort") === "latest";
+    if (params.get("sale") === "1") {
+      if (category === "mens") return PRESETS["mens-sale"];
+      if (category === "womens") return PRESETS["womens-sale"];
+      if (category === "footwear") return PRESETS["footwear-sale"];
+      if (category === "clothing") return PRESETS["clothing-sale"];
+      if (category === "accessories") return PRESETS["accessories-sale"];
+      return PRESETS.sale;
     }
+    if (category === "mens" && search === "footwear") return PRESETS["mens-footwear"];
+    if (category === "womens" && search === "footwear") return PRESETS["womens-footwear"];
+    if (category === "mens" && search === "clothing") return PRESETS["mens-clothing"];
+    if (category === "womens" && search === "clothing") return PRESETS["womens-clothing"];
+    if (category === "mens" && newest) return PRESETS["mens-new-in"];
+    if (category === "womens" && newest) return PRESETS["womens-new-in"];
+    if (category === "mens") return PRESETS.mens;
+    if (category === "womens") return PRESETS.womens;
+    if (category === "footwear") return PRESETS.footwear;
+    if (category === "clothing") return PRESETS.clothing;
+    if (category === "accessories") return PRESETS.accessories;
+    return null;
+  }
 
-    function renderControls(filteredItems, totalPages) {
-      var categories = (categoriesData || [])
-        .filter(function (category) {
-          return category && category.slug && category.name;
-        })
-        .map(function (category) {
-          return { slug: category.slug, name: category.name };
-        });
+  function resolvePreset(items) {
+    var params = new URLSearchParams(window.location.search || "");
+    var brandMap = buildBrandMap(items);
+    var plp = slugify(params.get("plp") || "");
+    var brand = slugify(params.get("brand") || "");
+    var rawSearch = String(params.get("search") || params.get("q") || "").trim();
+    var searchSlug = slugify(rawSearch);
+    var collection = slugify(params.get("collection") || "");
+    var legacy = legacyCategoryPreset(params);
 
-      var visibleCount = filteredItems.length;
+    if (brand) return brandPreset(brand, items, params);
+    if (rawSearch && brandMap.has(searchSlug)) return brandPreset(searchSlug, items, params);
+    if (plp && PRESETS[plp]) return PRESETS[plp];
+    if (collection) return collectionPreset(collection);
+    if (legacy) return legacy;
+    if (rawSearch) return searchPreset(rawSearch);
+    if (params.get("sale") === "1") return PRESETS.sale;
+    if (params.get("sort") === "newest" || params.get("sort") === "latest") return PRESETS.latest;
+    return PRESETS["shop-all"];
+  }
 
-      controlsSection.innerHTML =
-        '<div class="container mx-auto px-4 lg:px-8 py-6">' +
-        '<div class="flex flex-col gap-4">' +
-        '<div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">' +
-        '<p class="text-sm text-muted-foreground"><span id="shop-count">' +
-        visibleCount +
-        "</span> active auctions</p>" +
-        '<div class="flex flex-wrap gap-3">' +
-        '<label class="sr-only" for="shop-status">Status</label>' +
-        '<select id="shop-status" class="border-input bg-background ring-offset-background flex h-10 items-center justify-between rounded-md border px-3 py-2 text-sm w-[160px]">' +
-        '<option value="active">Active</option>' +
-        '<option value="ending-soon">Ending Soon</option>' +
-        '<option value="closed">Closed</option>' +
-        "</select>" +
-        '<label class="sr-only" for="shop-category">Category</label>' +
-        '<select id="shop-category" class="border-input bg-background ring-offset-background flex h-10 items-center justify-between rounded-md border px-3 py-2 text-sm w-[180px]">' +
-        '<option value="all">All Categories</option>' +
-        categories
-          .map(function (category) {
-            return '<option value="' + escapeHtml(category.slug) + '">' + escapeHtml(category.name) + "</option>";
-          })
-          .join("") +
-        "</select>" +
-        '<label class="sr-only" for="shop-sort">Sort</label>' +
-        '<select id="shop-sort" class="border-input bg-background ring-offset-background flex h-10 items-center justify-between rounded-md border px-3 py-2 text-sm w-[180px]">' +
-        '<option value="featured">Featured</option>' +
-        '<option value="ending-soon">Ending Soon</option>' +
-        '<option value="newly-listed">Ending Latest</option>' +
-        '<option value="price-low">Price: Low to High</option>' +
-        '<option value="price-high">Price: High to Low</option>' +
-        "</select>" +
-        "</div></div>" +
-        '<div class="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">' +
-        "<span>Page</span>" +
-        '<span class="inline-flex items-center rounded-md border px-2.5 py-1">' +
-        state.page +
-        " / " +
-        totalPages +
-        "</span></div></div></div>";
-
-      controlsSection.querySelector("#shop-status").value = state.status;
-      controlsSection.querySelector("#shop-category").value = state.category;
-      controlsSection.querySelector("#shop-sort").value = state.sortBy;
-
-      controlsSection.querySelector("#shop-status").addEventListener("change", function (event) {
-        state.status = event.target.value;
-        state.page = 1;
-        render();
+  function matchesProductQuery(item, query) {
+    if (!query) return true;
+    if (query.sale && !isRealSale(item)) return false;
+    if (query.brand && slugify(item.brand) !== query.brand) return false;
+    if (query.categoryPath && !categoryStartsWith(item, query.categoryPath)) return false;
+    if (query.tag && getDepartmentTags(item).indexOf(slugify(query.tag)) === -1) return false;
+    if (query.categoryIncludes && query.categoryIncludes.length) {
+      var categoryText = slugify(item.categoryPath || "");
+      var ok = query.categoryIncludes.some(function (term) {
+        return categoryText.indexOf(slugify(term)) !== -1;
       });
+      if (!ok) return false;
+    }
+    if (query.search && !queryMatches(item, query.search)) return false;
+    return true;
+  }
 
-      controlsSection.querySelector("#shop-category").addEventListener("change", function (event) {
-        state.category = event.target.value;
-        state.page = 1;
-        render();
+  function applyPresetQuery(items, preset) {
+    return items.filter(function (item) {
+      return matchesProductQuery(item, preset.productQuery || {});
+    });
+  }
+
+  function readSetParam(params, key) {
+    return new Set(String(params.get(key) || "")
+      .split(",")
+      .map(slugify)
+      .filter(Boolean));
+  }
+
+  function setParamFromSet(params, key, values) {
+    var list = Array.from(values || []).filter(Boolean);
+    if (list.length) params.set(key, list.join(","));
+    else params.delete(key);
+  }
+
+  function normalizeSort(value) {
+    var slug = slugify(value);
+    if (slug === "newest") return "latest";
+    if (slug === "price-low") return "price-asc";
+    if (slug === "price-high") return "price-desc";
+    if (slug === "title") return "name-asc";
+    if (["recommended", "latest", "price-asc", "price-desc", "name-asc", "name-desc", "brand"].indexOf(slug) !== -1) return slug;
+    return "recommended";
+  }
+
+  function sortItems(items, sortBy) {
+    var sorted = items.slice();
+    sorted.sort(function (a, b) {
+      if (sortBy === "price-asc") return Number(a.price || 0) - Number(b.price || 0) || a._index - b._index;
+      if (sortBy === "price-desc") return Number(b.price || 0) - Number(a.price || 0) || a._index - b._index;
+      if (sortBy === "name-asc") return String(a.title || "").localeCompare(String(b.title || "")) || a._index - b._index;
+      if (sortBy === "name-desc") return String(b.title || "").localeCompare(String(a.title || "")) || a._index - b._index;
+      if (sortBy === "brand") return String(a.brand || "").localeCompare(String(b.brand || "")) || String(a.title || "").localeCompare(String(b.title || ""));
+      if (sortBy === "latest") return String(b.id || "").localeCompare(String(a.id || "")) || b._index - a._index;
+      return a._index - b._index;
+    });
+    return sorted;
+  }
+
+  function valueCountOptions(items, getter, limit) {
+    var map = new Map();
+    items.forEach(function (item) {
+      var values = getter(item);
+      (Array.isArray(values) ? values : [values]).forEach(function (raw) {
+        var label = String(raw || "").trim();
+        var slug = slugify(label);
+        if (!label || !slug || label.toLowerCase() === "n/a") return;
+        var current = map.get(slug) || { slug: slug, label: label, count: 0 };
+        current.count += 1;
+        map.set(slug, current);
       });
+    });
+    return Array.from(map.values())
+      .sort(function (a, b) {
+        if (b.count !== a.count) return b.count - a.count;
+        return String(a.label).localeCompare(String(b.label), undefined, { numeric: true });
+      })
+      .slice(0, limit || 40);
+  }
 
-      controlsSection.querySelector("#shop-sort").addEventListener("change", function (event) {
-        state.sortBy = event.target.value;
-        state.page = 1;
-        render();
+  function buildOptions(baseItems) {
+    return {
+      sizes: valueCountOptions(baseItems, function (item) {
+        return item.sizes.filter(function (size) { return size.available; }).map(function (size) { return size.label; });
+      }, 36),
+      brands: valueCountOptions(baseItems, function (item) { return item.brand; }, 42),
+      colours: valueCountOptions(baseItems, function (item) { return item.colour; }, 28),
+      categories: valueCountOptions(baseItems, function (item) { return item.categoryPath; }, 42),
+    };
+  }
+
+  function applyRefine(items, state) {
+    return items.filter(function (item) {
+      if (state.filters.saleOnly && !isRealSale(item)) return false;
+      if (state.filters.sizes.size) {
+        var sizes = item.sizes.map(function (size) { return slugify(size.label); });
+        if (!Array.from(state.filters.sizes).some(function (value) { return sizes.indexOf(value) !== -1; })) return false;
+      }
+      if (state.filters.brands.size && !state.filters.brands.has(slugify(item.brand))) return false;
+      if (state.filters.colours.size && !state.filters.colours.has(slugify(item.colour))) return false;
+      if (state.filters.categories.size && !state.filters.categories.has(slugify(item.categoryPath))) return false;
+      return true;
+    });
+  }
+
+  function renderBreadcrumbs(preset) {
+    return '' +
+      '<nav class="hip-plp-crumbs" aria-label="Breadcrumb">' +
+        '<a href="index.html">Home</a>' +
+        '<span aria-hidden="true">/</span>' +
+        '<a href="shop.html">Shop</a>' +
+        (preset.id !== "shop-all" ? '<span aria-hidden="true">/</span><span>' + escapeHtml(preset.title) + '</span>' : '') +
+      '</nav>';
+  }
+
+  function renderHeader(preset) {
+    var topLinks = Array.isArray(preset.topLinks) ? preset.topLinks : [];
+    var intro = preset.introText || "";
+    var compact = preset.compactHeader && !topLinks.length && !intro;
+    return '' +
+      '<section class="hip-plp-header ' + (compact ? 'is-compact' : '') + '">' +
+        '<div class="hip-plp-container">' +
+          renderBreadcrumbs(preset) +
+          '<h1>' + escapeHtml(preset.title || "Shop All") + '</h1>' +
+          (intro ? '<p class="hip-plp-intro">' + escapeHtml(intro) + '</p>' : '') +
+          (topLinks.length ? '<div class="hip-plp-toplinks">' + topLinks.map(function (item) {
+            return '<a href="' + escapeHtml(item.href) + '">' + escapeHtml(item.label) + '</a>';
+          }).join("") + '</div>' : '') +
+        '</div>' +
+      '</section>';
+  }
+
+  function renderActiveFilters(preset, state, optionLookup) {
+    var chips = (preset.activeFilters || []).map(function (label) {
+      return '<span class="hip-chip">' + escapeHtml(label) + '</span>';
+    });
+    function addSet(set, key, labelPrefix) {
+      Array.from(set).forEach(function (value) {
+        var label = optionLookup[key] && optionLookup[key].get(value) || titleFromSlug(value);
+        chips.push('<button type="button" class="hip-chip is-removable" data-remove-filter="' + key + '" data-filter-value="' + escapeHtml(value) + '">' + escapeHtml(labelPrefix + label) + '<span aria-hidden="true">x</span></button>');
       });
     }
+    addSet(state.filters.sizes, "sizes", "Size: ");
+    addSet(state.filters.brands, "brands", "Brand: ");
+    addSet(state.filters.colours, "colours", "Colour: ");
+    addSet(state.filters.categories, "categories", "");
+    if (state.filters.saleOnly) chips.push('<button type="button" class="hip-chip is-removable" data-remove-sale>Sale<span aria-hidden="true">x</span></button>');
+    return chips.length ? '<div class="hip-active-filters">' + chips.join("") + '</div>' : "";
+  }
 
-    function renderResults(filteredItems, totalPages) {
-      var startIndex = (state.page - 1) * state.perPage;
-      var pageItems = filteredItems.slice(startIndex, startIndex + state.perPage);
-      var endIndex = Math.min(startIndex + state.perPage, filteredItems.length);
-      var currentRenderToken = ++shopRenderToken;
+  function renderQuickRefine(preset, options, state) {
+    if (!preset.quickRefine) return "";
+    var key = preset.quickRefine.type === "colour" ? "colours" : "sizes";
+    var values = (options[key] || []).slice(0, key === "sizes" ? 18 : 12);
+    if (!values.length) return "";
+    return '' +
+      '<section class="hip-quick-refine" aria-label="' + escapeHtml(preset.quickRefine.label) + '">' +
+        '<div class="hip-plp-container">' +
+          '<div class="hip-quick-row">' +
+            '<span>' + escapeHtml(preset.quickRefine.label) + '</span>' +
+            values.map(function (item) {
+              var active = state.filters[key].has(item.slug);
+              return '<button type="button" class="' + (active ? 'is-active' : '') + '" data-toggle-filter="' + key + '" data-filter-value="' + escapeHtml(item.slug) + '">' + escapeHtml(item.label) + '</button>';
+            }).join("") +
+          '</div>' +
+        '</div>' +
+      '</section>';
+  }
 
-      resultsSection.innerHTML =
-        '<div class="container mx-auto px-4 lg:px-8">' +
-        '<div class="text-center text-sm text-muted-foreground py-10">Loading auctions...</div>' +
-        "</div>";
+  function renderCheckboxList(title, key, options, selected) {
+    if (!options.length) return "";
+    return '' +
+      '<fieldset class="hip-refine-group">' +
+        '<legend>' + escapeHtml(title) + '</legend>' +
+        '<div class="hip-refine-list">' +
+          options.map(function (item) {
+            var checked = selected.has(item.slug) ? " checked" : "";
+            return '' +
+              '<label>' +
+                '<input type="checkbox" data-refine-checkbox="' + key + '" value="' + escapeHtml(item.slug) + '"' + checked + ' />' +
+                '<span>' + escapeHtml(item.label) + '</span>' +
+                '<em>' + item.count + '</em>' +
+              '</label>';
+          }).join("") +
+        '</div>' +
+      '</fieldset>';
+  }
 
-      return hydrateItemsWithRemoteData(pageItems).then(function (hydratedPageItems) {
-        if (currentRenderToken !== shopRenderToken) return;
+  function renderDrawer(options, state) {
+    return '' +
+      '<div class="hip-refine-shell ' + (state.drawerOpen ? 'is-open' : '') + '" aria-hidden="' + (state.drawerOpen ? 'false' : 'true') + '">' +
+        '<button type="button" class="hip-refine-backdrop" data-close-refine aria-label="Close filters"></button>' +
+        '<aside class="hip-refine-panel" aria-label="Refine products">' +
+          '<div class="hip-refine-head">' +
+            '<h2>Refine</h2>' +
+            '<button type="button" data-close-refine aria-label="Close filters">x</button>' +
+          '</div>' +
+          '<div class="hip-refine-body">' +
+            '<fieldset class="hip-refine-group">' +
+              '<legend>Sale</legend>' +
+              '<label class="hip-sale-only"><input type="checkbox" data-sale-only' + (state.filters.saleOnly ? ' checked' : '') + ' /><span>Only show reduced items</span></label>' +
+            '</fieldset>' +
+            renderCheckboxList("Size", "sizes", options.sizes, state.filters.sizes) +
+            renderCheckboxList("Brand", "brands", options.brands, state.filters.brands) +
+            renderCheckboxList("Colour", "colours", options.colours, state.filters.colours) +
+            renderCheckboxList("Category", "categories", options.categories, state.filters.categories) +
+          '</div>' +
+          '<div class="hip-refine-actions">' +
+            '<button type="button" data-clear-refine>Clear all</button>' +
+            '<button type="button" data-close-refine>Show products</button>' +
+          '</div>' +
+        '</aside>' +
+      '</div>';
+  }
 
-        resultsSection.innerHTML =
-          '<div class="container mx-auto px-4 lg:px-8">' +
-        '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">' +
-        hydratedPageItems.map(renderCard).join("") +
-        "</div>" +
-        '<div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-8 border-t">' +
-        '<p class="text-sm text-muted-foreground">Showing ' +
-        (filteredItems.length ? startIndex + 1 : 0) +
-        "-" +
-        endIndex +
-        " of " +
-        filteredItems.length +
-        "</p>" +
-        '<div class="flex items-center gap-2">' +
-        '<button id="shop-prev" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-transparent h-9 px-3 disabled:opacity-40 disabled:pointer-events-none">Previous</button>' +
-        '<span class="text-sm text-muted-foreground min-w-[100px] text-center">Page ' +
-        state.page +
-        " of " +
-        totalPages +
-        "</span>" +
-        '<button id="shop-next" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-transparent h-9 px-3 disabled:opacity-40 disabled:pointer-events-none">Next</button>' +
-        "</div></div></div>";
+  function renderToolbar(count, state) {
+    return '' +
+      '<section class="hip-toolbar">' +
+        '<div class="hip-plp-container hip-toolbar-inner">' +
+          '<button type="button" class="hip-refine-trigger" data-open-refine>Refine +</button>' +
+          '<p class="hip-count"><span>' + count + '</span> items</p>' +
+          '<label class="hip-sort-label"><span>Sort</span><select data-sort-select>' +
+            '<option value="recommended"' + (state.sortBy === "recommended" ? " selected" : "") + '>Recommended</option>' +
+            '<option value="latest"' + (state.sortBy === "latest" ? " selected" : "") + '>Newest</option>' +
+            '<option value="price-asc"' + (state.sortBy === "price-asc" ? " selected" : "") + '>Price: low to high</option>' +
+            '<option value="price-desc"' + (state.sortBy === "price-desc" ? " selected" : "") + '>Price: high to low</option>' +
+            '<option value="name-asc"' + (state.sortBy === "name-asc" ? " selected" : "") + '>Name A-Z</option>' +
+            '<option value="name-desc"' + (state.sortBy === "name-desc" ? " selected" : "") + '>Name Z-A</option>' +
+          '</select></label>' +
+        '</div>' +
+      '</section>';
+  }
 
-        resultsSection.querySelector("#shop-prev").disabled = state.page <= 1;
-        resultsSection.querySelector("#shop-next").disabled = state.page >= totalPages;
+  function renderProductCard(item) {
+    var sale = isRealSale(item);
+    return '' +
+      '<a class="hip-product-card" data-product-card href="' + getProductHref(item) + '">' +
+        '<article>' +
+          '<div class="hip-product-image">' +
+            '<img src="' + escapeHtml(item.image || PLACEHOLDER_IMAGE) + '" alt="' + escapeHtml(item.title) + '" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=\'' + PLACEHOLDER_IMAGE + '\';" />' +
+            (sale ? '<span class="hip-sale-badge">Sale</span>' : '') +
+          '</div>' +
+          '<div class="hip-product-meta">' +
+            '<p class="hip-product-brand">' + escapeHtml(item.brand || "Product") + '</p>' +
+            '<h2>' + escapeHtml(item.title) + '</h2>' +
+            '<p class="hip-product-path">' + escapeHtml(item.categoryPath || "") + '</p>' +
+            '<p class="hip-product-price"><span>' + formatCurrency(item.price, item.currency) + '</span>' +
+              (sale ? '<del>' + formatCurrency(item.oldPrice, item.currency) + '</del>' : '') +
+            '</p>' +
+          '</div>' +
+        '</article>' +
+      '</a>';
+  }
 
-        resultsSection.querySelector("#shop-prev").addEventListener("click", function () {
-          if (state.page > 1) {
-            state.page -= 1;
-            render();
-          }
-        });
+  function renderGrid(items, state, totalPages) {
+    if (!items.length) {
+      return '' +
+        '<section class="hip-results"><div class="hip-plp-container">' +
+          '<div class="hip-empty">' +
+            '<h2>No products found</h2>' +
+            '<p>Try clearing refine options or browsing Shop All.</p>' +
+            '<button type="button" data-clear-refine>Clear filters</button>' +
+          '</div>' +
+        '</div></section>';
+    }
+    var start = (state.page - 1) * state.perPage;
+    var pageItems = items.slice(start, start + state.perPage);
+    var end = Math.min(start + pageItems.length, items.length);
+    return '' +
+      '<section class="hip-results"><div class="hip-plp-container">' +
+        '<div class="hip-grid">' + pageItems.map(renderProductCard).join("") + '</div>' +
+        '<div class="hip-pagination">' +
+          '<p>Showing ' + (start + 1) + '-' + end + ' of ' + items.length + '</p>' +
+          '<div>' +
+            '<button type="button" data-page-prev' + (state.page <= 1 ? ' disabled' : '') + '>Previous</button>' +
+            '<span>Page ' + state.page + ' of ' + totalPages + '</span>' +
+            '<button type="button" data-page-next' + (state.page >= totalPages ? ' disabled' : '') + '>Next</button>' +
+          '</div>' +
+        '</div>' +
+      '</div></section>';
+  }
 
-        resultsSection.querySelector("#shop-next").addEventListener("click", function () {
-          if (state.page < totalPages) {
-            state.page += 1;
-            render();
-          }
-        });
+  function buildOptionLookup(options) {
+    var lookup = {};
+    Object.keys(options).forEach(function (key) {
+      lookup[key] = new Map();
+      options[key].forEach(function (item) { lookup[key].set(item.slug, item.label); });
+    });
+    return lookup;
+  }
 
-        updateCountdowns(resultsSection);
-      }).catch(function () {
-        if (currentRenderToken !== shopRenderToken) return;
+  function ensureStyles() {
+    if (document.getElementById("hip-plp-styles")) return;
+    document.head.insertAdjacentHTML("beforeend", '<style id="hip-plp-styles">' +
+      '.hip-plp-container{width:min(1440px,100%);margin:0 auto;padding:0 16px}.hip-plp-header{border-bottom:1px solid #e7e7e7;background:#fff}.hip-plp-header .hip-plp-container{padding-top:22px;padding-bottom:26px}.hip-plp-header.is-compact .hip-plp-container{padding-bottom:18px}.hip-plp-crumbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;color:#777;font-size:12px}.hip-plp-crumbs a{color:#555;text-decoration:none}.hip-plp-crumbs a:hover{text-decoration:underline}.hip-plp-header h1{margin:0;color:#111;font-family:inherit;font-size:clamp(28px,4vw,52px);font-weight:800;letter-spacing:0;line-height:1.05}.hip-plp-intro{max-width:720px;margin:14px 0 0;color:#555;font-size:15px;line-height:1.65}.hip-plp-toplinks{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}.hip-plp-toplinks a{display:inline-flex;min-height:36px;align-items:center;border:1px solid #d7d7d7;background:#fff;padding:0 13px;color:#111;font-size:12px;font-weight:800;text-decoration:none;text-transform:uppercase}.hip-plp-toplinks a:hover{border-color:#111}.hip-toolbar{position:sticky;top:62px;z-index:30;border-bottom:1px solid #e7e7e7;background:rgba(255,255,255,.96);backdrop-filter:blur(8px)}.hip-toolbar-inner{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;min-height:58px}.hip-refine-trigger,.hip-sort-label select,.hip-pagination button,.hip-empty button,.hip-refine-actions button{border:1px solid #111;background:#fff;color:#111;min-height:38px;padding:0 14px;font-size:12px;font-weight:900;text-transform:uppercase;cursor:pointer}.hip-refine-trigger:hover,.hip-pagination button:hover:not(:disabled),.hip-empty button:hover,.hip-refine-actions button:hover{background:#111;color:#fff}.hip-count{margin:0;color:#555;font-size:13px;font-weight:700}.hip-count span{color:#111}.hip-sort-label{display:flex;align-items:center;gap:9px;color:#555;font-size:12px;font-weight:800;text-transform:uppercase}.hip-sort-label select{min-width:176px;text-transform:none;font-weight:700}.hip-active-filters{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid #efefef;background:#fafafa;padding:12px 16px}.hip-active-filters .hip-chip{display:inline-flex;min-height:28px;align-items:center;gap:8px;border:1px solid #d8d8d8;background:#fff;padding:0 10px;color:#111;font-size:12px;font-weight:700}.hip-chip.is-removable{cursor:pointer}.hip-chip.is-removable span{font-weight:900}.hip-quick-refine{border-bottom:1px solid #e7e7e7;background:#fff}.hip-quick-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:13px 0}.hip-quick-row>span{margin-right:4px;color:#555;font-size:12px;font-weight:900;text-transform:uppercase}.hip-quick-row button{min-height:32px;border:1px solid #d6d6d6;background:#fff;padding:0 11px;color:#111;font-size:12px;font-weight:800;cursor:pointer}.hip-quick-row button.is-active,.hip-quick-row button:hover{border-color:#111;background:#111;color:#fff}.hip-results{padding:18px 0 42px}.hip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 10px}.hip-product-card{display:block;min-width:0;color:inherit;text-decoration:none}.hip-product-card article{height:100%;background:#fff}.hip-product-image{position:relative;aspect-ratio:1/1;background:#f6f6f6;overflow:hidden}.hip-product-image img{display:block;width:100%;height:100%;object-fit:contain;padding:12px;transition:transform .22s ease}.hip-product-card:hover img{transform:scale(1.035)}.hip-sale-badge{position:absolute;left:8px;top:8px;background:#111;color:#fff;padding:4px 7px;font-size:10px;font-weight:900;text-transform:uppercase}.hip-product-meta{padding:10px 2px 0}.hip-product-brand{margin:0 0 4px;color:#111;font-size:11px;font-weight:900;text-transform:uppercase}.hip-product-meta h2{display:-webkit-box;min-height:38px;margin:0;color:#111;overflow:hidden;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px;font-weight:600;line-height:1.45}.hip-product-path{margin:5px 0 0;color:#777;font-size:11px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hip-product-price{display:flex;flex-wrap:wrap;gap:7px;align-items:baseline;margin:7px 0 0;color:#111;font-size:14px;font-weight:900}.hip-product-price del{color:#777;font-size:12px;font-weight:600}.hip-pagination{display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:space-between;margin-top:30px;border-top:1px solid #e7e7e7;padding-top:22px}.hip-pagination p{margin:0;color:#555;font-size:13px}.hip-pagination div{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}.hip-pagination span{min-width:104px;text-align:center;color:#555;font-size:13px}.hip-pagination button:disabled{cursor:not-allowed;opacity:.4}.hip-empty{display:flex;min-height:320px;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #cfcfcf;padding:48px 18px;text-align:center}.hip-empty h2{margin:0;color:#111;font-size:22px}.hip-empty p{margin:10px 0 20px;color:#666;font-size:14px}.hip-refine-shell{position:fixed;inset:0;z-index:160;pointer-events:none}.hip-refine-shell.is-open{pointer-events:auto}.hip-refine-backdrop{position:absolute;inset:0;border:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .18s ease}.hip-refine-shell.is-open .hip-refine-backdrop{opacity:1}.hip-refine-panel{position:absolute;top:0;right:0;display:flex;width:min(420px,100%);height:100%;transform:translateX(100%);flex-direction:column;background:#fff;box-shadow:-20px 0 40px rgba(0,0,0,.16);transition:transform .2s ease}.hip-refine-shell.is-open .hip-refine-panel{transform:translateX(0)}.hip-refine-head{display:flex;min-height:60px;align-items:center;justify-content:space-between;border-bottom:1px solid #e7e7e7;padding:0 18px}.hip-refine-head h2{margin:0;color:#111;font-size:18px;font-weight:900}.hip-refine-head button{border:0;background:transparent;color:#111;font-size:22px;font-weight:900;cursor:pointer}.hip-refine-body{flex:1;overflow:auto;padding:8px 18px 18px}.hip-refine-group{margin:0;border:0;border-bottom:1px solid #ededed;padding:16px 0}.hip-refine-group legend{margin-bottom:10px;color:#111;font-size:13px;font-weight:900;text-transform:uppercase}.hip-refine-list{display:grid;gap:8px}.hip-refine-list label,.hip-sale-only{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;color:#222;font-size:13px;line-height:1.35}.hip-refine-list input,.hip-sale-only input{width:16px;height:16px;accent-color:#111}.hip-refine-list em{color:#777;font-size:11px;font-style:normal}.hip-refine-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-top:1px solid #e7e7e7;padding:14px 18px}.hip-refine-actions button:last-child{background:#111;color:#fff}@media(min-width:720px){.hip-plp-container{padding:0 28px}.hip-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 14px}.hip-pagination{flex-direction:row}.hip-active-filters{padding-left:28px;padding-right:28px}}@media(min-width:1100px){.hip-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:30px 18px}.hip-results{padding-top:24px}.hip-toolbar{top:62px}}@media(min-width:1380px){.hip-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:620px){.hip-toolbar-inner{grid-template-columns:1fr auto;gap:8px;min-height:auto;padding-top:10px;padding-bottom:10px}.hip-count{grid-column:1/-1;order:3}.hip-sort-label span{display:none}.hip-sort-label select{min-width:138px;max-width:44vw}.hip-refine-trigger{min-width:104px}.hip-plp-header .hip-plp-container{padding-top:16px;padding-bottom:18px}.hip-plp-toplinks a{min-height:34px;font-size:11px}.hip-product-meta h2{font-size:12px}.hip-product-path{display:none}}' +
+      '</style>');
+  }
 
-        resultsSection.innerHTML =
-          '<div class="container mx-auto px-4 lg:px-8">' +
-          '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">' +
-          pageItems.map(renderCard).join("") +
-          "</div>" +
-          '<div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-8 border-t">' +
-          '<p class="text-sm text-muted-foreground">Showing ' +
-          (filteredItems.length ? startIndex + 1 : 0) +
-          "-" +
-          endIndex +
-          " of " +
-          filteredItems.length +
-          "</p>" +
-          '<div class="flex items-center gap-2">' +
-          '<button id="shop-prev" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-transparent h-9 px-3 disabled:opacity-40 disabled:pointer-events-none">Previous</button>' +
-          '<span class="text-sm text-muted-foreground min-w-[100px] text-center">Page ' +
-          state.page +
-          " of " +
-          totalPages +
-          "</span>" +
-          '<button id="shop-next" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-transparent h-9 px-3 disabled:opacity-40 disabled:pointer-events-none">Next</button>' +
-          "</div></div></div>";
+  function updateUrl(state) {
+    var params = new URLSearchParams(window.location.search || "");
+    if (state.sortBy && state.sortBy !== state.defaultSort) params.set("sort", state.sortBy);
+    else params.delete("sort");
+    if (state.page > 1) params.set("page", String(state.page));
+    else params.delete("page");
+    setParamFromSet(params, "f_size", state.filters.sizes);
+    setParamFromSet(params, "f_brand", state.filters.brands);
+    setParamFromSet(params, "f_colour", state.filters.colours);
+    setParamFromSet(params, "f_category", state.filters.categories);
+    if (state.filters.saleOnly) params.set("f_sale", "1");
+    else params.delete("f_sale");
+    var query = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (query ? "?" + query : "") + (window.location.hash || ""));
+  }
 
-        resultsSection.querySelector("#shop-prev").disabled = state.page <= 1;
-        resultsSection.querySelector("#shop-next").disabled = state.page >= totalPages;
+  function createState(preset) {
+    var params = new URLSearchParams(window.location.search || "");
+    var defaultSort = normalizeSort(preset.defaultSort || "recommended");
+    var sortBy = normalizeSort(params.get("sort") || preset.defaultSort || "recommended");
+    return {
+      defaultSort: defaultSort,
+      sortBy: sortBy,
+      page: Math.max(1, Number(params.get("page") || 1) || 1),
+      perPage: DEFAULT_PER_PAGE,
+      drawerOpen: false,
+      filters: {
+        sizes: readSetParam(params, "f_size"),
+        brands: readSetParam(params, "f_brand"),
+        colours: readSetParam(params, "f_colour"),
+        categories: readSetParam(params, "f_category"),
+        saleOnly: params.get("f_sale") === "1",
+      },
+    };
+  }
 
-        resultsSection.querySelector("#shop-prev").addEventListener("click", function () {
-          if (state.page > 1) {
-            state.page -= 1;
-            render();
-          }
-        });
+  function mountCatalogPage(products) {
+    var main = document.querySelector("main");
+    if (!main) return;
+    ensureStyles();
+    var items = normalizeProducts(products);
+    var preset = resolvePreset(items);
+    var state = createState(preset);
+    document.title = (preset.title || "Shop All") + " | The Hip Store";
+    main.innerHTML = '<div id="hip-plp-root"></div>';
+    var root = document.getElementById("hip-plp-root");
 
-        resultsSection.querySelector("#shop-next").addEventListener("click", function () {
-          if (state.page < totalPages) {
-            state.page += 1;
-            render();
-          }
-        });
-
-        updateCountdowns(resultsSection);
-      });
+    function currentBaseItems() {
+      return applyPresetQuery(items, preset);
     }
 
     function render() {
-      var filteredItems = getFilteredItems();
-      var totalPages = Math.max(1, Math.ceil(filteredItems.length / state.perPage));
+      var baseItems = currentBaseItems();
+      var options = buildOptions(baseItems);
+      var optionLookup = buildOptionLookup(options);
+      var refined = applyRefine(baseItems, state);
+      var sorted = sortItems(refined, state.sortBy);
+      var totalPages = Math.max(1, Math.ceil(sorted.length / state.perPage));
       if (state.page > totalPages) state.page = totalPages;
-      renderControls(filteredItems, totalPages);
-      return renderResults(filteredItems, totalPages);
+      if (state.page < 1) state.page = 1;
+      updateUrl(state);
+      root.innerHTML =
+        renderHeader(preset) +
+        renderToolbar(sorted.length, state) +
+        renderActiveFilters(preset, state, optionLookup) +
+        renderQuickRefine(preset, options, state) +
+        renderGrid(sorted, state, totalPages) +
+        renderDrawer(options, state);
+      bind(root, totalPages);
+    }
+
+    function toggleSet(set, value, checked) {
+      if (checked) set.add(value);
+      else set.delete(value);
+      state.page = 1;
+    }
+
+    function clearFilters() {
+      state.filters.sizes.clear();
+      state.filters.brands.clear();
+      state.filters.colours.clear();
+      state.filters.categories.clear();
+      state.filters.saleOnly = false;
+      state.page = 1;
+    }
+
+    function bind(scope, totalPages) {
+      scope.querySelector("[data-open-refine]")?.addEventListener("click", function () {
+        state.drawerOpen = true;
+        render();
+      });
+      scope.querySelectorAll("[data-close-refine]").forEach(function (node) {
+        node.addEventListener("click", function () {
+          state.drawerOpen = false;
+          render();
+        });
+      });
+      scope.querySelector("[data-sort-select]")?.addEventListener("change", function (event) {
+        state.sortBy = normalizeSort(event.target.value);
+        state.page = 1;
+        render();
+      });
+      scope.querySelectorAll("[data-toggle-filter]").forEach(function (node) {
+        node.addEventListener("click", function () {
+          var key = node.getAttribute("data-toggle-filter");
+          var value = node.getAttribute("data-filter-value");
+          var set = state.filters[key];
+          if (!set) return;
+          toggleSet(set, value, !set.has(value));
+          render();
+        });
+      });
+      scope.querySelectorAll("[data-refine-checkbox]").forEach(function (node) {
+        node.addEventListener("change", function () {
+          var key = node.getAttribute("data-refine-checkbox");
+          var set = state.filters[key];
+          if (!set) return;
+          toggleSet(set, node.value, node.checked);
+          render();
+        });
+      });
+      scope.querySelector("[data-sale-only]")?.addEventListener("change", function (event) {
+        state.filters.saleOnly = event.target.checked;
+        state.page = 1;
+        render();
+      });
+      scope.querySelectorAll("[data-clear-refine]").forEach(function (node) {
+        node.addEventListener("click", function () {
+          clearFilters();
+          render();
+        });
+      });
+      scope.querySelectorAll("[data-remove-filter]").forEach(function (node) {
+        node.addEventListener("click", function () {
+          var key = node.getAttribute("data-remove-filter");
+          var value = node.getAttribute("data-filter-value");
+          if (state.filters[key]) state.filters[key].delete(value);
+          state.page = 1;
+          render();
+        });
+      });
+      scope.querySelector("[data-remove-sale]")?.addEventListener("click", function () {
+        state.filters.saleOnly = false;
+        state.page = 1;
+        render();
+      });
+      scope.querySelector("[data-page-prev]")?.addEventListener("click", function () {
+        if (state.page <= 1) return;
+        state.page -= 1;
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      scope.querySelector("[data-page-next]")?.addEventListener("click", function () {
+        if (state.page >= totalPages) return;
+        state.page += 1;
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
     }
 
     render();
   }
 
-  Promise.all([
-    loadJson("data/featured-lots.json"),
-    loadJson("data/all-shop-lots.json"),
-    loadJson("data/shop-all-meta.json"),
-    loadJson("data/categories.json"),
-  ])
-    .then(async function (results) {
-      var remoteSources = {
-        whiskey: [],
-        watches: [],
-        handbag: [],
-        earring: [],
-        collectible: [],
-        books: [],
-      };
-      try {
-        var remoteResults = await Promise.allSettled([
-          fetchRemoteActiveWhiskeyItems(),
-          fetchRemoteActiveCategoryItems(["9a4cd4f7-6b24-4183-b263-a25bded0e362"], null, 10),
-          fetchRemoteActiveCategoryItems(
-            ["ea511401-37c0-4768-add7-7d4738adb260", "173a1db8-0a95-4114-9cb3-6862c28c2835", "d475b83f-4a59-4394-8819-a53b8f5141c8", "74a6e0fb-fd62-4835-8b08-eb61bdb09593", "bced8a59-788a-447a-89e6-4c8f66ec9de3"],
-            null,
-            10
-          ),
-          fetchRemoteActiveCategoryItems(
-            ["52754627-1fbd-49e4-bc59-7abfb352c762", "575c9b4d-7f9c-42c0-b79d-e128f6ce3534"],
-            function (lot) {
-              var haystack = String(lot.title || "").toLowerCase();
-              return haystack.includes("earring") || haystack.includes("earclip");
-            },
-            10
-          ),
-          fetchRemoteActiveCategoryItems(["3a8bf043-dc55-4e87-87e2-f7c368995ef2"], null, 10),
-          fetchRemoteActiveCategoryItems(["e5d6928f-845c-464e-b77b-0ee67f552a20"], null, 10),
-        ]);
+  window.HipCatalog = {
+    mountCatalogPage: mountCatalogPage,
+    normalizeProducts: normalizeProducts,
+    resolvePreset: resolvePreset,
+  };
 
-        remoteSources.whiskey = remoteResults[0].status === "fulfilled" ? remoteResults[0].value : [];
-        remoteSources.watches = remoteResults[1].status === "fulfilled" ? remoteResults[1].value : [];
-        remoteSources.handbag = remoteResults[2].status === "fulfilled" ? remoteResults[2].value : [];
-        remoteSources.earring = remoteResults[3].status === "fulfilled" ? remoteResults[3].value : [];
-        remoteSources.collectible = remoteResults[4].status === "fulfilled" ? remoteResults[4].value : [];
-        remoteSources.books = remoteResults[5].status === "fulfilled" ? remoteResults[5].value : [];
-      } catch (error) {
-        console.error("Remote landing fetch failed:", error);
-      }
-
-      var featuredItems = normalizeCatalogItems(results[0]);
-      var shopItems = normalizeCatalogItems(results[1]);
-      var shopMeta = Object.assign({}, results[2], { total: filterActiveItems(shopItems).length });
-      var hydratedFeaturedItems = await hydrateFeaturedItems(featuredItems, shopItems);
-
-      await renderFeatured(hydratedFeaturedItems, shopItems);
-      await renderLandingCategorySections(shopItems, remoteSources);
-      await renderCollectionLandingSections(shopItems, remoteSources);
-      renderShopAll(shopItems, shopMeta, results[3]);
-      setInterval(function () {
-        updateCountdowns(document);
-      }, 1000);
-    })
+  loadCatalog()
+    .then(mountCatalogPage)
     .catch(function (error) {
       console.error("Catalog render failed:", error);
+      var main = document.querySelector("main");
+      if (main) {
+        main.innerHTML = '<section class="hip-results"><div class="hip-plp-container"><div class="hip-empty"><h2>Products could not be loaded</h2><p>Please refresh the page.</p></div></div></section>';
+      }
     });
 })();

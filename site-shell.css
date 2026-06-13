@@ -1,0 +1,44 @@
+:root {
+  --hip-shell-width: 1180px;
+}
+
+html {
+  background: #efefef;
+}
+
+body {
+  width: min(var(--hip-shell-width), 100%);
+  min-height: 100vh;
+  margin-right: auto;
+  margin-left: auto;
+  background: #fff;
+}
+
+body > .min-h-screen {
+  background: #fff;
+}
+
+.fixed,
+.sticky.top-0 {
+  max-width: min(var(--hip-shell-width), 100vw);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.fixed {
+  right: auto;
+  left: 50%;
+  width: min(var(--hip-shell-width), 100vw);
+  transform: translateX(-50%);
+}
+
+@media (max-width: 1180px) {
+  html,
+  body {
+    background: #fff;
+  }
+
+  body {
+    width: 100%;
+  }
+}

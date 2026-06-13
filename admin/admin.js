@@ -1,1321 +1,702 @@
 (function () {
-  'use strict';
+  "use strict";
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // CONFIG — заполни перед использованием
-  // ═══════════════════════════════════════════════════════════════════════
-  var CONFIG = {
-    adminPassword: 'admin26_Bra',
+  var PRODUCTS_DATA_PATH = "../data/products.normalized.json";
+  var ORDER_STATUSES = ["payment_pending", "processing", "shipped", "completed", "cancelled"];
+  var ADMIN_TABS = ["dashboard", "products", "orders", "customers", "settings"];
+  var NAV_ACTIVE_CLASS = "nav-active rounded-lg px-4 py-2 text-sm font-medium transition-colors";
+  var NAV_INACTIVE_CLASS = "nav-inactive rounded-lg px-4 py-2 text-sm font-medium transition-colors";
 
-    supabaseUrl: 'https://njsnxxiybniocteqbndp.supabase.co',
-    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qc254eGl5Ym5pb2N0ZXFibmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNTM5MzYsImV4cCI6MjA4ODkyOTkzNn0.xZhqA4ASoaHZ36mi3ZYXBTgG4Cvq89sVzXptJCs5mU4',
-    supabaseServiceKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qc254eGl5Ym5pb2N0ZXFibmRwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzM1MzkzNiwiZXhwIjoyMDg4OTI5OTM2fQ.7ffBVd5GLmjzjAVQqjDkd9d7p2ibQrgzxXuwAaaLUrI',
-
-    resend: {
-      functionName: 'send-admin-email',
-    },
-
-    auctionHouse: {
-      name: 'Auctio Holdings Ltd.',
-      email: 'support@auctio.com',
-    },
-  };
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // CONSTANTS
-  // ═══════════════════════════════════════════════════════════════════════
-  var ADMIN_SESSION_KEY  = 'auctio_admin_session';
-  var ADMIN_STATUSES_KEY = 'auctio_admin_statuses';
-  var ADMIN_CONFIRMATIONS_KEY = 'auctio_admin_confirmations';
-  var ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails_v2';
-  var LEGACY_ADMIN_SENT_EMAILS_KEY = 'auctio_admin_sent_emails';
-  var SENT_EMAIL_ACTIONS = ['invoice', 'win-invoice', 'win-only'];
-
-  var STATUS_LABELS = {
-    active:    'В работе',
-    pending:   'Ожидает',
-    won:       'Выиграл',
-    paid:      'Оплатил',
-    na:        'Н/Д',
-    lost:      'Отказ',
-    cancelled: 'Отменён',
-  };
-
-  var STATUS_CLASSES = {
-    active:    'bg-blue-100 text-blue-700',
-    pending:   'bg-yellow-100 text-yellow-700',
-    won:       'bg-emerald-100 text-emerald-700',
-    paid:      'bg-green-100 text-green-700',
-    na:        'bg-gray-100 text-gray-500',
-    lost:      'bg-red-100 text-red-600',
-    cancelled: 'bg-gray-100 text-gray-500',
-  };
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // STATE
-  // ═══════════════════════════════════════════════════════════════════════
   var state = {
-    leads:          [],
-    filteredLeads:  [],
-    filterStatus:   'all',
-    searchQuery:    '',
-    currentLead:    null,
-    currentAction:  null, // 'invoice' | 'win-invoice' | 'win-only'
-    currentDraft:   null,
-    adminStatuses:  {},
-    confirmations:  {},
-    sentEmails:     {},
-    timers:         {},
+    currentTab: "dashboard",
+    orders: [],
+    filteredOrders: [],
+    products: [],
+    filteredProducts: [],
+    customers: [],
+    ordersSearch: "",
+    ordersStatus: "all",
+    productsSearch: "",
+    productsBrand: "all",
+    productsCategory: "all",
+    productsSale: "all",
+    productsStock: "all",
+    productsSort: "newest",
+    productsPage: 1,
+    productsPageSize: 25,
+    currentOrderId: "",
   };
 
-  var sb = null;
-  var lotCatalogPromise = null;
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // AUTH
-  // ═══════════════════════════════════════════════════════════════════════
-  function isAuthenticated() {
-    return sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+  function $(id) {
+    return document.getElementById(id);
   }
 
-  function authenticate(password) {
-    if (password === CONFIG.adminPassword) {
-      sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
-      return true;
-    }
-    return false;
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
-  function logout() {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    showLogin();
+  function escapeCsv(value) {
+    return '"' + String(value == null ? "" : value).replace(/"/g, '""') + '"';
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // LEGACY ADMIN STATUSES  (old localStorage-only storage)
-  // ═══════════════════════════════════════════════════════════════════════
-  function loadLegacyAdminStatuses() {
+  function normalizeSearch(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function formatCurrency(value, currency) {
+    var amount = Number(value || 0);
+    var code = currency || "GBP";
     try {
-      return JSON.parse(localStorage.getItem(ADMIN_STATUSES_KEY)) || {};
-    } catch (e) {
-      return {};
+      return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: code,
+        maximumFractionDigits: amount % 1 ? 2 : 0,
+      }).format(amount);
+    } catch (_error) {
+      return code + " " + amount.toLocaleString("en-US");
     }
   }
 
-  function clearLegacyAdminStatuses() {
-    try {
-      localStorage.removeItem(ADMIN_STATUSES_KEY);
-    } catch (e) {}
+  function formatDate(value) {
+    if (!value) return "-";
+    var date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return String(value);
+    return date.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
   }
 
-  function loadConfirmationMap() {
-    try {
-      return JSON.parse(localStorage.getItem(ADMIN_CONFIRMATIONS_KEY)) || {};
-    } catch (e) {
-      return {};
+  function slugify(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function backend() {
+    if (!window.HipStoreBackend) throw new Error("Supabase client is not loaded.");
+    return window.HipStoreBackend;
+  }
+
+  function showLogin(message) {
+    $("login-screen").classList.remove("hidden");
+    $("login-screen").classList.add("flex");
+    $("admin-ui").classList.add("hidden");
+    if (message) {
+      $("login-error").textContent = message;
+      $("login-error").classList.remove("hidden");
     }
-  }
-
-  function saveConfirmationMap() {
-    try {
-      localStorage.setItem(ADMIN_CONFIRMATIONS_KEY, JSON.stringify(state.confirmations || {}));
-    } catch (e) {}
-  }
-
-  function isConfirmationSent(bidId) {
-    return Boolean(state.confirmations && state.confirmations[bidId]);
-  }
-
-  function markConfirmationSent(bidId, sentAt) {
-    var timestamp = sentAt || new Date().toISOString();
-    state.confirmations[bidId] = timestamp;
-    var lead = state.leads.find(function (item) { return item.id === bidId; });
-    if (lead) {
-      lead.confirmationSent = true;
-      lead.confirmationSentAt = timestamp;
-    }
-    saveConfirmationMap();
-  }
-
-  function loadSentEmailMap() {
-    try {
-      return normalizeSentEmailMap(JSON.parse(localStorage.getItem(ADMIN_SENT_EMAILS_KEY)) || {});
-    } catch (e) {
-      return {};
-    }
-  }
-
-  function saveSentEmailMap() {
-    try {
-      localStorage.setItem(ADMIN_SENT_EMAILS_KEY, JSON.stringify(normalizeSentEmailMap(state.sentEmails || {})));
-    } catch (e) {}
-  }
-
-  function getSentEmailKey(bidId, actionType) {
-    return String(bidId || '') + '::' + String(actionType || '');
-  }
-
-  function normalizeSentEmailMap(raw) {
-    var out = {};
-    if (!raw || typeof raw !== 'object') return out;
-
-    Object.keys(raw).forEach(function (key) {
-      var value = raw[key];
-
-      if (key.indexOf('::') !== -1) {
-        var parts = key.split('::');
-        var actionType = parts[1];
-        if (SENT_EMAIL_ACTIONS.indexOf(actionType) !== -1 && value) {
-          out[getSentEmailKey(parts[0], actionType)] = String(value);
-        }
-        return;
-      }
-
-      if (!value || typeof value !== 'object' || Array.isArray(value)) return;
-      SENT_EMAIL_ACTIONS.forEach(function (actionType) {
-        if (value[actionType]) {
-          out[getSentEmailKey(key, actionType)] = String(value[actionType]);
-        }
-      });
-    });
-
-    return out;
-  }
-
-  function resetLegacySentEmailMap() {
-    try {
-      localStorage.removeItem(LEGACY_ADMIN_SENT_EMAILS_KEY);
-    } catch (e) {}
-  }
-
-  function hasSentEmail(bidId, actionType) {
-    return Boolean(state.sentEmails && state.sentEmails[getSentEmailKey(bidId, actionType)]);
-  }
-
-  function markEmailSent(bidId, actionType, sentAt) {
-    if (!bidId || !actionType) return;
-    var timestamp = sentAt || new Date().toISOString();
-    state.sentEmails[getSentEmailKey(bidId, actionType)] = timestamp;
-    saveSentEmailMap();
-  }
-
-  function renderSentCheck(visible) {
-    if (!visible) return '';
-    return '<span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white/85 text-current text-[10px] font-bold leading-none">✓</span>';
-  }
-
-  function getLeadStatus(bidId, originalStatus) {
-    return state.adminStatuses[bidId] || originalStatus || 'active';
-  }
-
-  function setLeadStatus(bidId, status) {
-    state.adminStatuses[bidId] = status;
-    var lead = state.leads.find(function (item) { return item.id === bidId; });
-    if (lead) lead.status = status;
-  }
-
-  async function persistLeadStatus(bidId, status) {
-    if (!sb) initSupabase();
-    var res = await sb
-      .from('bids')
-      .update({ status: status })
-      .eq('id', bidId);
-    if (res.error) throw new Error(res.error.message || 'Unable to save bid status.');
-  }
-
-  async function syncLegacyStatusesToDatabase() {
-    var legacy = loadLegacyAdminStatuses();
-    var entries = Object.keys(legacy).map(function (bidId) {
-      return [bidId, legacy[bidId]];
-    }).filter(function (entry) {
-      var lead = state.leads.find(function (item) { return item.id === entry[0]; });
-      return lead && entry[1] && entry[1] !== lead.status;
-    });
-
-    if (!entries.length) {
-      clearLegacyAdminStatuses();
-      return 0;
-    }
-
-    for (var i = 0; i < entries.length; i++) {
-      var bidId = entries[i][0];
-      var status = entries[i][1];
-      await persistLeadStatus(bidId, status);
-      setLeadStatus(bidId, status);
-    }
-
-    clearLegacyAdminStatuses();
-    return entries.length;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // SUPABASE DATA
-  // ═══════════════════════════════════════════════════════════════════════
-  function initSupabase() {
-    var key = CONFIG.supabaseServiceKey || CONFIG.supabaseAnonKey;
-    sb = window.supabase.createClient(CONFIG.supabaseUrl, key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-  }
-
-  function getPaymentMethodFromBidId(bidId) {
-    var value = String(bidId || '').toLowerCase();
-    if (/-(revolut)$/.test(value)) return 'revolut';
-    if (/-(iban)$/.test(value)) return 'iban';
-    return '';
-  }
-
-  function normalizePaymentMethod(value, bidId) {
-    if (value === 'revolut' || value === 'iban') return value;
-    return getPaymentMethodFromBidId(bidId);
-  }
-
-  async function loadAllBids() {
-    var res = await sb
-      .from('bids')
-      .select('*')
-      .eq('is_simulated', false)
-      .order('created_at', { ascending: false })
-      .limit(500);
-    if (res.error) throw new Error(res.error.message);
-    return res.data || [];
-  }
-
-  async function loadProfiles(userIds) {
-    if (!userIds.length) return {};
-    var res = await sb
-      .from('profiles')
-      .select('id, email, first_name, last_name, phone, country, city, address, postal_code')
-      .in('id', userIds);
-    if (res.error) return {};
-    var map = {};
-    (res.data || []).forEach(function (p) { map[p.id] = p; });
-    return map;
-  }
-
-  async function loadLots(lotIds) {
-    if (!lotIds.length) return {};
-    if (!lotCatalogPromise) {
-      lotCatalogPromise = fetch('../data/all-shop-lots.json')
-        .then(function (r) { return r.ok ? r.json() : []; })
-        .catch(function () { return []; });
-    }
-
-    var allLots = await lotCatalogPromise;
-    var wanted = {};
-    lotIds.forEach(function (id) { wanted[String(id)] = true; });
-
-    var map = {};
-    (allLots || []).forEach(function (item) {
-      var itemId = item && item.id ? String(item.id) : '';
-      if (!itemId || !wanted[itemId]) return;
-      map[itemId] = {
-        id: item.id,
-        slug: item.slug || '',
-        title: item.title || item.name || '',
-        current_bid: item.currentBid || item.current_bid || 0,
-        end_time: resolveLotEndTime(item),
-        lot_images: item.lot_images || [{ image_url: item.image || '', is_primary: true }],
-      };
-    });
-
-    return map;
-  }
-
-  async function loadLeads() {
-    var bids = await loadAllBids();
-    var userIds = uniqueArr(bids.map(function (b) { return b.user_id; }).filter(Boolean));
-    var lotIds  = uniqueArr(bids.map(function (b) { return b.lot_id;  }).filter(Boolean));
-
-    var results = await Promise.all([loadProfiles(userIds), loadLots(lotIds)]);
-    var profiles = results[0];
-    var lots     = results[1];
-
-    return bids.map(function (bid) {
-      var profile = profiles[bid.user_id] || {};
-      var lot     = lots[bid.lot_id]     || {};
-      return {
-        id:         bid.id,
-        lotId:      bid.lot_id,
-        userId:     bid.user_id,
-        lotTitle:   lot.title   || ('Лот #' + String(bid.lot_id || '').slice(0, 8)),
-        lotSlug:    lot.slug    || '',
-        lotImage:   getPrimaryImage(lot.lot_images),
-        lotEndTime: lot.end_time || null,
-        bidAmount:  bid.amount,
-        status:     bid.status || 'active',
-        firstName:  profile.first_name || '',
-        lastName:   profile.last_name  || '',
-        email:      profile.email      || '',
-        phone:      profile.phone      || '',
-        address:    profile.address    || '',
-        country:    profile.country    || '',
-        city:       profile.city       || '',
-        postalCode: profile.postal_code || '',
-        placedAt:      bid.created_at,
-        paymentMethod: normalizePaymentMethod(bid.payment_method, bid.id),
-        confirmationSentAt: bid.confirmation_sent_at || state.confirmations[bid.id] || '',
-        confirmationSent: Boolean(bid.confirmation_sent_at || state.confirmations[bid.id]),
-      };
-    });
-  }
-
-  function getPrimaryImage(images) {
-    if (!images || !images.length) return null;
-    var primary = images.find(function (i) { return i.is_primary; }) || images[0];
-    return (primary && primary.image_url) || null;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // HELPERS
-  // ═══════════════════════════════════════════════════════════════════════
-  function uniqueArr(arr) {
-    return arr.filter(function (v, i, a) { return a.indexOf(v) === i; });
-  }
-
-  function hashString(value) {
-    var input = String(value || '');
-    var hash = 0;
-    for (var i = 0; i < input.length; i += 1) {
-      hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
-    }
-    return hash;
-  }
-
-  function resolveLotEndTime(item) {
-    var status = String((item && item.status) || '').toLowerCase();
-    var rawEndTime = item && (item.end_time || item.endTime) || null;
-    if (status && status !== 'active') return rawEndTime;
-
-    var rawDiff = new Date(rawEndTime).getTime() - Date.now();
-    if (Number.isFinite(rawDiff) && rawDiff > 0) return rawEndTime;
-
-    var hash = hashString((item && (item.id || item.slug || item.title)) || '');
-    var days = 1 + (hash % 10);
-    var minutes = Math.floor(hash / 10) % 1440;
-    return new Date(Date.now() + days * 86400000 + minutes * 60000).toISOString();
-  }
-
-  function escapeHtml(str) {
-    return String(str == null ? '' : str)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function formatCurrency(amount) {
-    return '€' + Number(amount || 0).toLocaleString('en-US');
-  }
-
-  function formatCountdown(endTimeIso) {
-    if (!endTimeIso) return null;
-    var diff = new Date(endTimeIso).getTime() - Date.now();
-    if (diff <= 0) return 'Завершён';
-    var d = Math.floor(diff / 86400000);
-    var h = Math.floor((diff % 86400000) / 3600000);
-    var m = Math.floor((diff % 3600000) / 60000);
-    var s = Math.floor((diff % 60000) / 1000);
-    if (d > 0) return d + 'д ' + h + 'ч ' + m + 'м';
-    if (h > 0) return h + 'ч ' + m + 'м ' + s + 'с';
-    return m + 'м ' + s + 'с';
-  }
-
-  function timerUrgencyClass(endTimeIso) {
-    if (!endTimeIso) return 'text-gray-400';
-    var diff = new Date(endTimeIso).getTime() - Date.now();
-    if (diff <= 0)          return 'text-gray-400';
-    if (diff < 3600000)     return 'text-red-500 font-medium';   // < 1h
-    if (diff < 86400000)    return 'text-amber-500';              // < 1d
-    return 'text-gray-500';
-  }
-
-  function isCompletedLeadStatus(status) {
-    var normalized = String(status || '').toLowerCase();
-    return normalized === 'won' || normalized === 'paid';
-  }
-
-  function getFullName(lead) {
-    return [lead.firstName, lead.lastName].filter(Boolean).join(' ') || '—';
-  }
-
-  function getGeo(lead) {
-    return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
-  }
-
-  function getDeliveryTo(lead) {
-    return [lead.city, lead.country].filter(Boolean).join(', ') || '—';
-  }
-
-  function getDeliveryAddress(lead) {
-    return [lead.address, lead.city, lead.postalCode, lead.country].filter(Boolean).join(', ') || '—';
-  }
-
-  function getDueDate(days) {
-    var d = new Date();
-    d.setDate(d.getDate() + days);
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-  }
-
-  function genInvoiceNumber() {
-    return 'INV-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // RENDER — TABLE
-  // ═══════════════════════════════════════════════════════════════════════
-  function applyFilters() {
-    var q = state.searchQuery.toLowerCase().trim();
-    state.filteredLeads = state.leads.filter(function (lead) {
-      var status = getLeadStatus(lead.id, lead.status);
-      if (state.filterStatus !== 'all' && status !== state.filterStatus) return false;
-      if (q) {
-        var haystack = [lead.firstName, lead.lastName, lead.email, lead.phone, lead.country, lead.city, lead.lotTitle].join(' ').toLowerCase();
-        if (haystack.indexOf(q) === -1) return false;
-      }
-      return true;
-    });
-    renderTable();
-    updateStats();
-  }
-
-  function renderTable() {
-    var tbody = document.getElementById('leads-body');
-    if (!tbody) return;
-
-    // Clear timers
-    Object.keys(state.timers).forEach(function (k) { clearInterval(state.timers[k]); });
-    state.timers = {};
-
-    if (!state.filteredLeads.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-14 text-gray-400 text-sm">Нет записей</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = state.filteredLeads.map(function (lead) {
-      var status      = getLeadStatus(lead.id, lead.status);
-      var statusLabel = STATUS_LABELS[status] || status;
-      var statusCls   = STATUS_CLASSES[status] || 'bg-gray-100 text-gray-600';
-      var name        = getFullName(lead);
-      var geo         = getGeo(lead);
-      var forceCompleted = isCompletedLeadStatus(status);
-      var timerText   = forceCompleted ? 'Завершён' : (lead.lotEndTime ? formatCountdown(lead.lotEndTime) : '—');
-      var timerCls    = forceCompleted ? 'text-gray-400' : timerUrgencyClass(lead.lotEndTime);
-      var invoiceSent = hasSentEmail(lead.id, 'invoice');
-      var winInvoiceSent = hasSentEmail(lead.id, 'win-invoice');
-      var winOnlySent = hasSentEmail(lead.id, 'win-only');
-      var confirmationDisabled = lead.confirmationSent
-        ? ' disabled aria-disabled="true" style="opacity:0.55;cursor:not-allowed;pointer-events:none;"'
-        : '';
-      var confirmationTitle = lead.confirmationSent
-        ? 'Подтверждение уже отправлено'
-        : 'Отправить подтверждение';
-      var confirmationLabel = lead.confirmationSent ? 'Подтв.✓' : 'Подтв.';
-
-      var imgHtml = lead.lotImage
-        ? '<img src="' + escapeHtml(lead.lotImage) + '" class="w-10 h-10 object-cover rounded-lg shrink-0" loading="lazy" />'
-        : '<div class="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center"><svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
-
-      var statusOptions = Object.keys(STATUS_LABELS).map(function (k) {
-        return '<option value="' + k + '"' + (status === k ? ' selected' : '') + '>' + STATUS_LABELS[k] + '</option>';
-      }).join('');
-
-      return [
-        '<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">',
-        // Lot + timer
-        '  <td class="px-4 py-3">',
-        '    <div class="flex items-start gap-3">',
-        '      ' + imgHtml,
-        '      <div class="min-w-0 pt-0.5">',
-        '        <div class="text-sm font-medium text-gray-900 leading-snug line-clamp-2 max-w-[200px]" title="' + escapeHtml(lead.lotTitle) + '">' + escapeHtml(lead.lotTitle) + '</div>',
-        '        <div class="text-xs mt-1 ' + timerCls + ' font-mono" id="timer-' + lead.id + '">' + escapeHtml(timerText) + '</div>',
-        '      </div>',
-        '    </div>',
-        '  </td>',
-        // Client
-        '  <td class="px-4 py-3">',
-        '    <div class="text-sm font-medium text-gray-900">' + escapeHtml(name) + '</div>',
-        '    <div class="text-xs text-gray-400 mt-0.5">' + escapeHtml(lead.email) + '</div>',
-        '  </td>',
-        // Phone
-        '  <td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(lead.phone || '—') + '</td>',
-        // Geo
-        '  <td class="px-4 py-3 text-sm text-gray-600">' + escapeHtml(geo) + '</td>',
-        // Amount + payment method
-        '  <td class="px-4 py-3">',
-        '    <div class="text-sm font-semibold text-gray-900">' + formatCurrency(lead.bidAmount) + '</div>',
-        '    <div class="mt-0.5">',
-        lead.paymentMethod === 'revolut'
-          ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-white bg-[#191c1f] px-2 py-0.5 rounded-full"><svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.65 0H7.35C3.29 0 0 3.29 0 7.35v9.3C0 20.71 3.29 24 7.35 24h9.3C20.71 24 24 20.71 24 16.65V7.35C24 3.29 20.71 0 16.65 0zM17.6 14.1l-2.95-4.2h1.1c1.05 0 1.6-.55 1.6-1.4s-.55-1.4-1.6-1.4h-3v7h-2.4V5h5.4c2.35 0 3.85 1.4 3.85 3.5 0 1.6-.85 2.75-2.3 3.25l3.1 4.35H17.6z"/></svg> Revolut</span>'
-          : lead.paymentMethod === 'iban'
-            ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg> IBAN</span>'
-            : '<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">Не сохранён</span>',
-        '    </div>',
-        '  </td>',
-        // Status
-        '  <td class="px-4 py-3">',
-        '    <select class="lead-status-select text-xs font-medium px-2.5 py-1.5 rounded-full cursor-pointer border-0 outline-none ' + statusCls + '" data-lead-id="' + lead.id + '">',
-        statusOptions,
-        '    </select>',
-        '  </td>',
-        // Actions
-        '  <td class="px-4 py-3">',
-        '    <div class="flex items-center gap-1.5 flex-nowrap">',
-        // Btn 1: Invoice
-        '      <button type="button" class="lead-action-btn action-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Отправить инвойс">',
-        '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
-        '        Инвойс',
-        '        ' + renderSentCheck(invoiceSent),
-        '      </button>',
-        // Btn 2: Win + Invoice
-        '      <button type="button" class="lead-action-btn action-win-invoice inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Победа + инвойс">',
-        '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-        '        Победа+',
-        '        ' + renderSentCheck(winInvoiceSent),
-        '      </button>',
-        // Btn 3: Win only
-        '      <button type="button" class="lead-action-btn action-win-only inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="Только уведомление о победе">',
-        '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
-        '        Победа',
-        '        ' + renderSentCheck(winOnlySent),
-        '      </button>',
-        // Btn 4: Confirmation
-        '      <button type="button" class="lead-action-btn action-confirmation inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors whitespace-nowrap" data-lead-id="' + lead.id + '" title="' + confirmationTitle + '"' + confirmationDisabled + '>',
-        '        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5-1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-        '        ' + confirmationLabel,
-        '      </button>',
-        '    </div>',
-        '  </td>',
-        '</tr>',
-      ].join('\n');
-    }).join('\n');
-
-    // Start countdowns
-    state.filteredLeads.forEach(function (lead) {
-      var currentStatus = getLeadStatus(lead.id, lead.status);
-      if (isCompletedLeadStatus(currentStatus)) return;
-      if (!lead.lotEndTime) return;
-      var el = document.getElementById('timer-' + lead.id);
-      if (!el) return;
-      state.timers[lead.id] = setInterval(function () {
-        var text = formatCountdown(lead.lotEndTime);
-        var cls  = timerUrgencyClass(lead.lotEndTime);
-        if (!el) { clearInterval(state.timers[lead.id]); return; }
-        el.textContent = text;
-        el.className = 'text-xs mt-1 font-mono ' + cls;
-        if (text === 'Завершён') clearInterval(state.timers[lead.id]);
-      }, 1000);
-    });
-
-    // Status selects
-    tbody.querySelectorAll('.lead-status-select').forEach(function (sel) {
-      sel.addEventListener('change', async function () {
-        var id  = sel.dataset.leadId;
-        var val = sel.value;
-        var lead = state.leads.find(function (item) { return item.id === id; });
-        var prev = lead ? lead.status : 'active';
-
-        setLeadStatus(id, val);
-        applyFilters();
-
-        try {
-          await persistLeadStatus(id, val);
-        } catch (e) {
-          setLeadStatus(id, prev);
-          applyFilters();
-          showToast('Не удалось сохранить статус: ' + (e.message || 'unknown'), 'error');
-        }
-      });
-    });
-
-    // Action buttons
-    tbody.querySelectorAll('.lead-action-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var lead = state.leads.find(function (l) { return l.id === btn.dataset.leadId; });
-        if (!lead) return;
-        if (btn.disabled) return;
-        if (btn.classList.contains('action-confirmation') && lead.confirmationSent) return;
-        state.currentLead = lead;
-        if (btn.classList.contains('action-invoice'))     openBankModal('invoice');
-        else if (btn.classList.contains('action-win-invoice')) openBankModal('win-invoice');
-        else if (btn.classList.contains('action-win-only'))    openWinModal();
-        else if (btn.classList.contains('action-confirmation')) handleSendConfirmation(lead, btn);
-      });
-    });
-  }
-
-  function updateStats() {
-    var total  = state.leads.length;
-    var active = 0, won = 0, paid = 0;
-    state.leads.forEach(function (l) {
-      var s = getLeadStatus(l.id, l.status);
-      if (s === 'active')  active++;
-      if (s === 'won')     won++;
-      if (s === 'paid')    paid++;
-    });
-    setText('stats-total',  total);
-    setText('stats-active', active);
-    setText('stats-won',    won);
-    setText('stats-paid',   paid);
-  }
-
-  function setText(id, val) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = val;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // MODALS
-  // ═══════════════════════════════════════════════════════════════════════
-  function openBankModal(action) {
-    state.currentAction = action;
-    var lead = state.currentLead;
-    var paymentMethod = normalizePaymentMethod(lead.paymentMethod, lead.id);
-
-    setText('modal-bank-title', action === 'invoice' ? 'Отправить инвойс' : 'Победа + Инвойс');
-
-    var clientEl = document.getElementById('modal-client-info');
-    if (clientEl) clientEl.textContent = getFullName(lead) + ' <' + lead.email + '>';
-
-    var lotEl = document.getElementById('modal-lot-title');
-    if (lotEl) lotEl.textContent = lead.lotTitle;
-
-    var amountEl = document.getElementById('bank-amount');
-    if (amountEl) amountEl.value = lead.bidAmount || '';
-
-    var refEl = document.getElementById('bank-reference');
-    if (refEl) refEl.value = genInvoiceNumber();
-
-    enablePaymentTypeSelection();
-    if (paymentMethod) {
-      switchPaymentType(paymentMethod);
-      updatePaymentMethodNote(paymentMethod);
-    } else {
-      switchPaymentType('iban');
-      updatePaymentMethodNote('');
-    }
-
-    showEl('modal-bank');
-  }
-
-  function closeBankModal() {
-    hideEl('modal-bank');
-    state.currentLead   = null;
-    state.currentAction = null;
-  }
-
-  function openWinModal() {
-    state.currentAction = 'win-only';
-    var lead = state.currentLead;
-    setText('win-client-name', getFullName(lead) + ' (' + lead.email + ')');
-    setText('win-lot-title',   lead.lotTitle);
-    setText('win-bid-amount',  formatCurrency(lead.bidAmount));
-    showEl('modal-win');
-  }
-
-  function closeWinModal() {
-    hideEl('modal-win');
-    state.currentLead   = null;
-    state.currentAction = null;
-  }
-
-  function showEl(id) {
-    var el = document.getElementById(id);
-    if (el) { el.style.display = 'flex'; el.removeAttribute('hidden'); }
-  }
-
-  function hideEl(id) {
-    var el = document.getElementById(id);
-    if (el) { el.style.display = 'none'; el.setAttribute('hidden', ''); }
-  }
-
-  // Payment type switcher (Revolut ↔ IBAN)
-  function switchPaymentType(type) {
-    var revF = document.getElementById('revolut-fields');
-    var ibaF = document.getElementById('iban-fields');
-    var revB = document.querySelector('[data-payment-type="revolut"]');
-    var ibaB = document.querySelector('[data-payment-type="iban"]');
-
-    var isRev = normalizePaymentMethod(type) === 'revolut';
-    revF.style.display = isRev ? 'block' : 'none';
-    ibaF.style.display = isRev ? 'none'  : 'block';
-
-    [revB, ibaB].forEach(function (b, idx) {
-      var active = (idx === 0) ? isRev : !isRev;
-      b.className = b.className.replace(/(tab-active|tab-inactive)/g, '');
-      b.className += active ? ' tab-active' : ' tab-inactive';
-    });
-  }
-
-  function updatePaymentMethodNote(type) {
-    var paymentType = normalizePaymentMethod(type);
-    var note = document.getElementById('payment-method-note');
-    if (!note) return;
-    note.textContent = paymentType === 'revolut'
-      ? 'Клиент выбрал Revolut.'
-      : paymentType === 'iban'
-        ? 'Клиент выбрал IBAN.'
-        : 'Способ оплаты клиента не сохранился. Выбери нужный вариант вручную.';
-  }
-
-  function enablePaymentTypeSelection() {
-    document.querySelectorAll('[data-payment-type]').forEach(function (btn) {
-      btn.disabled = false;
-      btn.setAttribute('aria-disabled', 'false');
-      btn.style.cursor = '';
-      btn.style.pointerEvents = '';
-      btn.style.opacity = '1';
-    });
-  }
-
-  function getPaymentType() {
-    var revF = document.getElementById('revolut-fields');
-    return revF && revF.style.display !== 'none' ? 'revolut' : 'iban';
-  }
-
-  function collectPaymentDetails() {
-    if (getPaymentType() === 'revolut') {
-      return {
-        type: 'Revolut',
-        tag:  val('rev-tag'),
-        name: val('rev-name'),
-      };
-    }
-    return {
-      type: 'Bank Transfer (IBAN)',
-      name: val('iban-name'),
-      iban: val('iban-number'),
-      bic:  val('iban-bic'),
-      bank: val('iban-bank'),
-    };
-  }
-
-  function formatPaymentBlock(d, amount, ref) {
-    if (d.type === 'Revolut') {
-      return [
-        'Payment via Revolut',
-        'Revolut: ' + d.tag,
-        'Recipient: ' + d.name,
-        'Amount: ' + formatCurrency(amount),
-        'Reference: ' + ref,
-      ].join('\n');
-    }
-    return [
-      'Bank Transfer (IBAN)',
-      'Beneficiary: ' + d.name,
-      'IBAN: ' + d.iban,
-      'BIC/SWIFT: ' + d.bic,
-      'Bank: ' + d.bank,
-      'Amount: ' + formatCurrency(amount),
-      'Reference: ' + ref,
-    ].join('\n');
-  }
-
-  function val(id) {
-    var el = document.getElementById(id);
-    return el ? (el.value || '').trim() : '';
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // EMAIL (Resend via Supabase Edge Function)
-  // ═══════════════════════════════════════════════════════════════════════
-  function resendConfigured() {
-    return CONFIG.resend && CONFIG.resend.functionName;
-  }
-
-  async function getEmailDraft(payload) {
-    if (!resendConfigured()) {
-      throw new Error('Resend не настроен. Заполни CONFIG.resend.functionName в admin.js');
-    }
-    if (!sb) initSupabase();
-    var result = await sb.functions.invoke(CONFIG.resend.functionName, {
-      body: Object.assign({}, payload, { preview_only: true }),
-    });
-    if (result.error) {
-      throw new Error(result.error.message || 'Не удалось подготовить шаблон письма.');
-    }
-    if (result.data && result.data.error) {
-      throw new Error(result.data.error);
-    }
-    return result.data || {};
-  }
-
-  function setFieldValue(id, value) {
-    var el = document.getElementById(id);
-    if (el) el.value = value || '';
-  }
-
-  function buildCopyPackage(draft) {
-    return [
-      'To: ' + String(draft && draft.to || ''),
-      'Reply-To: ' + String(draft && draft.reply_to || ''),
-      'Subject: ' + String(draft && draft.subject || ''),
-      '',
-      'HTML:',
-      String(draft && draft.html || ''),
-    ].join('\n');
-  }
-
-  function buildMailtoHref(draft) {
-    var to = String(draft && draft.to || '').trim();
-    var subject = String(draft && draft.subject || '').trim();
-    var body = String(draft && draft.text || '').trim();
-
-    if (!to) {
-      throw new Error('Не указан получатель письма.');
-    }
-
-    var query = [];
-    if (subject) query.push('subject=' + encodeURIComponent(subject));
-    if (body) query.push('body=' + encodeURIComponent(body));
-    return 'mailto:' + encodeURIComponent(to) + (query.length ? '?' + query.join('&') : '');
-  }
-
-  function toBase64Utf8(value) {
-    var text = String(value || '');
-    var bytes = new TextEncoder().encode(text);
-    var binary = '';
-    for (var i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-  }
-
-  function encodeMimeWord(value) {
-    var text = String(value || '').trim();
-    if (!text) return '';
-    return '=?UTF-8?B?' + toBase64Utf8(text) + '?=';
-  }
-
-  function sanitizeFileName(value) {
-    return String(value || 'email-draft')
-      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 120) || 'email-draft';
-  }
-
-  function buildEmlContent(draft) {
-    var to = String(draft && draft.to || '').trim();
-    var replyTo = String(draft && draft.reply_to || '').trim();
-    var subject = String(draft && draft.subject || '').trim();
-    var text = String(draft && draft.text || '').trim();
-    var html = String(draft && draft.html || '').trim();
-    var boundary = 'auctio-boundary-' + Date.now();
-    var fromHeader = CONFIG.auctionHouse.name + ' <' + CONFIG.auctionHouse.email + '>';
-    var lines = [
-      'To: ' + to,
-      'From: ' + fromHeader,
-      'Subject: ' + encodeMimeWord(subject),
-      'Date: ' + new Date().toUTCString(),
-      'MIME-Version: 1.0',
-      'X-Unsent: 1',
-      'Content-Type: multipart/alternative; boundary="' + boundary + '"',
-      '',
-      '--' + boundary,
-      'Content-Type: text/plain; charset="UTF-8"',
-      'Content-Transfer-Encoding: base64',
-      '',
-      toBase64Utf8(text),
-      '',
-      '--' + boundary,
-      'Content-Type: text/html; charset="UTF-8"',
-      'Content-Transfer-Encoding: base64',
-      '',
-      toBase64Utf8(html),
-      '',
-      '--' + boundary + '--',
-      '',
-    ];
-    if (replyTo) lines.splice(2, 0, 'Reply-To: ' + replyTo);
-    return lines.join('\r\n');
-  }
-
-  async function copyPlainText(text) {
-    var value = String(text || '');
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(value);
-      return;
-    }
-    var helper = document.createElement('textarea');
-    helper.value = value;
-    helper.setAttribute('readonly', '');
-    helper.style.position = 'fixed';
-    helper.style.opacity = '0';
-    document.body.appendChild(helper);
-    helper.select();
-    document.execCommand('copy');
-    helper.remove();
-  }
-
-  function openDraftModal(draft, title) {
-    state.currentDraft = draft || null;
-    setText('draft-modal-title', title || 'Готовое письмо');
-    setFieldValue('draft-to', draft && draft.to);
-    setFieldValue('draft-reply-to', draft && draft.reply_to);
-    setFieldValue('draft-subject', draft && draft.subject);
-    setFieldValue('draft-html', draft && draft.html);
-    setFieldValue('draft-text', draft && draft.text);
-    showEl('modal-draft');
-  }
-
-  function closeDraftModal() {
-    hideEl('modal-draft');
-    state.currentDraft = null;
-    setFieldValue('draft-to', '');
-    setFieldValue('draft-reply-to', '');
-    setFieldValue('draft-subject', '');
-    setFieldValue('draft-html', '');
-    setFieldValue('draft-text', '');
-  }
-
-  async function copyDraftAll() {
-    if (!state.currentDraft) return;
-    await copyPlainText(buildCopyPackage(state.currentDraft));
-    showToast('Черновик письма скопирован', 'success');
-  }
-
-  async function copyDraftHtml() {
-    if (!state.currentDraft) return;
-    var html = String(state.currentDraft.html || '');
-    if (navigator.clipboard && window.ClipboardItem) {
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([html], { type: 'text/plain' }),
-          }),
-        ]);
-        showToast('HTML письма скопирован', 'success');
-        return;
-      } catch (e) {}
-    }
-    await copyPlainText(html);
-    showToast('HTML письма скопирован', 'success');
-  }
-
-  function openDraftInMailApp() {
-    if (!state.currentDraft) return;
-
-    try {
-      var href = buildMailtoHref(state.currentDraft);
-      window.location.href = href;
-    } catch (error) {
-      showToast(error.message || 'Не удалось открыть почтовое приложение', 'error');
-    }
-  }
-
-  function downloadDraftEml() {
-    if (!state.currentDraft) return;
-
-    try {
-      var eml = buildEmlContent(state.currentDraft);
-      var fileName = sanitizeFileName(state.currentDraft.subject || 'email-draft') + '.eml';
-      var blob = new Blob([eml], { type: 'message/rfc822' });
-      var url = URL.createObjectURL(blob);
-      var link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      showToast('HTML письмо сохранено как .eml', 'success');
-    } catch (error) {
-      showToast(error.message || 'Не удалось подготовить .eml', 'error');
-    }
-  }
-
-  async function handleSendInvoice() {
-    var lead = state.currentLead;
-    if (!lead) return;
-
-    var amount = val('bank-amount')    || String(lead.bidAmount || 0);
-    var ref    = val('bank-reference') || genInvoiceNumber();
-    var pd     = collectPaymentDetails();
-
-    var templateType = state.currentAction === 'win-invoice'
-      ? 'win-invoice'
-      : 'invoice';
-
-    setBtnLoading('send-email-btn', 'send-email-btn-text', true, 'Подготовка...');
-
-    try {
-      var draft = await getEmailDraft({
-        template_type:   templateType,
-        to_email:        lead.email,
-        to_name:         getFullName(lead),
-        lot_title:       lead.lotTitle,
-        lot_image:       lead.lotImage || '',
-        bid_amount:      formatCurrency(amount),
-        invoice_number:  ref,
-        delivery_to:     getDeliveryTo(lead),
-        delivery_address:getDeliveryAddress(lead),
-        payment_type:    pd.type,
-        payment_details: formatPaymentBlock(pd, amount, ref),
-        due_date:        getDueDate(14),
-        from_name:       CONFIG.auctionHouse.name,
-        reply_to:        CONFIG.auctionHouse.email,
-      });
-
-      closeBankModal();
-      openDraftModal(draft, templateType === 'win-invoice' ? 'Черновик: Победа + Инвойс' : 'Черновик: Инвойс');
-    } catch (e) {
-      showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
-    } finally {
-      setBtnLoading('send-email-btn', 'send-email-btn-text', false, 'Подготовить письмо');
-    }
-  }
-
-  async function handleSendWinOnly() {
-    var lead = state.currentLead;
-    if (!lead) return;
-
-    setBtnLoading('send-win-btn', 'send-win-btn-text', true, 'Подготовка...');
-
-    try {
-      var draft = await getEmailDraft({
-        template_type:   'win-only',
-        to_email:        lead.email,
-        to_name:         getFullName(lead),
-        lot_title:       lead.lotTitle,
-        lot_image:       lead.lotImage || '',
-        bid_amount:      formatCurrency(lead.bidAmount),
-        invoice_number:  '—',
-        delivery_to:     getDeliveryTo(lead),
-        delivery_address:getDeliveryAddress(lead),
-        payment_type:    'Payment instructions will follow',
-        payment_details: 'Our team will contact you shortly with payment details.',
-        due_date:        getDueDate(14),
-        from_name:       CONFIG.auctionHouse.name,
-        reply_to:        CONFIG.auctionHouse.email,
-      });
-
-      closeWinModal();
-      openDraftModal(draft, 'Черновик: Уведомление о победе');
-    } catch (e) {
-      showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
-    } finally {
-      setBtnLoading('send-win-btn', 'send-win-btn-text', false, 'Подготовить письмо');
-    }
-  }
-
-  async function handleSendConfirmation(lead, triggerBtn) {
-    if (!lead) return;
-
-    var originalHtml = triggerBtn ? triggerBtn.innerHTML : '';
-    if (triggerBtn) {
-      triggerBtn.disabled = true;
-      triggerBtn.style.opacity = '0.7';
-      triggerBtn.innerHTML = 'Подготовка...';
-    }
-
-    try {
-      var draft = await getEmailDraft({
-        template_type:    'confirmation',
-        to_email:         lead.email,
-        to_name:          getFullName(lead),
-        lot_title:        lead.lotTitle,
-        lot_image:        lead.lotImage || '',
-        bid_amount:       formatCurrency(lead.bidAmount),
-        delivery_to:      getDeliveryTo(lead),
-        delivery_address: getDeliveryAddress(lead),
-        from_name:        CONFIG.auctionHouse.name,
-        reply_to:         CONFIG.auctionHouse.email,
-      });
-
-      openDraftModal(draft, 'Черновик: Подтверждение');
-    } catch (e) {
-      showToast('Ошибка: ' + (e.message || e.text || 'unknown'), 'error');
-    } finally {
-      if (triggerBtn) {
-        triggerBtn.disabled = false;
-        triggerBtn.style.opacity = '1';
-        triggerBtn.innerHTML = originalHtml;
-      }
-      state.currentLead = null;
-    }
-  }
-
-  function setBtnLoading(btnId, textId, loading, text) {
-    var btn  = document.getElementById(btnId);
-    var span = document.getElementById(textId);
-    if (!btn) return;
-    btn.disabled = loading;
-    btn.style.opacity = loading ? '0.6' : '1';
-    if (span) span.textContent = text;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // TOAST
-  // ═══════════════════════════════════════════════════════════════════════
-  function showToast(msg, type) {
-    var el = document.getElementById('toast');
-    if (!el) return;
-    el.textContent = msg;
-    el.className = 'fixed bottom-6 right-6 px-4 py-3 rounded-xl text-sm font-medium shadow-xl z-[100] max-w-xs transition-all duration-300 '
-      + (type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white');
-    el.style.display  = 'block';
-    el.style.opacity  = '1';
-    el.style.transform = 'translateY(0)';
-    clearTimeout(el._t);
-    el._t = setTimeout(function () {
-      el.style.opacity = '0';
-      setTimeout(function () { el.style.display = 'none'; }, 300);
-    }, 3500);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // SCREENS
-  // ═══════════════════════════════════════════════════════════════════════
-  function showLogin() {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('admin-ui').style.display     = 'none';
   }
 
   function showAdmin() {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('admin-ui').style.display     = 'block';
+    $("login-screen").classList.add("hidden");
+    $("login-screen").classList.remove("flex");
+    $("admin-ui").classList.remove("hidden");
+    loadAll();
   }
 
-  async function loadAndRender() {
-    var loading  = document.getElementById('leads-loading');
-    var errorDiv = document.getElementById('leads-error');
-    var errorTxt = document.getElementById('leads-error-text');
-    var wrapper  = document.getElementById('leads-table-wrapper');
-    var searchEl = document.getElementById('search-input');
+  function statusBadgeClass(status) {
+    var classes = {
+      payment_pending: "bg-amber-100 text-amber-700",
+      processing: "bg-blue-100 text-blue-700",
+      shipped: "bg-indigo-100 text-indigo-700",
+      completed: "bg-emerald-100 text-emerald-700",
+      cancelled: "bg-gray-100 text-gray-600",
+    };
+    return classes[status] || classes.payment_pending;
+  }
 
-    if (loading)  loading.style.display  = 'flex';
-    if (wrapper)  wrapper.style.display  = 'none';
-    if (errorDiv) errorDiv.style.display = 'none';
-    state.searchQuery = '';
-    if (searchEl) searchEl.value = '';
+  function statusLabel(status) {
+    var labels = {
+      payment_pending: "Payment pending",
+      processing: "Processing",
+      shipped: "Shipped",
+      completed: "Completed",
+      cancelled: "Cancelled",
+    };
+    return labels[status] || "Payment pending";
+  }
 
+  function statusOptions(selected) {
+    return ORDER_STATUSES.map(function (status) {
+      return '<option value="' + status + '"' + (status === selected ? " selected" : "") + ">" + statusLabel(status) + "</option>";
+    }).join("");
+  }
+
+  function normalizeOrder(order) {
+    var item = Array.isArray(order.order_items) ? order.order_items[0] || {} : {};
+    var status = String(order.status || "payment_pending").toLowerCase();
+    if (ORDER_STATUSES.indexOf(status) === -1) status = "payment_pending";
+    return {
+      id: String(order.id || ""),
+      orderId: String(order.order_number || order.orderId || order.id || ""),
+      createdAt: String(order.created_at || order.createdAt || ""),
+      status: status,
+      paymentStatus: String(order.payment_status || "payment_not_configured"),
+      paymentMethod: String(order.payment_method || "manual_payment"),
+      productId: String(item.product_id || order.productId || ""),
+      sku: String(item.sku || order.sku || ""),
+      routeSlug: String(item.route_slug || order.routeSlug || ""),
+      brand: String(item.brand || order.brand || ""),
+      title: String(item.title || order.title || ""),
+      size: String(item.selected_size || order.size || ""),
+      quantity: Number(item.quantity || order.quantity || 1),
+      unitPrice: Number(item.unit_price || order.unitPrice || 0),
+      oldPrice: item.old_price != null ? Number(item.old_price) : null,
+      subtotal: Number(order.subtotal || 0),
+      shipping: Number(order.shipping || 0),
+      total: Number(order.total || 0),
+      currency: String(order.currency || "GBP"),
+      image: String(item.image_url || order.image || ""),
+      history: Array.isArray(order.order_status_history) ? order.order_status_history : [],
+      customer: {
+        email: String(order.email || ""),
+        firstName: String(order.first_name || ""),
+        lastName: String(order.last_name || ""),
+        phone: String(order.phone || ""),
+        address: String(order.shipping_address || ""),
+        city: String(order.shipping_city || ""),
+        postcode: String(order.shipping_postcode || ""),
+        country: String(order.shipping_country || ""),
+      },
+    };
+  }
+
+  function customerName(order) {
+    var customer = order.customer || {};
+    return [customer.firstName, customer.lastName].filter(Boolean).join(" ") || "-";
+  }
+
+  async function loadOrders() {
+    var result = await backend().adminListOrders();
+    state.orders = (result.orders || []).map(normalizeOrder);
+    applyOrderFilters();
+    renderDashboard();
+  }
+
+  function normalizeCustomer(customer) {
+    return {
+      email: String(customer.email || "-"),
+      name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || "-",
+      phone: String(customer.phone || "-"),
+      ordersCount: Number(customer.orders_count || 0),
+      totalSpent: Number(customer.total_spent || 0),
+      currency: String(customer.currency || "GBP"),
+    };
+  }
+
+  async function loadCustomers() {
+    var result = await backend().adminListCustomers();
+    state.customers = (result.customers || []).map(normalizeCustomer);
+    renderCustomers();
+  }
+
+  async function updateOrderStatus(orderId, status) {
+    if (ORDER_STATUSES.indexOf(status) === -1) return;
+    await backend().adminUpdateOrderStatus(orderId, status);
+    await loadOrders();
+    await loadCustomers();
+    renderCustomers();
+  }
+
+  function loadJson(path) {
+    return fetch(path, { cache: "no-store" }).then(function (response) {
+      if (!response.ok) throw new Error("Failed to load " + path);
+      return response.json();
+    });
+  }
+
+  function normalizeProductPayload(payload) {
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.products)) return payload.products;
+    if (payload && Array.isArray(payload.items)) return payload.items;
+    return [];
+  }
+
+  function normalizeSize(size) {
+    if (typeof size === "string" || typeof size === "number") {
+      return { label: String(size), available: true };
+    }
+    return {
+      label: String(size && (size.label || size.size || size.name || size.value) || ""),
+      available: !(size && (size.available === false || size.inStock === false || size.in_stock === false)),
+    };
+  }
+
+  function priceValue(value) {
+    if (value && typeof value === "object") return Number(value.amount || value.value || value.price || 0);
+    return Number(value || 0);
+  }
+
+  function normalizeCategory(value) {
+    if (Array.isArray(value)) return value.filter(Boolean).join(" / ");
+    return String(value || "");
+  }
+
+  function firstImage(item) {
+    var images = Array.isArray(item && item.images) ? item.images.filter(Boolean) : [];
+    return String((item && (item.mainImage || item.main_image || item.image || item.imageUrl)) || images[0] || "../placeholder.svg");
+  }
+
+  function productId(item) {
+    return String((item && (item.id || item.product_id || item.productId || item.sku)) || "").trim();
+  }
+
+  function sourceSlug(item) {
+    return String((item && (item.sourceSlug || item.source_slug || item.slug)) || "").trim();
+  }
+
+  function routeSlug(item) {
+    var direct = String((item && (item.routeSlug || item.route_slug)) || "").trim();
+    if (direct) return direct;
+    var source = sourceSlug(item);
+    var id = productId(item);
+    return source && id ? source + "-" + id : source;
+  }
+
+  function normalizeProduct(item, index) {
+    var id = productId(item);
+    var title = String((item && (item.title || item.full_name || item.name)) || "Product");
+    var rawOldPrice = item && (item.oldPrice != null ? item.oldPrice : item.old_price != null ? item.old_price : item.was_price);
+    var oldPrice = rawOldPrice != null ? priceValue(rawOldPrice) : null;
+    var sizes = (Array.isArray(item && item.sizes) ? item.sizes : []).map(normalizeSize).filter(function (size) { return size.label; });
+    var price = priceValue(item && item.price);
+    var route = routeSlug(item) || (sourceSlug(item) || slugify(title)) + (id ? "-" + id : "");
+    var category = normalizeCategory(item && (item.categoryPath || item.category_path || item.category || item.categories));
+    var sale = Boolean(item && (item.isSale || item.is_sale || item.sale)) || Boolean(oldPrice && oldPrice > price);
+    var inStock = item && item.inStock != null ? Boolean(item.inStock) : !(item && (item.in_stock === false || item.status === "out_of_stock"));
+    return {
+      id: id,
+      sourceIndex: Number(index || 0),
+      sortId: Number(String(id || "").replace(/[^0-9.]/g, "")) || Number(index || 0),
+      sku: String((item && (item.sku || item.product_id || item.productId || item.id)) || ""),
+      routeSlug: route,
+      brand: String((item && item.brand) || ""),
+      title: title,
+      categoryPath: category,
+      price: price,
+      oldPrice: oldPrice,
+      currency: String((item && item.currency) || "GBP"),
+      isSale: sale,
+      inStock: inStock,
+      sizesCount: sizes.filter(function (size) { return size.available !== false; }).length,
+      image: firstImage(item),
+    };
+  }
+
+  function loadProducts() {
+    var api = backend();
+    if (api && typeof api.isConfigured === "function" && api.isConfigured() && typeof api.getCatalog === "function") {
+      return api.getCatalog().catch(function (error) {
+        console.warn("Catalog backend unavailable, using local catalog file:", error);
+        return loadJson(PRODUCTS_DATA_PATH);
+      }).then(function (payload) {
+        return normalizeProductPayload(payload).map(normalizeProduct);
+      });
+    }
+    return loadJson(PRODUCTS_DATA_PATH).then(function (payload) {
+      return normalizeProductPayload(payload).map(normalizeProduct);
+    });
+  }
+
+  function unique(items) {
+    var seen = {};
+    return items.filter(function (item) {
+      var key = String(item || "");
+      if (!key || seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  function detectCurrency() {
+    return (state.orders[0] && state.orders[0].currency) || (state.products[0] && state.products[0].currency) || "GBP";
+  }
+
+  function renderDashboard() {
+    if (!$("stat-products")) return;
+    var productCount = state.products.length;
+    var orderCount = state.orders.length;
+    var revenue = state.orders.reduce(function (sum, order) { return sum + Number(order.total || 0); }, 0);
+    var pendingOrders = state.orders.filter(function (order) { return order.status === "payment_pending"; }).length;
+    var saleProducts = state.products.filter(function (product) { return product.isSale; }).length;
+    var outProducts = state.products.filter(function (product) { return !product.inStock; }).length;
+    var brands = unique(state.products.map(function (product) { return product.brand; })).length;
+    var categories = unique(state.products.map(function (product) { return product.categoryPath; })).length;
+
+    $("stat-products").textContent = String(productCount);
+    $("stat-orders").textContent = String(orderCount);
+    $("stat-revenue").textContent = formatCurrency(revenue, detectCurrency());
+    $("stat-new-orders").textContent = String(pendingOrders);
+    $("stat-sale-products").textContent = String(saleProducts);
+    $("stat-out-products").textContent = String(outProducts);
+    $("stat-brands").textContent = String(brands);
+    $("stat-categories").textContent = String(categories);
+    renderDashboardOrders();
+    renderDashboardCatalog({ productCount: productCount, saleProducts: saleProducts, outProducts: outProducts, brands: brands, categories: categories });
+  }
+
+  function sortOrdersNewest(a, b) {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  }
+
+  function renderDashboardOrders() {
+    var target = $("dashboard-orders");
+    var empty = $("dashboard-orders-empty");
+    if (!target || !empty) return;
+    var recent = state.orders.slice().sort(sortOrdersNewest).slice(0, 5);
+    empty.classList.toggle("hidden", recent.length !== 0);
+    target.innerHTML = recent.map(function (order) {
+      return '<div class="flex items-start justify-between gap-3 px-4 py-3"><div class="min-w-0"><div class="truncate text-sm font-medium">' + escapeHtml(order.orderId) + '</div><div class="truncate text-xs text-gray-500">' + escapeHtml(customerName(order)) + ' - ' + escapeHtml(order.sku || "-") + '</div></div><div class="shrink-0 text-right"><div class="text-sm font-semibold">' + escapeHtml(formatCurrency(order.total, order.currency)) + '</div><span class="mt-1 inline-block rounded-full px-2 py-1 text-xs font-medium ' + statusBadgeClass(order.status) + '">' + statusLabel(order.status) + '</span></div></div>';
+    }).join("");
+  }
+
+  function renderDashboardCatalog(metrics) {
+    var target = $("dashboard-catalog");
+    if (!target) return;
+    var rows = [
+      ["Products Loaded", metrics.productCount],
+      ["Sale Products", metrics.saleProducts],
+      ["Out Of Stock", metrics.outProducts],
+      ["Unique Brands", metrics.brands],
+      ["Unique Categories", metrics.categories],
+      ["Backend Orders", state.orders.length],
+    ];
+    target.innerHTML = rows.map(function (row) {
+      return '<div class="rounded-lg border border-gray-100 p-3"><div class="text-xs font-medium uppercase tracking-wide text-gray-500">' + escapeHtml(row[0]) + '</div><div class="mt-1 text-lg font-semibold">' + escapeHtml(String(row[1])) + '</div></div>';
+    }).join("");
+  }
+
+  function applyOrderFilters() {
+    var query = normalizeSearch(state.ordersSearch);
+    state.filteredOrders = state.orders.filter(function (order) {
+      if (state.ordersStatus !== "all" && order.status !== state.ordersStatus) return false;
+      if (!query) return true;
+      return [order.orderId, order.customer.email, order.customer.phone, order.sku, order.title, order.routeSlug].join(" ").toLowerCase().indexOf(query) !== -1;
+    }).sort(sortOrdersNewest);
+    renderOrders();
+  }
+
+  function renderOrders() {
+    var body = $("orders-body");
+    var empty = $("orders-empty");
+    if (!body || !empty) return;
+    $("orders-count-label").textContent = state.filteredOrders.length + " of " + state.orders.length + " orders";
+    empty.classList.toggle("hidden", state.filteredOrders.length !== 0);
+    body.innerHTML = state.filteredOrders.map(function (order) {
+      var customer = order.customer || {};
+      return [
+        '<tr class="border-b border-gray-100 align-top hover:bg-gray-50">',
+        '<td class="px-4 py-3 font-medium text-gray-900">' + escapeHtml(order.orderId || "-") + '</td>',
+        '<td class="px-4 py-3 text-xs text-gray-500">' + escapeHtml(formatDate(order.createdAt)) + '</td>',
+        '<td class="px-4 py-3"><select data-order-status="' + escapeHtml(order.id) + '" class="rounded-full px-2.5 py-1.5 text-xs font-medium border-0 ' + statusBadgeClass(order.status) + '">' + statusOptions(order.status) + '</select></td>',
+        '<td class="px-4 py-3 font-medium">' + escapeHtml(customerName(order)) + '</td>',
+        '<td class="px-4 py-3">' + escapeHtml(customer.email || "-") + '</td>',
+        '<td class="px-4 py-3">' + escapeHtml(customer.phone || "-") + '</td>',
+        '<td class="px-4 py-3"><div class="max-w-[280px] clamp-2 font-medium">' + escapeHtml(order.title || "-") + '</div><div class="text-xs text-gray-500">Payment: ' + escapeHtml(order.paymentStatus.replace(/_/g, " ")) + '</div></td>',
+        '<td class="px-4 py-3">' + escapeHtml(order.brand || "-") + '</td>',
+        '<td class="px-4 py-3 font-mono text-xs">' + escapeHtml(order.sku || "-") + '</td>',
+        '<td class="px-4 py-3"><div class="max-w-[260px] truncate font-mono text-xs" title="' + escapeHtml(order.routeSlug) + '">' + escapeHtml(order.routeSlug || "-") + '</div></td>',
+        '<td class="px-4 py-3">' + escapeHtml(order.size || "-") + '</td>',
+        '<td class="px-4 py-3">' + escapeHtml(String(order.quantity || 1)) + '</td>',
+        '<td class="px-4 py-3 font-semibold">' + escapeHtml(formatCurrency(order.total, order.currency)) + '</td>',
+        '<td class="px-4 py-3">' + escapeHtml(order.currency || "") + '</td>',
+        '<td class="px-4 py-3"><button type="button" data-view-order="' + escapeHtml(order.id) + '" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium hover:bg-gray-50">Details</button></td>',
+        '</tr>',
+      ].join("");
+    }).join("");
+  }
+
+  function sortProducts(a, b) {
+    if (state.productsSort === "price-asc") return a.price - b.price || a.title.localeCompare(b.title);
+    if (state.productsSort === "price-desc") return b.price - a.price || a.title.localeCompare(b.title);
+    if (state.productsSort === "brand-asc") return a.brand.localeCompare(b.brand) || a.title.localeCompare(b.title);
+    if (state.productsSort === "title-asc") return a.title.localeCompare(b.title) || a.brand.localeCompare(b.brand);
+    return b.sortId - a.sortId || b.sourceIndex - a.sourceIndex;
+  }
+
+  function applyProductFilters(resetPage) {
+    var query = normalizeSearch(state.productsSearch);
+    if (resetPage) state.productsPage = 1;
+    state.filteredProducts = state.products.filter(function (product) {
+      if (state.productsBrand !== "all" && product.brand !== state.productsBrand) return false;
+      if (state.productsCategory !== "all" && product.categoryPath !== state.productsCategory) return false;
+      if (state.productsSale === "sale" && !product.isSale) return false;
+      if (state.productsSale === "regular" && product.isSale) return false;
+      if (state.productsStock === "in" && !product.inStock) return false;
+      if (state.productsStock === "out" && product.inStock) return false;
+      if (!query) return true;
+      return [product.title, product.brand, product.sku, product.routeSlug].join(" ").toLowerCase().indexOf(query) !== -1;
+    });
+    state.filteredProducts.sort(sortProducts);
+    renderProducts();
+  }
+
+  function renderProducts() {
+    var body = $("products-body");
+    var empty = $("products-empty");
+    if (!body || !empty) return;
+    var total = state.filteredProducts.length;
+    var maxPage = Math.max(1, Math.ceil(total / state.productsPageSize));
+    state.productsPage = Math.min(Math.max(1, state.productsPage), maxPage);
+    var start = total ? (state.productsPage - 1) * state.productsPageSize : 0;
+    var end = Math.min(start + state.productsPageSize, total);
+    var pageItems = state.filteredProducts.slice(start, end);
+    $("products-count-label").textContent = total + " of " + state.products.length + " products";
+    $("products-range-label").textContent = total ? "Showing " + (start + 1) + "-" + end + " of " + total : "No products";
+    $("products-page-label").textContent = "Page " + state.productsPage + " of " + maxPage;
+    $("products-page-prev").disabled = state.productsPage <= 1;
+    $("products-page-next").disabled = state.productsPage >= maxPage;
+    empty.classList.toggle("hidden", total !== 0);
+    body.innerHTML = pageItems.map(function (product) {
+      var openHref = "../product/index.html?slug=" + encodeURIComponent(product.routeSlug);
+      var oldPrice = product.oldPrice && product.oldPrice > product.price ? formatCurrency(product.oldPrice, product.currency) : "-";
+      return [
+        '<tr class="border-b border-gray-100 align-top hover:bg-gray-50">',
+        '<td class="px-4 py-3"><img src="' + escapeHtml(product.image) + '" alt="' + escapeHtml(product.title) + '" class="h-12 w-12 rounded-lg border border-gray-100 bg-white object-contain p-1" loading="lazy" /></td>',
+        '<td class="px-4 py-3"><div class="max-w-[280px] clamp-2 font-medium">' + escapeHtml(product.title) + '</div><div class="text-xs text-gray-500">' + escapeHtml(product.brand || "-") + '</div></td>',
+        '<td class="px-4 py-3 font-mono text-xs">' + escapeHtml(product.sku || "-") + '</td>',
+        '<td class="px-4 py-3"><div class="max-w-[280px] truncate font-mono text-xs" title="' + escapeHtml(product.routeSlug) + '">' + escapeHtml(product.routeSlug || "-") + '</div></td>',
+        '<td class="px-4 py-3"><div class="max-w-[240px] text-xs text-gray-600">' + escapeHtml(product.categoryPath || "-") + '</div></td>',
+        '<td class="px-4 py-3 font-semibold">' + escapeHtml(formatCurrency(product.price, product.currency)) + '</td>',
+        '<td class="px-4 py-3 text-xs text-gray-500">' + escapeHtml(oldPrice) + '</td>',
+        '<td class="px-4 py-3">' + (product.isSale ? '<span class="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">Sale</span>' : '<span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">No</span>') + '</td>',
+        '<td class="px-4 py-3">' + (product.inStock ? '<span class="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">In stock</span>' : '<span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">Out</span>') + '</td>',
+        '<td class="px-4 py-3">' + escapeHtml(String(product.sizesCount || 0)) + '</td>',
+        '<td class="px-4 py-3"><a href="' + openHref + '" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium hover:bg-gray-50">Open Product</a></td>',
+        '</tr>',
+      ].join("");
+    }).join("");
+  }
+
+  function populateProductFilters() {
+    var brands = unique(state.products.map(function (product) { return product.brand; })).sort();
+    var categories = unique(state.products.map(function (product) { return product.categoryPath; })).sort();
+    $("products-brand-filter").innerHTML = '<option value="all">All brands</option>' + brands.map(function (brand) {
+      return '<option value="' + escapeHtml(brand) + '">' + escapeHtml(brand) + '</option>';
+    }).join("");
+    $("products-category-filter").innerHTML = '<option value="all">All categories</option>' + categories.map(function (category) {
+      return '<option value="' + escapeHtml(category) + '">' + escapeHtml(category) + '</option>';
+    }).join("");
+  }
+
+  function renderCustomers() {
+    var body = $("customers-body");
+    var empty = $("customers-empty");
+    if (!body || !empty) return;
+    $("customers-count-label").textContent = state.customers.length + " customers from backend orders";
+    empty.classList.toggle("hidden", state.customers.length !== 0);
+    body.innerHTML = state.customers.map(function (customer) {
+      return '<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="px-4 py-3">' + escapeHtml(customer.email || "-") + '</td><td class="px-4 py-3 font-medium">' + escapeHtml(customer.name || "-") + '</td><td class="px-4 py-3">' + escapeHtml(customer.phone || "-") + '</td><td class="px-4 py-3">' + escapeHtml(String(customer.ordersCount || 0)) + '</td><td class="px-4 py-3 font-semibold">' + escapeHtml(formatCurrency(customer.totalSpent, customer.currency)) + '</td></tr>';
+    }).join("");
+  }
+
+  function switchTab(tabName) {
+    if (ADMIN_TABS.indexOf(tabName) === -1) return;
+    state.currentTab = tabName;
+    ADMIN_TABS.forEach(function (name) {
+      $(name + "-section").classList.toggle("hidden", name !== tabName);
+      $(name + "-tab").className = name === tabName ? NAV_ACTIVE_CLASS : NAV_INACTIVE_CLASS;
+    });
+  }
+
+  function findOrder(id) {
+    return state.orders.find(function (order) { return order.id === id; });
+  }
+
+  function detailRow(label, value) {
+    return '<div class="rounded-lg border border-gray-100 p-3"><dt class="text-xs font-medium uppercase tracking-wide text-gray-500">' + escapeHtml(label) + '</dt><dd class="mt-1 break-words text-sm text-gray-900">' + escapeHtml(value || "-") + '</dd></div>';
+  }
+
+  function openOrderDetail(orderId) {
+    var order = findOrder(orderId);
+    if (!order) return;
+    state.currentOrderId = orderId;
+    var customer = order.customer || {};
+    $("modal-order-id").textContent = order.orderId;
+    $("modal-status-select").value = order.status;
+    $("order-detail-body").innerHTML =
+      '<div class="space-y-5">' +
+      '<div><h3 class="mb-3 text-sm font-semibold">Customer</h3><dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">' +
+      detailRow("Name", customerName(order)) + detailRow("Email", customer.email) + detailRow("Phone", customer.phone) + detailRow("Address", [customer.address, customer.city, customer.postcode, customer.country].filter(Boolean).join(", ")) +
+      '</dl></div>' +
+      '<div><h3 class="mb-3 text-sm font-semibold">Product</h3>' + (order.image ? '<img src="' + escapeHtml(order.image) + '" alt="' + escapeHtml(order.title || "Product") + '" class="mb-3 h-20 w-20 rounded-lg border border-gray-100 object-contain p-1" />' : "") + '<dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">' +
+      detailRow("Title", order.title) + detailRow("Brand", order.brand) + detailRow("SKU", order.sku) + detailRow("Route", order.routeSlug) + detailRow("Size", order.size) + detailRow("Quantity", String(order.quantity || 1)) + detailRow("Unit Price", formatCurrency(order.unitPrice, order.currency)) + detailRow("Subtotal", formatCurrency(order.subtotal, order.currency)) + detailRow("Shipping", formatCurrency(order.shipping, order.currency)) + detailRow("Total", formatCurrency(order.total, order.currency)) + detailRow("Payment", order.paymentStatus.replace(/_/g, " ")) + detailRow("Created", formatDate(order.createdAt)) +
+      '</dl></div></div>';
+    $("order-modal").classList.remove("hidden");
+    $("order-modal").classList.add("flex");
+  }
+
+  function closeOrderDetail() {
+    $("order-modal").classList.add("hidden");
+    $("order-modal").classList.remove("flex");
+    state.currentOrderId = "";
+  }
+
+  function downloadFile(filename, content, type) {
+    var blob = new Blob([content], { type: type });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+  }
+
+  function exportOrdersJson() {
+    downloadFile("shop-orders.json", JSON.stringify(state.filteredOrders, null, 2), "application/json");
+  }
+
+  function exportOrdersCsv() {
+    var headers = ["orderId", "createdAt", "status", "paymentStatus", "customerName", "email", "phone", "title", "brand", "sku", "routeSlug", "size", "quantity", "total", "currency"];
+    var rows = state.filteredOrders.map(function (order) {
+      var customer = order.customer || {};
+      return [order.orderId, order.createdAt, order.status, order.paymentStatus, customerName(order), customer.email, customer.phone, order.title, order.brand, order.sku, order.routeSlug, order.size, order.quantity, order.total, order.currency].map(escapeCsv).join(",");
+    });
+    downloadFile("shop-orders.csv", headers.map(escapeCsv).join(",") + "\n" + rows.join("\n"), "text/csv");
+  }
+
+  async function loadAll() {
     try {
-      if (!window.supabase || !window.supabase.createClient) {
-        throw new Error('Supabase SDK failed to load.');
-      }
-      if (!sb) initSupabase();
-      state.adminStatuses = {};
-      state.confirmations = loadConfirmationMap();
-      resetLegacySentEmailMap();
-      state.sentEmails = loadSentEmailMap();
-      state.leads         = await loadLeads();
-      await syncLegacyStatusesToDatabase();
-      state.filteredLeads = state.leads.slice();
-      applyFilters();
-      if (loading) loading.style.display = 'none';
-      if (wrapper) wrapper.style.display = 'block';
-    } catch (e) {
-      if (loading)  loading.style.display  = 'none';
-      if (errorDiv) errorDiv.style.display = 'flex';
-      if (errorTxt) errorTxt.textContent   = e.message || 'Ошибка загрузки';
+      await loadOrders();
+    } catch (error) {
+      state.orders = [];
+      state.filteredOrders = [];
+      $("orders-count-label").textContent = "Backend orders unavailable";
+      $("orders-empty").textContent = error.message || "Unable to load backend orders.";
+      $("orders-empty").classList.remove("hidden");
+      renderDashboard();
     }
+    try {
+      await loadCustomers();
+    } catch (_error) {
+      state.customers = [];
+      renderCustomers();
+    }
+    loadProducts()
+      .then(function (products) {
+        state.products = products;
+        $("products-error").classList.add("hidden");
+        populateProductFilters();
+        applyProductFilters(true);
+        renderDashboard();
+      })
+      .catch(function (error) {
+        state.products = [];
+        state.filteredProducts = [];
+        $("products-error").textContent = error.message || "Could not load products.";
+        $("products-error").classList.remove("hidden");
+        renderProducts();
+        renderDashboard();
+      });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // INIT
-  // ═══════════════════════════════════════════════════════════════════════
-  function init() {
-    state.adminStatuses = {};
-    state.confirmations = loadConfirmationMap();
-    resetLegacySentEmailMap();
-    state.sentEmails = loadSentEmailMap();
-
-    // ── Login ──────────────────────────────────────────────────────────
-    var loginPass  = document.getElementById('admin-pass');
-    var loginBtn   = document.getElementById('login-btn');
-    var loginError = document.getElementById('login-error');
-
-    function tryLogin() {
-      if (authenticate(loginPass.value)) {
+  function bindEvents() {
+    $("login-btn").addEventListener("click", async function () {
+      $("login-error").classList.add("hidden");
+      $("login-btn").disabled = true;
+      $("login-btn").textContent = "Signing in...";
+      try {
+        await backend().adminLogin($("admin-email").value, $("admin-pass").value);
         showAdmin();
-        loadAndRender();
-      } else {
-        loginError.textContent = 'Неверный пароль';
-        loginError.classList.remove('hidden');
-        loginPass.value = '';
-        loginPass.focus();
+      } catch (error) {
+        $("login-error").textContent = error.message || "Admin sign-in failed.";
+        $("login-error").classList.remove("hidden");
+      } finally {
+        $("login-btn").disabled = false;
+        $("login-btn").textContent = "Sign in";
       }
+    });
+
+    ["admin-email", "admin-pass"].forEach(function (id) {
+      $(id).addEventListener("keydown", function (event) {
+        if (event.key === "Enter") $("login-btn").click();
+      });
+    });
+
+    $("logout-btn").addEventListener("click", async function () {
+      await backend().adminLogout();
+      showLogin();
+    });
+    $("refresh-btn").addEventListener("click", loadAll);
+
+    ADMIN_TABS.forEach(function (tabName) {
+      $(tabName + "-tab").addEventListener("click", function () { switchTab(tabName); });
+    });
+
+    $("orders-search").addEventListener("input", function (event) {
+      state.ordersSearch = event.target.value.trim();
+      applyOrderFilters();
+    });
+    $("orders-status-filter").addEventListener("change", function (event) {
+      state.ordersStatus = event.target.value;
+      applyOrderFilters();
+    });
+    $("orders-body").addEventListener("change", async function (event) {
+      var select = event.target.closest("[data-order-status]");
+      if (!select) return;
+      select.disabled = true;
+      try {
+        await updateOrderStatus(select.getAttribute("data-order-status"), select.value);
+      } catch (error) {
+        alert(error.message || "Unable to update status.");
+        await loadOrders();
+      }
+    });
+    $("orders-body").addEventListener("click", function (event) {
+      var button = event.target.closest("[data-view-order]");
+      if (button) openOrderDetail(button.getAttribute("data-view-order"));
+    });
+
+    $("export-orders-json").addEventListener("click", exportOrdersJson);
+    $("export-orders-csv").addEventListener("click", exportOrdersCsv);
+
+    $("products-search").addEventListener("input", function (event) { state.productsSearch = event.target.value.trim(); applyProductFilters(true); });
+    $("products-brand-filter").addEventListener("change", function (event) { state.productsBrand = event.target.value; applyProductFilters(true); });
+    $("products-category-filter").addEventListener("change", function (event) { state.productsCategory = event.target.value; applyProductFilters(true); });
+    $("products-sale-filter").addEventListener("change", function (event) { state.productsSale = event.target.value; applyProductFilters(true); });
+    $("products-stock-filter").addEventListener("change", function (event) { state.productsStock = event.target.value; applyProductFilters(true); });
+    $("products-sort").addEventListener("change", function (event) { state.productsSort = event.target.value; applyProductFilters(true); });
+    $("products-page-size").addEventListener("change", function (event) { state.productsPageSize = Number(event.target.value || 25); applyProductFilters(true); });
+    $("products-page-prev").addEventListener("click", function () { state.productsPage -= 1; renderProducts(); });
+    $("products-page-next").addEventListener("click", function () { state.productsPage += 1; renderProducts(); });
+
+    $("close-order-modal").addEventListener("click", closeOrderDetail);
+    $("order-modal").addEventListener("click", function (event) {
+      if (event.target === $("order-modal")) closeOrderDetail();
+    });
+    $("save-modal-status").addEventListener("click", async function () {
+      if (!state.currentOrderId) return;
+      await updateOrderStatus(state.currentOrderId, $("modal-status-select").value);
+      closeOrderDetail();
+    });
+    window.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeOrderDetail();
+    });
+  }
+
+  async function init() {
+    bindEvents();
+    switchTab("dashboard");
+    if (!window.HipStoreBackend || !window.HipStoreBackend.isConfigured()) {
+      showLogin("Supabase is not configured. Add site-config.js values before admin access.");
+      return;
     }
-
-    if (loginBtn)  loginBtn.addEventListener('click', tryLogin);
-    if (loginPass) loginPass.addEventListener('keydown', function (e) { if (e.key === 'Enter') tryLogin(); });
-
-    // ── Logout / Refresh ───────────────────────────────────────────────
-    on('logout-btn',  'click', logout);
-    on('refresh-btn', 'click', loadAndRender);
-
-    // ── Search ─────────────────────────────────────────────────────────
-    var searchEl = document.getElementById('search-input');
-    if (searchEl) {
-      searchEl.value = '';
-      searchEl.addEventListener('input', function () {
-        state.searchQuery = searchEl.value;
-        applyFilters();
-      });
-    }
-
-    // ── Filter tabs ────────────────────────────────────────────────────
-    document.querySelectorAll('[data-filter-status]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.filterStatus = btn.dataset.filterStatus;
-        document.querySelectorAll('[data-filter-status]').forEach(function (b) {
-          b.className = b.className.replace('tab-active', 'tab-inactive');
-        });
-        btn.className = btn.className.replace('tab-inactive', 'tab-active');
-        applyFilters();
-      });
-    });
-
-    // ── Modal: bank ────────────────────────────────────────────────────
-    on('close-bank-modal',   'click', closeBankModal);
-    on('close-bank-modal-2', 'click', closeBankModal);
-    on('send-email-btn',     'click', handleSendInvoice);
-    document.querySelectorAll('[data-payment-type]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        if (btn.disabled) return;
-        switchPaymentType(btn.dataset.paymentType);
-      });
-    });
-
-    // ── Modal: win ─────────────────────────────────────────────────────
-    on('close-win-modal',   'click', closeWinModal);
-    on('close-win-modal-2', 'click', closeWinModal);
-    on('send-win-btn',      'click', handleSendWinOnly);
-    on('close-draft-modal',   'click', closeDraftModal);
-    on('close-draft-modal-2', 'click', closeDraftModal);
-    on('open-draft-mail-btn', 'click', openDraftInMailApp);
-    on('download-draft-eml-btn', 'click', downloadDraftEml);
-    on('copy-draft-all-btn',  'click', copyDraftAll);
-    on('copy-draft-html-btn', 'click', copyDraftHtml);
-
-    // Close modals on backdrop click
-    document.getElementById('modal-bank').addEventListener('click', function (e) {
-      if (e.target === this) closeBankModal();
-    });
-    document.getElementById('modal-win').addEventListener('click', function (e) {
-      if (e.target === this) closeWinModal();
-    });
-    document.getElementById('modal-draft').addEventListener('click', function (e) {
-      if (e.target === this) closeDraftModal();
-    });
-
-    // ── Auth check ─────────────────────────────────────────────────────
-    if (isAuthenticated()) {
+    try {
+      await backend().checkAdmin();
       showAdmin();
-      loadAndRender();
-    } else {
+    } catch (_error) {
       showLogin();
     }
   }
 
-  function on(id, event, handler) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener(event, handler);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  init();
 })();

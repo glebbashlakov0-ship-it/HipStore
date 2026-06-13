@@ -1,696 +1,145 @@
 [
   {
-    "id": "7cd68ab6-447d-4f1e-8e5f-e289b5f1db7c",
-    "name": "Bags & Fashion",
-    "slug": "bags-fashion",
-    "description": "Discover your next Hermès bag, including the always coveted Birkin bag or the forever classic Hermès Kelly bag. Shop Chanel bags both modern and vintage, or a Louis Vuitton purse in the classic monogram.",
+    "id": "mens",
+    "slug": "mens",
+    "name": "Mens",
+    "description": "Shop mens footwear, clothing, and accessories.",
     "parent_id": null,
     "is_active": true,
+    "display_order": 1,
     "category_translations": [
       {
-        "name": "Sac",
-        "language": "fr",
-        "description": "Découvrez votre prochaine pochette Hermès, y compris la toujours convoitée pochette Birkin ou la classique éternelle pochette Hermès Kelly. Achetez des sacs Chanel, à la fois modernes et vintage, ou une pochette Louis Vuitton dans le classique monogramme."
-      },
-      {
-        "name": "Bags & Fashion",
         "language": "en",
-        "description": "Discover your next Hermès bag, including the always coveted Birkin bag or the forever classic Hermès Kelly bag. Shop Chanel bags both modern and vintage, or a Louis Vuitton purse in the classic monogram."
-      },
-      {
-        "name": "Kabelky",
-        "language": "cs",
-        "description": "<em>Odhalte své další kabelky od Hermès, včetně vždy vyhledávané kabelky Birkin nebo věčně klasické kabelky Hermès Kelly.</em> \n <br>\n <strong>Nakupujte kabelky Chanel, ať už moderní nebo vintage, nebo kabelku Louis Vuitton v klasickém monogramu.</strong>"
-      },
-      {
-        "name": "Bolsa",
-        "language": "es",
-        "description": "Descubre tu próxima bolsa de Hermès, incluyendo la siempre codiciada bolsa Birkin o la clásica bolsa Hermès Kelly para siempre. Compra bolsas Chanel, tanto modernas como vintage, o una bolsa Louis Vuitton en el clásico monograma."
-      },
-      {
-        "name": "Taschen",
-        "language": "de",
-        "description": "Entdecken Sie Ihre nächste Hermès-Tasche, einschließlich der immer begehrten Birkin-Tasche oder der ewigen Klassiker Hermès Kelly-Tasche. Kaufen Sie Chanel-Taschen sowohl modern als auch vintage, oder eine Louis Vuitton-Tasche im klassischen Monogramm."
-      },
-      {
-        "name": "Tasjer",
-        "language": "no",
-        "description": "Oppdag din neste Hermès-behandling, inkludert den alltid ettertraktede Birkin-behandling eller den evige klassiske Hermès Kelly-behandling.  Kjøp Chanel-behandling både moderne og vintage, eller en Louis Vuitton-håndtaske i klassisk monogram."
-      },
-      {
-        "name": "Tas",
-        "language": "sv",
-        "description": "Upptäck din nästa Hermès-väska, inklusive den alltid eftertraktade Birkin-väskan eller den eviga klassiska Hermès Kelly-väskan. Handla Chanel-väskor både moderna och vintage, eller en Louis Vuitton-handvärk i det klassiska monogrammet."
-      },
-      {
-        "name": "Kemer",
-        "language": "tr",
-        "description": "Keşfediniz bir sonraki Hermès çantasını, daima arzu edilen Birkin çantasını veya sonsuz klasik Hermès Kelly çantasını. Chanel çantalarını hem modern hem de vintage olarak satın alın, ya da klasik monogramda Louis Vuitton bir kemer."
-      },
-      {
-        "name": "Torby",
-        "language": "pl",
-        "description": "Odkryj swoją następną torebkę Hermès, w tym zawsze pożądany Birkin lub klasyka na zawsze Hermès Kelly. Kupuj torebki Chanel zarówno nowoczesne jak i w stylu vintage, lub torebkę Louis Vuitton w klasycznym monogramie."
-      },
-      {
-        "name": "Taske",
-        "language": "da",
-        "description": "Opdag din næste Hermès taske, herunder den altid eftertragte Birkin taske eller den evigt klassiske Hermès Kelly taske. Køb Chanel-taske både moderne og vintage, eller en Louis Vuitton-håndtaske i det klassiske monogram."
-      },
-      {
-        "name": "Valize",
-        "language": "ro",
-        "description": "Descoperă următorul său sac Hermès, inclusiv sacul Birkin, mereu dorit, sau sacul Hermès Kelly, clasic pentru totdeauna. Cumpărați saci Chanel, atât moderni, cât și vechi, sau o purică Louis Vuitton în monograma clasică."
-      },
-      {
-        "name": "حقيبة",
-        "language": "ar",
-        "description": "اكتشف حقيبتك التالية من ماركة هرمس، بما في ذلك الحقيبة المشهورة دائمًا بيركين أو الحقيبة الكلاسيكية دائمًا هرمس كيلي. استمتع بمتجر حقيبات تشاليلي الحديثة والقديمة، أو حقيبة لويس فيتون في الطراز الكلاسيكي للمونوغرام."
-      },
-      {
-        "name": "袋",
-        "language": "zh",
-        "description": "<p>发现您的下一个赫尔梅斯包，包括永远受人追捧的伯金包或永远经典的赫尔梅斯凯利包。 </p><p>购买香奈儿包，现代和经典的，或者路易威登包，经典的格子图案。</p>"
-      },
-      {
-        "name": "Tassen",
-        "language": "nl",
-        "description": "Ontdek uw volgende Hermès tas, inclusief de altijd begeerde Birkin tas of de eeuwige klassieke Hermès Kelly tas. Koop Chanel tassen zowel modern als vintage, of een Louis Vuitton tas in het klassieke monogram."
-      },
-      {
-        "name": "Bolsas",
-        "language": "pt",
-        "description": "Descubra sua próxima bolsa Hermès, incluindo a sempre cobiçada bolsa Birkin ou a clássica e eterna bolsa Hermès Kelly. Compre bolsas Chanel, tanto modernas quanto vintage, ou uma bolsa Louis Vuitton no clássico monograma."
-      },
-      {
-        "name": "Borsa",
-        "language": "it",
-        "description": "Scopri la tua prossima borsa Hermès, inclusa la sempre ambita borsa Birkin o la classica e sempre attuale borsa Hermès Kelly. Acquista borse Chanel, sia moderne che d'epoca, o una borsa Louis Vuitton con il classico monogramma."
+        "name": "Mens",
+        "description": "Shop mens footwear, clothing, and accessories."
       }
     ]
   },
   {
-    "id": "020c7218-a351-4d29-ac3b-6bd0c2f57232",
-    "name": "Collectibles & More",
-    "slug": "collectibles-more",
-    "description": null,
+    "id": "womens",
+    "slug": "womens",
+    "name": "Womens",
+    "description": "Shop womens footwear, clothing, and accessories.",
     "parent_id": null,
     "is_active": true,
+    "display_order": 2,
     "category_translations": [
       {
-        "name": "Collectibles & Meer",
-        "language": "nl",
-        "description": null
-      },
-      {
-        "name": "Colecciones & Más",
-        "language": "es",
-        "description": null
-      },
-      {
-        "name": "Objets de collection & Plus",
-        "language": "fr",
-        "description": null
-      },
-      {
-        "name": "Zbiory & Więcej",
-        "language": "pl",
-        "description": null
-      },
-      {
-        "name": "Collezioni & Altro",
-        "language": "it",
-        "description": null
-      },
-      {
-        "name": "Sammelstücke & Mehr",
-        "language": "de",
-        "description": null
-      },
-      {
-        "name": "Samlinger & Mer",
-        "language": "no",
-        "description": null
-      },
-      {
-        "name": "收藏品 & 更多",
-        "language": "zh",
-        "description": null
-      },
-      {
-        "name": "Samlinger & Mere",
-        "language": "da",
-        "description": null
-      },
-      {
-        "name": "Koleksiyonlar & Daha Fazla",
-        "language": "tr",
-        "description": null
-      },
-      {
-        "name": "Colecții & Mai Multe",
-        "language": "ro",
-        "description": null
-      },
-      {
-        "name": "الأمثلة & أكثر",
-        "language": "ar",
-        "description": null
-      },
-      {
-        "name": "Sbírky & Více",
-        "language": "cs",
-        "description": null
-      },
-      {
-        "name": "Coleções & Mais",
-        "language": "pt",
-        "description": null
-      },
-      {
-        "name": "Samlingsobjekt & Mer",
-        "language": "sv",
-        "description": null
-      }
-    ]
-  },
-  {
-    "id": "4977e750-606e-4790-8eff-3bc69173ec6b",
-    "name": "Fine Art",
-    "slug": "fine-art",
-    "description": null,
-    "parent_id": null,
-    "is_active": true,
-    "category_translations": [
-      {
-        "name": "Güzel Sanatlar",
-        "language": "tr",
-        "description": null
-      },
-      {
-        "name": "Kunst",
-        "language": "de",
-        "description": null
-      },
-      {
-        "name": "Beaux-Arts",
-        "language": "fr",
-        "description": null
-      },
-      {
-        "name": "Sztuka",
-        "language": "pl",
-        "description": null
-      },
-      {
-        "name": "Kunst",
-        "language": "da",
-        "description": null
-      },
-      {
-        "name": "Schilderijen en Kunst",
-        "language": "nl",
-        "description": null
-      },
-      {
-        "name": "美术",
-        "language": "zh",
-        "description": null
-      },
-      {
-        "name": "الفنون الجميلة",
-        "language": "ar",
-        "description": null
-      },
-      {
-        "name": "Arte Frumoasă",
-        "language": "ro",
-        "description": null
-      },
-      {
-        "name": "Umělecké dílo",
-        "language": "cs",
-        "description": null
-      },
-      {
-        "name": "Arte",
-        "language": "es",
-        "description": null
-      },
-      {
-        "name": "Arte",
-        "language": "pt",
-        "description": null
-      },
-      {
-        "name": "Arte",
-        "language": "it",
-        "description": null
-      },
-      {
-        "name": "Konst",
-        "language": "sv",
-        "description": null
-      },
-      {
-        "name": "Kunst",
-        "language": "no",
-        "description": null
-      }
-    ]
-  },
-  {
-    "id": "b2f2facb-9373-42d2-a74d-e877ceec2cff",
-    "name": "Furniture & Decor",
-    "slug": "furniture-decor",
-    "description": null,
-    "parent_id": null,
-    "is_active": true,
-    "category_translations": [
-      {
-        "name": "أثاث وديكور",
-        "language": "ar",
-        "description": null
-      },
-      {
-        "name": "家具 & 装饰",
-        "language": "zh",
-        "description": null
-      },
-      {
-        "name": "Meubles & Décoration",
-        "language": "fr",
-        "description": null
-      },
-      {
-        "name": "Arredamento & Decorazione",
-        "language": "it",
-        "description": null
-      },
-      {
-        "name": "Møbler & Dekorasjon",
-        "language": "no",
-        "description": null
-      },
-      {
-        "name": "Meubelen & Decor",
-        "language": "nl",
-        "description": null
-      },
-      {
-        "name": "Nábytek & Dekorace",
-        "language": "cs",
-        "description": null
-      },
-      {
-        "name": "Møbler & Dekoration",
-        "language": "da",
-        "description": null
-      },
-      {
-        "name": "Mobilya & Dekor",
-        "language": "tr",
-        "description": null
-      },
-      {
-        "name": "Möbler & Dekoration",
-        "language": "sv",
-        "description": null
-      },
-      {
-        "name": "Mobila & Decorație",
-        "language": "ro",
-        "description": null
-      },
-      {
-        "name": "Möbel & Dekoration",
-        "language": "de",
-        "description": null
-      },
-      {
-        "name": "Furnituras & Decoração",
-        "language": "pt",
-        "description": null
-      },
-      {
-        "name": "Meble & Dekoracja",
-        "language": "pl",
-        "description": null
-      },
-      {
-        "name": "Muebles & Decoración",
-        "language": "es",
-        "description": null
-      }
-    ]
-  },
-  {
-    "id": "575c9b4d-7f9c-42c0-b79d-e128f6ce3534",
-    "name": "Jewelry",
-    "slug": "jewelry",
-    "description": null,
-    "parent_id": null,
-    "is_active": true,
-    "category_translations": [
-      {
-        "name": "Jewelry",
         "language": "en",
-        "description": null
-      },
-      {
-        "name": "Sieraden",
-        "language": "nl",
-        "description": null
-      },
-      {
-        "name": "جوهرة",
-        "language": "ar",
-        "description": null
-      },
-      {
-        "name": "Smycken",
-        "language": "sv",
-        "description": null
-      },
-      {
-        "name": "Smukke genstande",
-        "language": "da",
-        "description": null
-      },
-      {
-        "name": "Smykker",
-        "language": "no",
-        "description": null
-      },
-      {
-        "name": "Juwelen",
-        "language": "de",
-        "description": null
-      },
-      {
-        "name": "Joyería",
-        "language": "es",
-        "description": null
-      },
-      {
-        "name": "Bijoux",
-        "language": "fr",
-        "description": null
-      },
-      {
-        "name": "Gioielli",
-        "language": "it",
-        "description": null
-      },
-      {
-        "name": "Biżuteria",
-        "language": "pl",
-        "description": null
-      },
-      {
-        "name": "Drahé kameny",
-        "language": "cs",
-        "description": null
-      },
-      {
-        "name": "珠宝",
-        "language": "zh",
-        "description": null
-      },
-      {
-        "name": "Joalheria",
-        "language": "pt",
-        "description": null
-      },
-      {
-        "name": "Güllüce",
-        "language": "tr",
-        "description": null
-      },
-      {
-        "name": "Joiere",
-        "language": "ro",
-        "description": null
+        "name": "Womens",
+        "description": "Shop womens footwear, clothing, and accessories."
       }
     ]
   },
   {
-    "id": "dfc0c6be-f84a-40ac-85c4-70de504e0eef",
-    "name": "Science",
-    "slug": "science",
-    "description": null,
+    "id": "footwear",
+    "slug": "footwear",
+    "name": "Footwear",
+    "description": "Browse sneakers, shoes, and seasonal footwear.",
     "parent_id": null,
     "is_active": true,
+    "display_order": 3,
     "category_translations": [
       {
-        "name": "Wissenschaft",
-        "language": "de",
-        "description": null
-      },
-      {
-        "name": "Ciencia",
-        "language": "es",
-        "description": null
-      },
-      {
-        "name": "Science",
-        "language": "fr",
-        "description": null
-      },
-      {
-        "name": "Scienza",
-        "language": "it",
-        "description": null
-      },
-      {
-        "name": "Ciência",
-        "language": "pt",
-        "description": null
-      },
-      {
-        "name": "Wetenschap",
-        "language": "nl",
-        "description": null
-      },
-      {
-        "name": "Nauka",
-        "language": "pl",
-        "description": null
-      },
-      {
-        "name": "Bilim",
-        "language": "tr",
-        "description": null
-      },
-      {
-        "name": "علم",
-        "language": "ar",
-        "description": null
-      },
-      {
-        "name": "科学",
-        "language": "zh",
-        "description": null
-      },
-      {
-        "name": "Vetenskap",
-        "language": "sv",
-        "description": null
-      },
-      {
-        "name": "Videnskab",
-        "language": "da",
-        "description": null
-      },
-      {
-        "name": "Ştiinţă",
-        "language": "ro",
-        "description": null
-      },
-      {
-        "name": "Věda",
-        "language": "cs",
-        "description": null
-      },
-      {
-        "name": "Vitenskap",
-        "language": "no",
-        "description": null
-      }
-    ]
-  },
-  {
-    "id": "381105e0-5b02-43f8-8bcc-b62faf3b51f6",
-    "name": "Spirits",
-    "slug": "spirits",
-    "description": null,
-    "parent_id": null,
-    "is_active": true,
-    "category_translations": [
-      {
-        "name": "Geister",
-        "language": "de",
-        "description": null
-      },
-      {
-        "name": "Ande",
-        "language": "sv",
-        "description": null
-      },
-      {
-        "name": "Spiriti",
-        "language": "it",
-        "description": null
-      },
-      {
-        "name": "Duchy",
-        "language": "pl",
-        "description": null
-      },
-      {
-        "name": "精灵",
-        "language": "zh",
-        "description": null
-      },
-      {
-        "name": "Duhuri",
-        "language": "ro",
-        "description": null
-      },
-      {
-        "name": "Espíritus",
-        "language": "es",
-        "description": null
-      },
-      {
-        "name": "Duchy",
-        "language": "cs",
-        "description": null
-      },
-      {
-        "name": "Espíritos",
-        "language": "pt",
-        "description": null
-      },
-      {
-        "name": "Geesten",
-        "language": "nl",
-        "description": null
-      },
-      {
-        "name": "Ruhlar",
-        "language": "tr",
-        "description": null
-      },
-      {
-        "name": "Ånder",
-        "language": "no",
-        "description": null
-      },
-      {
-        "name": "Esprits",
-        "language": "fr",
-        "description": null
-      },
-      {
-        "name": "روح",
-        "language": "ar",
-        "description": null
-      },
-      {
-        "name": "Ånder",
-        "language": "da",
-        "description": null
-      }
-    ]
-  },
-  {
-    "id": "9a4cd4f7-6b24-4183-b263-a25bded0e362",
-    "name": "Watches",
-    "slug": "watches",
-    "description": null,
-    "parent_id": null,
-    "is_active": true,
-    "category_translations": [
-      {
-        "name": "Watches",
         "language": "en",
-        "description": null
-      },
+        "name": "Footwear",
+        "description": "Browse sneakers, shoes, and seasonal footwear."
+      }
+    ]
+  },
+  {
+    "id": "clothing",
+    "slug": "clothing",
+    "name": "Clothing",
+    "description": "Browse jackets, tops, trousers, and everyday layers.",
+    "parent_id": null,
+    "is_active": true,
+    "display_order": 4,
+    "category_translations": [
       {
-        "name": "Uhren",
-        "language": "de",
-        "description": null
-      },
+        "language": "en",
+        "name": "Clothing",
+        "description": "Browse jackets, tops, trousers, and everyday layers."
+      }
+    ]
+  },
+  {
+    "id": "accessories",
+    "slug": "accessories",
+    "name": "Accessories",
+    "description": "Browse bags, caps, socks, and everyday accessories.",
+    "parent_id": null,
+    "is_active": true,
+    "display_order": 5,
+    "category_translations": [
       {
-        "name": "Relojes",
-        "language": "es",
-        "description": null
-      },
+        "language": "en",
+        "name": "Accessories",
+        "description": "Browse bags, caps, socks, and everyday accessories."
+      }
+    ]
+  },
+  {
+    "id": "sale",
+    "slug": "sale",
+    "name": "Sale",
+    "description": "Browse reduced products from the current catalog.",
+    "parent_id": null,
+    "is_active": true,
+    "display_order": 6,
+    "category_translations": [
       {
-        "name": "Montres",
-        "language": "fr",
-        "description": null
-      },
+        "language": "en",
+        "name": "Sale",
+        "description": "Browse reduced products from the current catalog."
+      }
+    ]
+  },
+  {
+    "id": "new-balance",
+    "slug": "new-balance",
+    "name": "New Balance",
+    "description": "Shop New Balance products.",
+    "parent_id": null,
+    "is_active": true,
+    "display_order": 7,
+    "category_translations": [
       {
-        "name": "Orologi",
-        "language": "it",
-        "description": null
-      },
+        "language": "en",
+        "name": "New Balance",
+        "description": "Shop New Balance products."
+      }
+    ]
+  },
+  {
+    "id": "nike",
+    "slug": "nike",
+    "name": "Nike",
+    "description": "Shop Nike products.",
+    "parent_id": null,
+    "is_active": true,
+    "display_order": 8,
+    "category_translations": [
       {
-        "name": "Relógios",
-        "language": "pt",
-        "description": null
-      },
+        "language": "en",
+        "name": "Nike",
+        "description": "Shop Nike products."
+      }
+    ]
+  },
+  {
+    "id": "adidas",
+    "slug": "adidas",
+    "name": "Adidas",
+    "description": "Shop Adidas products.",
+    "parent_id": null,
+    "is_active": true,
+    "display_order": 9,
+    "category_translations": [
       {
-        "name": "Klockor",
-        "language": "sv",
-        "description": null
-      },
-      {
-        "name": "Ur",
-        "language": "da",
-        "description": null
-      },
-      {
-        "name": "Ur",
-        "language": "no",
-        "description": null
-      },
-      {
-        "name": "Hodinky",
-        "language": "cs",
-        "description": null
-      },
-      {
-        "name": "Ceasuri",
-        "language": "ro",
-        "description": null
-      },
-      {
-        "name": "Horloges",
-        "language": "nl",
-        "description": null
-      },
-      {
-        "name": "Zegarki",
-        "language": "pl",
-        "description": null
-      },
-      {
-        "name": "Saatler",
-        "language": "tr",
-        "description": null
-      },
-      {
-        "name": "أوقات",
-        "language": "ar",
-        "description": null
-      },
-      {
-        "name": "表",
-        "language": "zh",
-        "description": null
+        "language": "en",
+        "name": "Adidas",
+        "description": "Shop Adidas products."
       }
     ]
   }
