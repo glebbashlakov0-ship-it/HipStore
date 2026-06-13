@@ -1075,6 +1075,7 @@
     register: registerAuthUser,
     login: loginAuthUser,
     requestPasswordReset: (email, redirectTo) => backend().requestPasswordReset(email, redirectTo),
+    authRedirectUrl: (path) => backend().authRedirectUrl ? backend().authRedirectUrl(path) : new URL(path || "", window.location.origin + "/").toString(),
     logout: logoutAuthUser,
     updatePassword: (newPassword) => backend().updatePassword(newPassword),
     getProfile: () => backend().getProfile(),

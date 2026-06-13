@@ -14,6 +14,7 @@
       supabaseUrl: "",
       supabaseAnonKey: "",
       functionsBaseUrl: "",
+      siteUrl: "",
       enableDevOrderFallback: false,
     },
     window.HipStoreConfig || {}
@@ -21,6 +22,66 @@
 
   function clean(value) {
     return String(value == null ? "" : value).trim();
+  }
+
+  function countryLabel(value) {
+    return clean(value).split("|")[0] || "";
+  }
+
+  function hasLetter(value) {
+    return /[A-Za-z]/.test(value) || /[^\W\d_]/u.test(value);
+  }
+
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean(value));
+  }
+
+  function isValidName(value) {
+    var text = clean(value);
+    return text.length >= 2 && hasLetter(text) && !/\d/.test(text);
+  }
+
+  function isValidPhone(value) {
+    var text = clean(value);
+    var digits = text.replace(/\D/g, "");
+    return /^[+\d\s().-]+$/.test(text) && digits.length >= 7 && digits.length <= 20;
+  }
+
+  function isValidAddressLine(value) {
+    var text = clean(value);
+    return text.length >= 5 && hasLetter(text);
+  }
+
+  function isValidOptionalAddressLine(value) {
+    var text = clean(value);
+    return !text || (text.length >= 2 && (hasLetter(text) || /\d/.test(text)));
+  }
+
+  function isValidTown(value) {
+    var text = clean(value);
+    return text.length >= 2 && hasLetter(text);
+  }
+
+  function isValidPostcode(value) {
+    var text = clean(value);
+    return text.length >= 3 && text.length <= 12 && /[A-Za-z0-9]/.test(text) && /^[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]$/.test(text);
+  }
+
+  function isValidCountry(value) {
+    var text = countryLabel(value) || clean(value);
+    return text.length >= 2 && hasLetter(text);
+  }
+
+  function validateAddressPayload(payload) {
+    if (!isValidName(payload.first_name)) throw backendError("Please enter a valid first name.", "validation_error");
+    if (!isValidName(payload.last_name)) throw backendError("Please enter a valid surname.", "validation_error");
+    if (!isValidPhone(payload.phone)) throw backendError("Please enter a valid phone number.", "validation_error");
+    if (!isValidAddressLine(payload.address)) throw backendError("Please enter a valid address line.", "validation_error");
+    if (!isValidOptionalAddressLine(payload.address_2)) throw backendError("Please enter valid extra address details.", "validation_error");
+    if (!isValidTown(payload.city)) throw backendError("Please enter a valid town or city.", "validation_error");
+    if (!isValidOptionalAddressLine(payload.state)) throw backendError("Please enter a valid county or state.", "validation_error");
+    if (!isValidPostcode(payload.postal_code)) throw backendError("Please enter a valid postcode.", "validation_error");
+    if (!isValidCountry(payload.country)) throw backendError("Please enter a valid country.", "validation_error");
   }
 
   function uuid() {
@@ -217,6 +278,23 @@
     return clean(CONFIG.functionsBaseUrl) || clean(CONFIG.supabaseUrl).replace(/\/+$/, "") + "/functions/v1";
   }
 
+  function siteBaseUrl() {
+    var configured = clean(CONFIG.siteUrl).replace(/\/+$/, "");
+    if (/^https?:\/\//i.test(configured)) return configured;
+    if (window.location && window.location.origin) return window.location.origin.replace(/\/+$/, "");
+    return "";
+  }
+
+  function authRedirectUrl(path) {
+    var base = siteBaseUrl();
+    if (!base) return "";
+    try {
+      return new URL(String(path || "/").replace(/^\/+/, ""), base + "/").toString();
+    } catch (_error) {
+      return base + "/" + String(path || "").replace(/^\/+/, "");
+    }
+  }
+
   async function currentSession() {
     var client = await getClient();
     var result = await client.auth.getSession();
@@ -243,12 +321,20 @@
     var client = await getClient();
     var email = clean(payload && payload.email).toLowerCase();
     var password = String((payload && payload.password) || "");
-    if (!email) throw backendError("Email is required.", "validation_error");
+    if (!isValidEmail(email)) throw backendError("Please enter a valid email address.", "validation_error");
+    if (!isValidPhone(payload && payload.phone)) throw backendError("Please enter a valid phone number.", "validation_error");
+    if (!isValidCountry(payload && payload.country)) throw backendError("Please enter a valid country.", "validation_error");
+    if (!isValidAddressLine(payload && payload.address)) throw backendError("Please enter a valid address line.", "validation_error");
+    if (!isValidOptionalAddressLine(payload && payload.address2)) throw backendError("Please enter valid extra address details.", "validation_error");
+    if (!isValidTown(payload && payload.city)) throw backendError("Please enter a valid town or city.", "validation_error");
+    if (!isValidOptionalAddressLine(payload && payload.state)) throw backendError("Please enter a valid county or state.", "validation_error");
+    if (!isValidPostcode(payload && payload.postalCode)) throw backendError("Please enter a valid postcode.", "validation_error");
     if (password.length < 8) throw backendError("Password must be at least 8 characters.", "validation_error");
     var result = await client.auth.signUp({
       email: email,
       password: password,
       options: {
+        emailRedirectTo: authRedirectUrl("account.html"),
         data: {
           first_name: clean(payload && payload.firstName),
           last_name: clean(payload && payload.lastName),
@@ -407,9 +493,7 @@
       if (!isMissingAddressTable(error)) throw error;
     }
     var payload = normalizeAddressPayload(address, user, profile, current.length);
-    if (!payload.address && !payload.city && !payload.postal_code && !payload.country) {
-      throw backendError("Please enter an address.", "validation_error");
-    }
+    validateAddressPayload(payload);
     if (!payload.is_default && current.length <= 1) payload.is_default = true;
     if (payload.is_default) {
       var reset = await client.from("profile_addresses").update({ is_default: false }).eq("user_id", user.id);
@@ -674,6 +758,7 @@
     login: login,
     register: register,
     requestPasswordReset: requestPasswordReset,
+    authRedirectUrl: authRedirectUrl,
     logout: logout,
     updatePassword: updatePassword,
     getProfile: getProfile,

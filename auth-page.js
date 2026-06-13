@@ -161,11 +161,19 @@
       .accountCreate .accountCreateButton{border:0}
       .accountCreate .accountCreateButton .fs-mod-cnt{padding:0}
       .accountCreate .accountCreateButton .legalRequirementMessage{margin-top:0}
-      .accountCreate .inputErr{display:none;margin:8px 0 0 144px;color:#b00020;font-size:12px;line-height:1.45}
-      .accountCreate .inputErr i{display:none}
-      .accountCreate .fs-row.has-error .inputErr{display:block}
-      .accountCreate .tooltipIcon{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-left:7px;border:1px solid #bbb;border-radius:999px;color:#777;font-size:11px;vertical-align:middle}
-      .accountCreate .tooltipIcon::before{content:"i"}
+      .accountCreate .fs-row.inp > span,.accountCreate .fs-row.sel > span,.accountAddressForm .fs-row.inp > span{padding-right:34px}
+      .accountCreate .fs-row.inp input,.accountCreate .fs-row.sel select,.accountAddressForm .fs-row.inp input{padding-right:36px}
+      .accountCreate .inputErr,.accountAddressForm .inputErr{display:none;grid-column:2;margin:8px 34px 0 0;color:#b00020;font-size:12px;font-weight:700;line-height:1.45}
+      .accountCreate .inputErr i,.accountAddressForm .inputErr i{display:none}
+      .accountCreate .fs-row.has-error .inputErr,.accountAddressForm .fs-row.has-error .inputErr{display:block}
+      .accountCreate .passwordRules{display:flex;flex-direction:column;gap:2px}
+      .accountCreate .passwordRules span{display:block}
+      .accountCreate .tooltipIcon,.accountAddressForm .tooltipIcon{position:absolute;top:50%;right:0;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin:0;border:0;border-radius:999px;background:#9b9b9b;color:#fff;font-size:13px;font-weight:900;line-height:1;transform:translateY(-50%);vertical-align:middle}
+      .accountCreate .tooltipIcon::before,.accountAddressForm .tooltipIcon::before{content:"i"}
+      .accountCreate .tooltipIcon.is-valid,.accountAddressForm .tooltipIcon.is-valid{background:#000;color:#fff}
+      .accountCreate .tooltipIcon.is-valid::before,.accountAddressForm .tooltipIcon.is-valid::before{content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+      .accountCreate .tooltipIcon.is-invalid,.accountAddressForm .tooltipIcon.is-invalid{background:#b00020;color:#fff}
+      .accountCreate .tooltipIcon.is-invalid::before,.accountAddressForm .tooltipIcon.is-invalid::before{content:"×";font-size:18px;font-weight:900;line-height:20px}
       .accountCreate .chk input{position:absolute;opacity:0;pointer-events:none}
       .accountCreate .chk label[for]{display:flex;gap:10px;align-items:flex-start;padding-top:0;cursor:pointer}
       .accountCreate .chkbox{display:inline-flex;width:18px;height:18px;flex:0 0 18px;align-items:center;justify-content:center;border:1px solid #111;background:#fff;color:#111;font-size:11px;line-height:1}
@@ -235,7 +243,8 @@
         #accountContent{grid-template-columns:1fr}
         .fs-row{grid-template-columns:1fr;gap:7px}
         .fs-row label{padding-top:0}
-        .accountCreate .inputErr{margin-left:0}
+        .accountCreate .inputErr,.accountAddressForm .inputErr{grid-column:1;margin-right:0;margin-left:0}
+        .accountCreate .fs-row.inp > span,.accountCreate .fs-row.sel > span,.accountAddressForm .fs-row.inp > span{padding-right:30px}
         .btn.btn-level1.large{width:100%;min-width:0}
         #accountLeft{float:none;width:100%;padding-right:0;margin-bottom:20px}
         #accountRight.splitRight{overflow:visible}
@@ -387,6 +396,54 @@
     return String(value || "").split("|")[0] || "";
   }
 
+  function cleanInput(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function hasLetter(value) {
+    return /[A-Za-z]/.test(value) || /[^\W\d_]/u.test(value);
+  }
+
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanInput(value));
+  }
+
+  function isValidName(value) {
+    var text = cleanInput(value);
+    return text.length >= 2 && hasLetter(text) && !/\d/.test(text);
+  }
+
+  function isValidPhone(value) {
+    var text = cleanInput(value);
+    var digits = text.replace(/\D/g, "");
+    return /^[+\d\s().-]+$/.test(text) && digits.length >= 7 && digits.length <= 20;
+  }
+
+  function isValidAddressLine(value) {
+    var text = cleanInput(value);
+    return text.length >= 5 && hasLetter(text);
+  }
+
+  function isValidOptionalAddressLine(value) {
+    var text = cleanInput(value);
+    return !text || (text.length >= 2 && (hasLetter(text) || /\d/.test(text)));
+  }
+
+  function isValidTown(value) {
+    var text = cleanInput(value);
+    return text.length >= 2 && hasLetter(text);
+  }
+
+  function isValidPostcode(value) {
+    var text = cleanInput(value);
+    return text.length >= 3 && text.length <= 12 && /[A-Za-z0-9]/.test(text) && /^[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]$/.test(text);
+  }
+
+  function isValidCountry(value) {
+    var text = cleanInput(countryLabel(value) || value);
+    return text.length >= 2 && hasLetter(text);
+  }
+
   function addressValue(address, key) {
     address = address || {};
     if (key === "address2") return address.address_2 || address.address2 || "";
@@ -489,7 +546,6 @@
       item("info", "Contact Details") +
       item("addressbook", "My Addresses") +
       item("orders", "My Orders", ' data-e2e="dashboard-orders-tab"') +
-      '<li><a class="btn btn-default" target="_blank" href="https://returns.thehipstore.co.uk"><span class="accountNavLabel">My Returns</span><i class="fa fa-external-link"></i></a></li>' +
       item("promotional-preferences", "Promotional Preferences") +
       item("password", "Change Password") +
       item("logout", "Sign Out", " data-account-signout") +
@@ -498,6 +554,10 @@
 
   function inputRow(label, name, value, type, autocomplete, attrs) {
     return '<div class="fs-row inp"><label>' + escapeHtml(label) + '</label><span><input type="' + (type || "text") + '" name="' + escapeHtml(name) + '" value="' + escapeHtml(value || "") + '" autocomplete="' + escapeHtml(autocomplete || "") + '"' + (attrs || "") + '></span></div>';
+  }
+
+  function addressInputRow(label, name, value, type, autocomplete, errorText, required) {
+    return '<div class="fs-row inp address-validate-row' + (required ? " req" : "") + '"><label>' + escapeHtml(label) + '</label><span><input type="' + (type || "text") + '" name="' + escapeHtml(name) + '" value="' + escapeHtml(value || "") + '" autocomplete="' + escapeHtml(autocomplete || "") + '"><span class="tooltipIcon" aria-label="Information"></span></span><div class="inputErr"><i></i><p>' + escapeHtml(errorText || "Please enter a valid value.") + '</p></div></div>';
   }
 
   function renderContactDetailsView(user, profile) {
@@ -546,15 +606,15 @@
       '<div class="fs-mod-ttl"><h3 data-address-form-title>' + (hasRows ? "Add New Address" : "Add Your Address") + '</h3></div><div class="fs-mod-cnt">' +
       '<div class="fs-grp">' +
       inputRow("Label", "label", "Delivery Address", "text", "section-address") +
-      inputRow("First name", "firstName", profileField(profile, user, "first_name", "firstName"), "text", "given-name") +
-      inputRow("Surname", "lastName", profileField(profile, user, "last_name", "lastName"), "text", "family-name") +
-      inputRow("Telephone", "phone", profileField(profile, user, "phone", "phone"), "tel", "tel") +
-      inputRow("Address line 1", "address", "", "text", "street-address") +
-      inputRow("Address line 2", "address2", "", "text", "address-line2") +
-      inputRow("Town/City", "city", "", "text", "address-level2") +
-      inputRow("County/State", "state", "", "text", "address-level1") +
-      inputRow("Postcode", "postalCode", "", "text", "postal-code") +
-      inputRow("Country", "country", "", "text", "country-name") +
+      addressInputRow("First name", "firstName", profileField(profile, user, "first_name", "firstName"), "text", "given-name", "Please enter a valid first name.", true) +
+      addressInputRow("Surname", "lastName", profileField(profile, user, "last_name", "lastName"), "text", "family-name", "Please enter a valid surname.", true) +
+      addressInputRow("Telephone", "phone", profileField(profile, user, "phone", "phone"), "tel", "tel", "Please enter a valid telephone number.", true) +
+      addressInputRow("Address line 1", "address", "", "text", "street-address", "Please enter a valid address line.", true) +
+      addressInputRow("Address line 2", "address2", "", "text", "address-line2", "Please enter valid extra address details.", false) +
+      addressInputRow("Town/City", "city", "", "text", "address-level2", "Please enter a valid town or city.", true) +
+      addressInputRow("County/State", "state", "", "text", "address-level1", "Please enter a valid county or state.", false) +
+      addressInputRow("Postcode", "postalCode", "", "text", "postal-code", "Please enter a valid postcode.", true) +
+      addressInputRow("Country", "country", "", "text", "country-name", "Please enter a valid country.", true) +
       '<div class="fs-row chk hlb"><label></label><span><input type="checkbox" id="addressDefault" name="isDefault" checked="checked"><label for="addressDefault"><span class="chkbox"><i class="fa fa-check"></i></span><span class="label">Use as default delivery address.</span></label></span></div>' +
       '</div>' +
       '<div class="fs-grp"><div class="fs-row but act hlb"><label></label><span class="accountAddressFormActions"><button type="submit" class="btn btn-level1 large">Save address</button><button type="button" class="btn btn-default" data-address-cancel>Cancel</button></span></div></div>' +
@@ -749,7 +809,48 @@
         setAddressField("postalCode", addressValue(address, "postalCode"));
         setAddressField("country", countryLabel(address.country));
         setAddressField("isDefault", address.id ? addressValue(address, "isDefault") : true);
+        validateAddressForm(false);
         addressForm.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+
+      function addressField(name) {
+        return addressForm.querySelector('[name="' + name + '"]');
+      }
+
+      function setAddressFieldState(name, valid, force) {
+        var field = addressField(name);
+        var row = field && field.closest(".fs-row");
+        var icon = row && row.querySelector(".tooltipIcon");
+        var value = cleanInput(field && field.value);
+        var optionalEmpty = (name === "address2" || name === "state") && !value;
+        if (icon) {
+          icon.classList.toggle("is-valid", !optionalEmpty && valid);
+          icon.classList.toggle("is-invalid", !valid && (force || value.length > 0));
+          icon.setAttribute("aria-label", !optionalEmpty && valid ? "Valid" : !valid && (force || value.length > 0) ? "Invalid" : "Information");
+        }
+        if (row) row.classList.toggle("has-error", !valid && (force || value.length > 0));
+      }
+
+      function validateAddressField(name, force) {
+        var field = addressField(name);
+        var value = cleanInput(field && field.value);
+        var valid = true;
+        if (name === "firstName" || name === "lastName") valid = isValidName(value);
+        else if (name === "phone") valid = isValidPhone(value);
+        else if (name === "address") valid = isValidAddressLine(value);
+        else if (name === "address2" || name === "state") valid = isValidOptionalAddressLine(value);
+        else if (name === "city") valid = isValidTown(value);
+        else if (name === "postalCode") valid = isValidPostcode(value);
+        else if (name === "country") valid = isValidCountry(value);
+        if (!field) return true;
+        setAddressFieldState(name, valid, force);
+        return valid;
+      }
+
+      function validateAddressForm(force) {
+        return ["firstName", "lastName", "phone", "address", "address2", "city", "state", "postalCode", "country"].reduce(function (valid, name) {
+          return validateAddressField(name, force) && valid;
+        }, true);
       }
 
       function hideAddressForm() {
@@ -799,10 +900,23 @@
         });
       }
 
+      ["firstName", "lastName", "phone", "address", "address2", "city", "state", "postalCode", "country"].forEach(function (name) {
+        var field = addressField(name);
+        if (!field) return;
+        field.addEventListener("input", function () { validateAddressField(name, false); });
+        field.addEventListener("change", function () { validateAddressField(name, false); });
+        field.addEventListener("blur", function () { validateAddressField(name, true); });
+      });
+      validateAddressForm(false);
+
       addressForm.addEventListener("submit", async function (event) {
         event.preventDefault();
         var button = addressForm.querySelector("button[type=submit]");
         var formData = new FormData(addressForm);
+        if (!validateAddressForm(true)) {
+          helpers.flash("Please check the address fields marked in red.");
+          return;
+        }
         setButton(button, true, "Save address", "Saving...");
         try {
           var addressPayload = {
@@ -895,6 +1009,7 @@
             <input class="address1" type="text" value="" id="${prefix}Address1" name="${prefix}Address1" autocomplete="${autocompletePrefix} address-line1" maxlength="30">
             <span class="tooltipIcon" data-info="Address is a required field."></span>
           </span>
+          <div class="inputErr"><i></i><p>Please enter a valid address line.</p></div>
         </div>
         <div class="fs-row inp PCA_autocompletable"${style}>
           <label for="${prefix}Address2">Address Line 2</label>
@@ -902,6 +1017,7 @@
             <input class="address2" type="text" value="" id="${prefix}Address2" name="${prefix}Address2" autocomplete="${autocompletePrefix} address-line2" maxlength="30">
             <span class="tooltipIcon" data-info="Optionally provide extra address details."></span>
           </span>
+          <div class="inputErr"><i></i><p>Please enter valid extra address details.</p></div>
         </div>
         <div class="fs-row inp req PCA_autocompletable"${style}>
           <label for="${prefix}Town">Town/City</label>
@@ -909,6 +1025,7 @@
             <input class="town" type="text" value="" id="${prefix}Town" name="${prefix}Town" autocomplete="${autocompletePrefix} address-level2" maxlength="30">
             <span class="tooltipIcon" data-info="Address is a required field."></span>
           </span>
+          <div class="inputErr"><i></i><p>Please enter a valid town or city.</p></div>
         </div>
         <div class="fs-row county-row inp PCA_autocompletable"${style}>
           <label class="addressFormCountyLabel" for="${prefix}CountyInp">County</label>
@@ -916,6 +1033,7 @@
             <input class="county county-inp" type="text" value="" id="${prefix}CountyInp" name="${prefix}County" autocomplete="${autocompletePrefix} address-level1" maxlength="30">
             <span class="tooltipIcon" data-info="Optionally provide extra address details."></span>
           </span>
+          <div class="inputErr"><i></i><p>Please enter a valid county.</p></div>
         </div>
       </div>`;
   }
@@ -1053,7 +1171,7 @@
                       </div>
                       <div class="fs-row inp req tooltip">
                         <label>Telephone</label>
-                        <span><input class="required" type="tel" id="phone" name="phone" value="" autocomplete="tel" data-e2e="register-registerForm-phone" maxlength=""><span class="tooltipIcon" data-info="Please provide your contact telephone number. This should be 8-14 characters long and should only contain numbers or a '+' symbol"></span></span>
+                        <span><input class="required" type="tel" id="phone" name="phone" value="" autocomplete="tel" data-e2e="register-registerForm-phone" maxlength=""><span class="tooltipIcon" data-info="Please enter your phone number."></span></span>
                       </div>
                     </div>
                     <div class="fs-grp infoBasic">
@@ -1061,7 +1179,7 @@
                       <div class="fs-row inp req tooltip">
                         <label>Password</label>
                         <span><input class="required" type="password" id="password" name="password" value="" autocomplete="new-password" data-linked="#confirmPassword" data-e2e="register-registerForm-password"><span class="tooltipIcon" data-info="Password must be 8 characters long and include at least one number. No special characters allowed."></span></span>
-                        <div class="inputErr"><i></i><p>Password must be 8 characters long and include at least one number. No special characters allowed.</p></div>
+                        <div class="inputErr"><i></i><p class="passwordRules"><span>Password must be 8 characters long.</span><span>Include at least one number.</span><span>No special characters allowed.</span></p></div>
                       </div>
                       <div class="fs-row inp req tooltip">
                         <label>Confirm password</label>
@@ -1085,13 +1203,14 @@
                     <div class="fs-grp">
                       <div class="fs-row sel PCA_autocompletable shippingCountry">
                         <label for="country">Country</label>
-                        <span><select name="billingCountry" id="country" class="wider valid">${countries}</select></span>
+                        <span><select name="billingCountry" id="country" class="wider valid">${countries}</select><span class="tooltipIcon info" data-info="Allowed delivery countries"></span></span>
                       </div>
                     </div>
                     <div class="fs-grp" id="billingPostcodeHolder">
                       <div class="fs-row inp req" id="postcodeHolder" style="display: none;">
                         <label for="postcode">Postcode</label>
-                        <span><input class="postcode inputAdvancer" type="text" id="postcode" name="billingPostcode" value="" autocomplete="billing postal-code" maxlength=""></span>
+                        <span><input class="postcode inputAdvancer" type="text" id="postcode" name="billingPostcode" value="" autocomplete="billing postal-code" maxlength=""><span class="tooltipIcon" data-info="Postcode is a required field."></span></span>
+                        <div class="inputErr"><i></i><p>Please enter a valid postcode.</p></div>
                       </div>
                     </div>
                     ${addressRows("billing", "billing", true)}
@@ -1102,7 +1221,6 @@
                         <span>
                           <input class="valid" type="checkbox" name="useBillingAddress" id="useBillingAddress" checked="checked" value="on">
                           <label for="useBillingAddress"><span id="useBillingAddressSpan" class="chkbox" style="cursor: pointer;"><i class="fa fa-check"></i></span><span class="label">Use Billing Address for Delivery</span></label>
-                          <span class="tooltipIcon info" data-info="Allowed delivery countries"></span>
                         </span>
                       </div>
                     </div>
@@ -1121,7 +1239,8 @@
                     <div class="fs-grp" id="shippingPostcodeHolder">
                       <div class="fs-row inp req" id="shippingPostcodeHolderRow" style="display: none;">
                         <label for="shippingPostcode">Postcode</label>
-                        <span><input class="postcode inputAdvancer" type="text" id="shippingPostcode" name="shippingPostcode" value="" autocomplete="shipping postal-code" maxlength=""></span>
+                        <span><input class="postcode inputAdvancer" type="text" id="shippingPostcode" name="shippingPostcode" value="" autocomplete="shipping postal-code" maxlength=""><span class="tooltipIcon" data-info="Postcode is a required field."></span></span>
+                        <div class="inputErr"><i></i><p>Please enter a valid postcode.</p></div>
                       </div>
                     </div>
                     ${addressRows("shipping", "shipping", true)}
@@ -1329,6 +1448,11 @@
   }
 
   function getPasswordResetRedirect(basePath) {
+    if (window.AuctioAuth && typeof window.AuctioAuth.authRedirectUrl === "function") {
+      var configuredTarget = new URL(window.AuctioAuth.authRedirectUrl("forgot-password.html"));
+      configuredTarget.searchParams.set("mode", "recovery");
+      return configuredTarget.toString();
+    }
     var target = new URL(basePath + "forgot-password.html", window.location.href);
     target.searchParams.set("mode", "recovery");
     return target.toString();
@@ -1422,6 +1546,99 @@
     var button = form && form.querySelector("button[type=submit]");
     if (!form) return;
 
+    function fieldValue(fieldId) {
+      var field = document.getElementById(fieldId);
+      return String((field && field.value) || "").trim();
+    }
+
+    function fieldRow(fieldId) {
+      var field = document.getElementById(fieldId);
+      return field && field.closest(".fs-row");
+    }
+
+    function fieldIcon(fieldId) {
+      var row = fieldRow(fieldId);
+      return row && row.querySelector(".tooltipIcon");
+    }
+
+    function setFieldState(fieldId, state, showError) {
+      var row = fieldRow(fieldId);
+      var icon = fieldIcon(fieldId);
+      if (icon) {
+        icon.classList.toggle("is-valid", state === "valid");
+        icon.classList.toggle("is-invalid", state === "invalid");
+        icon.setAttribute("aria-label", state === "valid" ? "Valid" : state === "invalid" ? "Invalid" : "Information");
+      }
+      if (row) row.classList.toggle("has-error", Boolean(showError));
+    }
+
+    function isRowVisible(fieldId) {
+      var row = fieldRow(fieldId);
+      return !row || row.offsetParent !== null;
+    }
+
+    function validateRegisterField(fieldId, force) {
+      if (!isRowVisible(fieldId)) {
+        setFieldState(fieldId, "info", false);
+        return true;
+      }
+      var value = fieldValue(fieldId);
+      var hasValue = value.length > 0;
+      var valid = true;
+      if (fieldId === "firstName" || fieldId === "lastName") valid = isValidName(value);
+      else if (fieldId === "username") valid = isValidEmail(value);
+      else if (fieldId === "phone") valid = isValidPhone(value);
+      else if (fieldId === "password") valid = /^(?=.*\d)[A-Za-z0-9]{8,}$/.test(value);
+      else if (fieldId === "confirmPassword") valid = hasValue && value === fieldValue("password");
+      else if (fieldId === "country") valid = isValidCountry(value);
+      else if (fieldId === "postcode") valid = isValidPostcode(value);
+      else if (fieldId === "billingAddress1") valid = isValidAddressLine(value);
+      else if (fieldId === "billingAddress2" || fieldId === "billingCountyInp") valid = isValidOptionalAddressLine(value);
+      else if (fieldId === "billingTown") valid = isValidTown(value);
+      else valid = true;
+
+      if (!hasValue && (fieldId === "billingAddress2" || fieldId === "billingCountyInp")) {
+        setFieldState(fieldId, "info", false);
+        return true;
+      }
+      if (!hasValue && !force) {
+        setFieldState(fieldId, "info", false);
+        return false;
+      }
+      setFieldState(fieldId, valid ? "valid" : "invalid", !valid && (force || fieldId === "password"));
+      return valid;
+    }
+
+    function bindFieldValidation() {
+      [
+        "firstName",
+        "lastName",
+        "username",
+        "phone",
+        "password",
+        "confirmPassword",
+        "country",
+        "postcode",
+        "billingAddress1",
+        "billingAddress2",
+        "billingTown",
+        "billingCountyInp",
+      ].forEach(function (fieldId) {
+        var field = document.getElementById(fieldId);
+        if (!field) return;
+        function refresh() {
+          validateRegisterField(fieldId, false);
+          if (fieldId === "password") validateRegisterField("confirmPassword", false);
+        }
+        field.addEventListener("input", refresh);
+        field.addEventListener("change", refresh);
+        field.addEventListener("blur", function () {
+          validateRegisterField(fieldId, true);
+          if (fieldId === "password") validateRegisterField("confirmPassword", false);
+        });
+      });
+    }
+
     function clearFieldErrors() {
       form.querySelectorAll(".has-error").forEach(function (node) {
         node.classList.remove("has-error");
@@ -1437,6 +1654,7 @@
         var field = document.getElementById(fieldId);
         var row = field && field.closest(".fs-row");
         if (row) row.classList.add("has-error");
+        setFieldState(fieldId, "invalid", true);
       }
       if (!errorNode) return;
       errorNode.textContent = message || "";
@@ -1461,8 +1679,13 @@
     form.querySelectorAll("[data-address-manual]").forEach(function (manualButton) {
       manualButton.addEventListener("click", function () {
         showManualAddress(manualButton);
+        ["postcode", "billingAddress1", "billingAddress2", "billingTown", "billingCountyInp"].forEach(function (fieldId) {
+          validateRegisterField(fieldId, false);
+        });
       });
     });
+
+    bindFieldValidation();
 
     var useBillingAddress = document.getElementById("useBillingAddress");
     var shippingHolder = document.getElementById("shippingAddressHolder");
@@ -1476,30 +1699,55 @@
       event.preventDefault();
       clearFieldErrors();
       var data = new FormData(form);
-      if (!String(data.get("firstName") || "").trim()) {
+      if (!validateRegisterField("firstName", true)) {
         showRegisterError("Please provide your first name. This cannot contain numbers.", "firstName");
         return;
       }
-      if (!String(data.get("lastName") || "").trim()) {
+      if (!validateRegisterField("lastName", true)) {
         showRegisterError("Please provide your surname. This cannot contain numbers.", "lastName");
         return;
       }
       var email = String(data.get("email") || "").trim();
       var password = String(data.get("password") || "");
-      if (!email || email.indexOf("@") === -1) {
+      if (!validateRegisterField("username", true)) {
         showRegisterError("The email address you entered is incorrect please enter a valid email", "username");
         return;
       }
-      if (!String(data.get("phone") || "").trim()) {
-        showRegisterError("Please provide your contact telephone number. This should be 8-14 characters long and should only contain numbers or a '+' symbol", "phone");
+      if (!validateRegisterField("phone", true)) {
+        showRegisterError("Please enter a valid phone number.", "phone");
         return;
       }
-      if (!/^(?=.*\d)[A-Za-z0-9]{8,}$/.test(password)) {
+      if (!validateRegisterField("password", true)) {
         showRegisterError("Password must be 8 characters long and include at least one number. No special characters allowed.", "password");
         return;
       }
-      if (password !== String(data.get("confirmPassword") || "")) {
+      if (!validateRegisterField("confirmPassword", true)) {
         showRegisterError("Passwords do not match.", "confirmPassword");
+        return;
+      }
+      showManualAddress(document.querySelector(".register-billing [data-address-manual]"));
+      if (!validateRegisterField("country", true)) {
+        showRegisterError("Please select a valid country.", "country");
+        return;
+      }
+      if (!validateRegisterField("postcode", true)) {
+        showRegisterError("Please enter a valid postcode.", "postcode");
+        return;
+      }
+      if (!validateRegisterField("billingAddress1", true)) {
+        showRegisterError("Please enter a valid address line.", "billingAddress1");
+        return;
+      }
+      if (!validateRegisterField("billingAddress2", true)) {
+        showRegisterError("Please enter valid extra address details.", "billingAddress2");
+        return;
+      }
+      if (!validateRegisterField("billingTown", true)) {
+        showRegisterError("Please enter a valid town or city.", "billingTown");
+        return;
+      }
+      if (!validateRegisterField("billingCountyInp", true)) {
+        showRegisterError("Please enter a valid county.", "billingCountyInp");
         return;
       }
       setButton(button, true, "Register", "Registering...");
