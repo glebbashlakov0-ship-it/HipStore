@@ -4,6 +4,17 @@
   var PLACEHOLDER_IMAGE = "placeholder.svg";
   var DEFAULT_PER_PAGE = 24;
 
+  function revealShell() {
+    if (typeof window.HipStoreRevealShell === "function") {
+      window.HipStoreRevealShell();
+      return;
+    }
+    if (document.body) {
+      document.body.classList.remove("hip-shell-pending");
+      document.body.removeAttribute("aria-busy");
+    }
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -1017,6 +1028,7 @@
     }
 
     render();
+    revealShell();
   }
 
   window.HipCatalog = {
@@ -1033,5 +1045,6 @@
       if (main) {
         main.innerHTML = '<section class="hip-results"><div class="hip-plp-container"><div class="hip-empty"><h2>Products could not be loaded</h2><p>Please refresh the page.</p></div></div></section>';
       }
+      revealShell();
     });
 })();

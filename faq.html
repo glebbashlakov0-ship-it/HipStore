@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FAQ</title>
   <meta name="description" content="Answers about orders, shipping, returns, sizing, payments, and international delivery." />
-  <link rel="stylesheet" href="site-shell.css?v=20260612a" />
+  <link rel="stylesheet" href="site-shell.css?v=20260614c" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -338,7 +338,7 @@
     }
   </style>
 </head>
-<body>
+<body class="hip-shell-pending">
   <div class="page-shell">
     <header></header>
 
@@ -369,14 +369,14 @@
                 <li><a href="#faq-order">My Order</a></li>
                 <li><a href="#faq-returns">Returns</a></li>
                 <li><a href="#faq-payment">Payment &amp; Security</a></li>
-                <li><a href="#faq-account">My Account</a></li>
+                <li><a href="#faq-checkout">Guest Checkout</a></li>
                 <li><a href="#faq-delivery">Delivery</a></li>
                 <li><a href="#faq-international">International</a></li>
               </ul>
             </aside>
 
             <div class="infoArticle">
-              <p class="infoIntro">Answers about orders, sizes, delivery, returns, payment, and account support. If you still need help, use our <a href="contact.html">contact page</a> and include your order number where possible.</p>
+              <p class="infoIntro">Answers about orders, sizes, delivery, returns, payment, and checkout support. If you still need help, use our <a href="contact.html">contact page</a> and include your order number where possible.</p>
 
               <div class="infoCustomPage" id="infoCustomFAQ">
                 <ul class="menu">
@@ -394,7 +394,7 @@
                     <button class="faqQuestion" type="button" aria-expanded="false">How do I return something to you?</button>
                     <div class="faqAnswer">
                       <p>Returns can be started through our returns request page. If you prefer, you can also make your own postal arrangements, but we recommend using a tracked service and keeping proof of posting.</p>
-                      <p><a href="returns.html">Open the returns request page</a></p>
+                      <p><a href="shipping.html">Open the returns request page</a></p>
                     </div>
                   </li>
                   <li class="faqItem">
@@ -491,25 +491,25 @@
                     </div>
                   </li>
 
-                  <li id="faq-account">
-                    <h2 class="menuSectionHeading">My Account</h2>
+                  <li id="faq-checkout">
+                    <h2 class="menuSectionHeading">Guest Checkout</h2>
                   </li>
                   <li class="faqItem">
-                    <button class="faqQuestion" type="button" aria-expanded="false">Do I need an account to place an order?</button>
+                    <button class="faqQuestion" type="button" aria-expanded="false">Can I place an order as a guest?</button>
                     <div class="faqAnswer">
-                      <p>You can browse freely, but having an account makes it easier to track orders, manage saved details, and move through checkout faster on future purchases.</p>
+                      <p>Yes. Add products to your bag, enter your contact and delivery details, choose a payment method, and place the order without signing in.</p>
                     </div>
                   </li>
                   <li class="faqItem">
-                    <button class="faqQuestion" type="button" aria-expanded="false">I forgot my password</button>
+                    <button class="faqQuestion" type="button" aria-expanded="false">How do I check my order after checkout?</button>
                     <div class="faqAnswer">
-                      <p>Use the password recovery link on the <a href="login.html">login page</a>. If you no longer have access to the email address on the account, contact support for help.</p>
+                      <p>Use your order number when contacting support. Keep the order confirmation details so the team can find your order quickly.</p>
                     </div>
                   </li>
                   <li class="faqItem">
-                    <button class="faqQuestion" type="button" aria-expanded="false">How do I update my details?</button>
+                    <button class="faqQuestion" type="button" aria-expanded="false">How do I update my delivery details?</button>
                     <div class="faqAnswer">
-                      <p>Once signed in, you can update the information stored in your account area. If something looks wrong on a live order, contact support before the parcel is dispatched.</p>
+                      <p>If something looks wrong on a live order, contact support before the parcel is dispatched and include your order number.</p>
                     </div>
                   </li>
 
@@ -584,7 +584,7 @@
     });
   </script>
   <script src="site-config.js?v=20260613a"></script>
-  <script src="supabase-client.js?v=20260613a"></script>
-  <script src="header-fix.js?v=20260613footer"></script>
+  <script src="supabase-client.js?v=20260614b"></script>
+  <script src="header-fix.js?v=20260614c"></script>
 </body>
 </html>

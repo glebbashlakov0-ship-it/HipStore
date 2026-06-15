@@ -22,6 +22,19 @@
     "Carhartt",
     "New Balance",
   ];
+
+  function revealShell() {
+    if (!document.body) return;
+    document.body.classList.remove("hip-shell-pending");
+    document.body.removeAttribute("aria-busy");
+  }
+
+  function shellWaitsForRenderer() {
+    return Boolean(document.body && document.body.getAttribute("data-hip-render"));
+  }
+
+  window.HipStoreRevealShell = revealShell;
+
   const SHOP_LINKS = [
     { label: "Shop All", href: SHOP_PAGE },
     { label: "Mens", href: SHOP_PAGE + "?plp=mens" },
@@ -296,13 +309,6 @@
   ];
   const MOBILE_SERVICE_ITEMS = [
     {
-      label: "My Account",
-      children: [
-        { label: "Log in", href: "login.html" },
-        { label: "Wishlist", href: "account.html" },
-      ],
-    },
-    {
       label: "Customer Service",
       children: [
         { label: "FAQs", href: "faq.html" },
@@ -428,24 +434,7 @@
   }
 
   function buildAuthControls(basePath) {
-    const user = getCurrentUser();
-    if (!user) {
-      return '' +
-        '<a class="inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium hover:bg-accent" href="' + buildAuthPageUrl("login", basePath) + '">Login</a>' +
-        '<a class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90" href="' + buildAuthPageUrl("register", basePath) + '">Register</a>';
-    }
-    return '' +
-      '<div class="relative" data-auth-menu-root>' +
-        '<button type="button" data-auth-menu-trigger aria-expanded="false" class="inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium hover:bg-accent">' +
-          '<span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">' + escapeHtml(getUserInitials(user)) + '</span>' +
-          '<span class="max-w-32 truncate">' + escapeHtml(user.fullName || user.email) + '</span>' +
-        '</button>' +
-        '<div data-auth-menu class="hidden absolute right-0 top-full z-[150] mt-3 w-56 rounded-md border border-border bg-background p-1 shadow-md">' +
-          '<a class="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent" href="' + basePath + 'account.html">Account</a>' +
-          '<a class="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent" href="' + basePath + 'account.html?tab=orders">Orders</a>' +
-          '<button type="button" data-auth-logout class="block w-full rounded-sm px-2 py-1.5 text-left text-sm text-red-600 hover:bg-accent">Logout</button>' +
-        '</div>' +
-      '</div>';
+    return "";
   }
 
   function renderAuthControls(basePath) {
@@ -456,23 +445,7 @@
   }
 
   function syncMobileMenuFooterAuth(basePath) {
-    const user = getCurrentUser();
-    const signedOutLink = document.getElementById("myAccountLinkToModal");
-    const signedInLink = document.getElementById("loggedInMenuLink");
-    if (!signedOutLink || !signedInLink) return;
-    signedOutLink.href = basePath + "account.html";
-    signedInLink.href = basePath + "account.html";
-    if (user) {
-      signedOutLink.hidden = true;
-      signedOutLink.style.display = "none";
-      signedInLink.hidden = false;
-      signedInLink.style.display = "";
-    } else {
-      signedOutLink.hidden = false;
-      signedOutLink.style.display = "";
-      signedInLink.hidden = true;
-      signedInLink.style.display = "none";
-    }
+    return;
   }
 
   function searchIconSvg() {
@@ -561,7 +534,6 @@
           '<div id="headLeft"></div>' +
           '<div id="headRight">' +
             '<a class="srch" href="#!" data-header-search-trigger data-e2e="header-search-toggle" aria-label="Search">' + searchIconSvg() + closeIconSvg() + '</a>' +
-            '<a class="ga-ip" rel="nofollow" data-e2e="homePage-userMenu-myAccount" data-ip-position="header-sign in" href="' + basePath + 'account.html">' + accountIconSvg() + '</a>' +
             '<a class="bskt" data-e2e="basket-go-to" href="' + basePath + 'checkout/index.html" title="">' +
               '<div id="cartSummaryOverlay" class="eq1"><img src="' + ASSET_ORIGIN + '/skins/default/public/img/icons/preload-white.gif" alt=""></div>' +
               basketIconSvg() +
@@ -596,14 +568,6 @@
   function renderMenuFooter(basePath) {
     return '' +
       '<div id="navFooterContainer">' +
-        '<a class="ga-ip innerCloseNav" id="myAccountLinkToModal" rel="nofollow" data-e2e="homePage-userMenu-myAccount" href="' + basePath + 'account.html">' +
-          'Sign into my account' +
-          '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
-        '</a>' +
-        '<a class="ga-ip innerCloseNav" id="loggedInMenuLink" rel="nofollow" href="' + basePath + 'account.html" style="display: none;" hidden>' +
-          'My Account' +
-          '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
-        '</a>' +
         '<a class="ga-ip" data-ip-position="header-help" href="' + basePath + 'faq.html">' +
           'Help' +
           '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
@@ -1057,14 +1021,12 @@
     bindInteractions(basePath);
     setBasketCount(readCartCount());
     refreshRemoteCartCount();
+    if (!shellWaitsForRenderer()) revealShell();
     window.addEventListener("hip:cart-updated", (event) => {
       const items = Array.isArray(event.detail && event.detail.items) ? event.detail.items : [];
       const count = items.reduce((sum, item) => sum + Math.max(1, Number(item && item.quantity || 1)), 0);
       setBasketCount(count);
     });
-    refreshCurrentUser()
-      .then(() => renderAuthControls(basePath))
-      .catch(() => renderAuthControls(basePath));
   }
 
   window.__AUCTIO_HEADER = { getBasePath };

@@ -5,6 +5,21 @@
   }
 
   function targetForSlug(slug) {
+    var legacyTargets = {
+      "fine-watches": "../shop.html?plp=accessories",
+      "timepieces-of-distinction": "../shop.html?plp=accessories",
+      "icons-of-swiss-watchmaking": "../shop.html?plp=accessories",
+      "handbags-fashion": "../shop.html?plp=accessories-bags",
+      "heritage-in-leather": "../shop.html?search=leather",
+      "herm-s-birkin-collection": "../shop.html?plp=accessories-bags",
+      "high-jewelry": "../shop.html?search=jewellery",
+      "rare-collectible-spirits": "../shop.html?plp=living",
+      "the-great-whiskey-collection": "../shop.html?plp=living",
+      "parisian-icons": "../shop.html?search=paris",
+      "the-winter-edit-icons-of-luxury": "../shop.html?search=winter",
+      "valentine-s-curated-icons": "../shop.html?search=valentine",
+    };
+    if (legacyTargets[slug]) return legacyTargets[slug];
     if (slug === "last-chance" || slug === "sale") return "../shop.html?plp=sale";
     if (slug === "mens-footwear") return "../shop.html?plp=mens-footwear";
     if (slug === "womens-footwear") return "../shop.html?plp=womens-footwear";

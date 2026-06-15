@@ -123,6 +123,26 @@
     return labels[status] || "Payment pending";
   }
 
+  function paymentMethodLabel(method) {
+    var labels = {
+      manual_payment: "Manual payment",
+      card: "Credit / Debit Card",
+      paypal: "PayPal",
+      apple_pay: "Apple Pay",
+      klarna: "Klarna",
+      future_method: "Other payment method",
+    };
+    return labels[method] || String(method || "Manual payment").replace(/_/g, " ");
+  }
+
+  function normalizeObject(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+
+  function paymentProviderLabel(value) {
+    return String(value || "-").replace(/_/g, " ");
+  }
+
   function statusOptions(selected) {
     return ORDER_STATUSES.map(function (status) {
       return '<option value="' + status + '"' + (status === selected ? " selected" : "") + ">" + statusLabel(status) + "</option>";
@@ -131,6 +151,8 @@
 
   function normalizeOrder(order) {
     var item = Array.isArray(order.order_items) ? order.order_items[0] || {} : {};
+    var metadata = normalizeObject(order.metadata);
+    var paymentDetails = normalizeObject(order.payment_details || metadata.payment_details);
     var status = String(order.status || "payment_pending").toLowerCase();
     if (ORDER_STATUSES.indexOf(status) === -1) status = "payment_pending";
     return {
@@ -140,6 +162,10 @@
       status: status,
       paymentStatus: String(order.payment_status || "payment_not_configured"),
       paymentMethod: String(order.payment_method || "manual_payment"),
+      paymentProvider: String(order.payment_provider || paymentDetails.provider || metadata.payment_provider || order.payment_method || ""),
+      paymentReference: String(order.payment_reference || paymentDetails.reference || metadata.payment_reference || ""),
+      paymentDetails: paymentDetails,
+      paidAt: String(order.paid_at || ""),
       productId: String(item.product_id || order.productId || ""),
       sku: String(item.sku || order.sku || ""),
       routeSlug: String(item.route_slug || order.routeSlug || ""),
@@ -378,7 +404,7 @@
     state.filteredOrders = state.orders.filter(function (order) {
       if (state.ordersStatus !== "all" && order.status !== state.ordersStatus) return false;
       if (!query) return true;
-      return [order.orderId, order.customer.email, order.customer.phone, order.sku, order.title, order.routeSlug].join(" ").toLowerCase().indexOf(query) !== -1;
+      return [order.orderId, order.customer.email, order.customer.phone, order.sku, order.title, order.routeSlug, order.paymentMethod, order.paymentProvider, order.paymentReference].join(" ").toLowerCase().indexOf(query) !== -1;
     }).sort(sortOrdersNewest);
     renderOrders();
   }
@@ -399,7 +425,7 @@
         '<td class="px-4 py-3 font-medium">' + escapeHtml(customerName(order)) + '</td>',
         '<td class="px-4 py-3">' + escapeHtml(customer.email || "-") + '</td>',
         '<td class="px-4 py-3">' + escapeHtml(customer.phone || "-") + '</td>',
-        '<td class="px-4 py-3"><div class="max-w-[280px] clamp-2 font-medium">' + escapeHtml(order.title || "-") + '</div><div class="text-xs text-gray-500">Payment: ' + escapeHtml(order.paymentStatus.replace(/_/g, " ")) + '</div></td>',
+        '<td class="px-4 py-3"><div class="max-w-[280px] clamp-2 font-medium">' + escapeHtml(order.title || "-") + '</div><div class="text-xs text-gray-500">Payment: ' + escapeHtml(paymentMethodLabel(order.paymentMethod)) + '</div></td>',
         '<td class="px-4 py-3">' + escapeHtml(order.brand || "-") + '</td>',
         '<td class="px-4 py-3 font-mono text-xs">' + escapeHtml(order.sku || "-") + '</td>',
         '<td class="px-4 py-3"><div class="max-w-[260px] truncate font-mono text-xs" title="' + escapeHtml(order.routeSlug) + '">' + escapeHtml(order.routeSlug || "-") + '</div></td>',
@@ -514,6 +540,22 @@
     return '<div class="rounded-lg border border-gray-100 p-3"><dt class="text-xs font-medium uppercase tracking-wide text-gray-500">' + escapeHtml(label) + '</dt><dd class="mt-1 break-words text-sm text-gray-900">' + escapeHtml(value || "-") + '</dd></div>';
   }
 
+  function paymentRows(order) {
+    var details = normalizeObject(order.paymentDetails);
+    var card = [details.card_brand, details.card_last4 ? "**** " + details.card_last4 : ""].filter(Boolean).join(" ");
+    return detailRow("Payment Method", paymentMethodLabel(order.paymentMethod)) +
+      detailRow("Payment Status", order.paymentStatus.replace(/_/g, " ")) +
+      detailRow("Payment Provider", paymentProviderLabel(order.paymentProvider)) +
+      detailRow("Payment Reference", order.paymentReference || "-") +
+      detailRow("Provider Status", details.provider_status || "-") +
+      detailRow("Integration Status", details.integration_status || "-") +
+      detailRow("Payment Intent ID", details.payment_intent_id || "-") +
+      detailRow("Transaction ID", details.transaction_id || "-") +
+      detailRow("Card", card || "-") +
+      detailRow("Payer Email", details.payer_email || "-") +
+      detailRow("Paid At", order.paidAt ? formatDate(order.paidAt) : "-");
+  }
+
   function openOrderDetail(orderId) {
     var order = findOrder(orderId);
     if (!order) return;
@@ -526,8 +568,11 @@
       '<div><h3 class="mb-3 text-sm font-semibold">Customer</h3><dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">' +
       detailRow("Name", customerName(order)) + detailRow("Email", customer.email) + detailRow("Phone", customer.phone) + detailRow("Address", [customer.address, customer.city, customer.postcode, customer.country].filter(Boolean).join(", ")) +
       '</dl></div>' +
+      '<div><h3 class="mb-3 text-sm font-semibold">Payment</h3><dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">' +
+      paymentRows(order) +
+      '</dl></div>' +
       '<div><h3 class="mb-3 text-sm font-semibold">Product</h3>' + (order.image ? '<img src="' + escapeHtml(order.image) + '" alt="' + escapeHtml(order.title || "Product") + '" class="mb-3 h-20 w-20 rounded-lg border border-gray-100 object-contain p-1" />' : "") + '<dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">' +
-      detailRow("Title", order.title) + detailRow("Brand", order.brand) + detailRow("SKU", order.sku) + detailRow("Route", order.routeSlug) + detailRow("Size", order.size) + detailRow("Quantity", String(order.quantity || 1)) + detailRow("Unit Price", formatCurrency(order.unitPrice, order.currency)) + detailRow("Subtotal", formatCurrency(order.subtotal, order.currency)) + detailRow("Shipping", formatCurrency(order.shipping, order.currency)) + detailRow("Total", formatCurrency(order.total, order.currency)) + detailRow("Payment", order.paymentStatus.replace(/_/g, " ")) + detailRow("Created", formatDate(order.createdAt)) +
+      detailRow("Title", order.title) + detailRow("Brand", order.brand) + detailRow("SKU", order.sku) + detailRow("Route", order.routeSlug) + detailRow("Size", order.size) + detailRow("Quantity", String(order.quantity || 1)) + detailRow("Unit Price", formatCurrency(order.unitPrice, order.currency)) + detailRow("Subtotal", formatCurrency(order.subtotal, order.currency)) + detailRow("Shipping", formatCurrency(order.shipping, order.currency)) + detailRow("Total", formatCurrency(order.total, order.currency)) + detailRow("Created", formatDate(order.createdAt)) +
       '</dl></div></div>';
     $("order-modal").classList.remove("hidden");
     $("order-modal").classList.add("flex");
@@ -556,10 +601,10 @@
   }
 
   function exportOrdersCsv() {
-    var headers = ["orderId", "createdAt", "status", "paymentStatus", "customerName", "email", "phone", "title", "brand", "sku", "routeSlug", "size", "quantity", "total", "currency"];
+    var headers = ["orderId", "createdAt", "status", "paymentStatus", "paymentMethod", "paymentProvider", "paymentReference", "customerName", "email", "phone", "title", "brand", "sku", "routeSlug", "size", "quantity", "total", "currency"];
     var rows = state.filteredOrders.map(function (order) {
       var customer = order.customer || {};
-      return [order.orderId, order.createdAt, order.status, order.paymentStatus, customerName(order), customer.email, customer.phone, order.title, order.brand, order.sku, order.routeSlug, order.size, order.quantity, order.total, order.currency].map(escapeCsv).join(",");
+      return [order.orderId, order.createdAt, order.status, order.paymentStatus, paymentMethodLabel(order.paymentMethod), order.paymentProvider, order.paymentReference, customerName(order), customer.email, customer.phone, order.title, order.brand, order.sku, order.routeSlug, order.size, order.quantity, order.total, order.currency].map(escapeCsv).join(",");
     });
     downloadFile("shop-orders.csv", headers.map(escapeCsv).join(",") + "\n" + rows.join("\n"), "text/csv");
   }

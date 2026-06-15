@@ -154,6 +154,10 @@
     return error;
   }
 
+  function customerAccountsDisabled() {
+    return backendError("Customer accounts are disabled. Please use guest checkout.", "customer_accounts_disabled");
+  }
+
   function sanitizeUser(user) {
     if (!user) return null;
     var meta = user.user_metadata || user.raw_user_meta_data || {};
@@ -318,6 +322,7 @@
   }
 
   async function register(payload) {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var email = clean(payload && payload.email).toLowerCase();
     var password = String((payload && payload.password) || "");
@@ -358,6 +363,7 @@
   }
 
   async function login(email, password) {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var emailValue = clean(email).toLowerCase();
     var passwordValue = String(password || "");
@@ -374,6 +380,7 @@
   }
 
   async function requestPasswordReset(email, redirectTo) {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var emailValue = clean(email).toLowerCase();
     if (!emailValue || emailValue.indexOf("@") === -1) throw backendError("Please enter a valid email address.", "validation_error");
@@ -393,6 +400,7 @@
   }
 
   async function updatePassword(newPassword) {
+    throw customerAccountsDisabled();
     if (String(newPassword || "").length < 8) throw backendError("New password must be at least 8 characters.", "validation_error");
     var client = await getClient();
     var result = await client.auth.updateUser({ password: String(newPassword || "") });
@@ -401,6 +409,7 @@
   }
 
   async function getProfile() {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var user = await getCurrentUser();
     if (!user) throw backendError("Please sign in to view your profile.", "auth_required");
@@ -416,6 +425,7 @@
   }
 
   async function saveProfile(profile) {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var user = await getCurrentUser();
     if (!user) throw backendError("Please sign in to update your profile.", "auth_required");
@@ -448,6 +458,7 @@
   }
 
   async function getCustomerAddresses() {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var user = await getCurrentUser();
     if (!user) throw backendError("Please sign in to view your addresses.", "auth_required");
@@ -465,6 +476,7 @@
   }
 
   async function syncDefaultProfileAddress(address) {
+    throw customerAccountsDisabled();
     var user = await getCurrentUser();
     if (!user) throw backendError("Please sign in to update your profile.", "auth_required");
     var profile = {};
@@ -477,6 +489,7 @@
   }
 
   async function saveCustomerAddress(address) {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var user = await getCurrentUser();
     if (!user) throw backendError("Please sign in to update your addresses.", "auth_required");
@@ -531,6 +544,7 @@
   }
 
   async function clearProfileAddress() {
+    throw customerAccountsDisabled();
     var user = await getCurrentUser();
     if (!user) throw backendError("Please sign in to update your addresses.", "auth_required");
     var profile = {};
@@ -550,6 +564,7 @@
   }
 
   async function deleteCustomerAddress(addressId) {
+    throw customerAccountsDisabled();
     var client = await getClient();
     var user = await getCurrentUser();
     if (!user) throw backendError("Please sign in to update your addresses.", "auth_required");
@@ -632,15 +647,26 @@
     var items = Array.isArray(payload && payload.items) && payload.items.length
       ? payload.items
       : (payload && payload.item ? [payload.item] : []);
+    var paymentMethod = clean(payload && payload.paymentMethod) || "manual_payment";
+    var paymentDetails = payload && payload.paymentDetails && typeof payload.paymentDetails === "object" ? payload.paymentDetails : {};
+    var paymentProvider = clean(paymentDetails.provider || paymentMethod) || "manual";
+    var paymentReference = clean(paymentDetails.reference || paymentDetails.paymentIntentId || paymentDetails.transactionId);
     return {
       order_number: orderNumber,
       status: "payment_pending",
       payment_status: "payment_not_configured",
-      payment_method: "manual_payment",
+      payment_method: paymentMethod,
+      payment_provider: paymentProvider,
+      payment_reference: paymentReference,
+      payment_details: paymentDetails,
       is_dev_fallback: true,
       message: "Development fallback order only. Configure Supabase for production order storage.",
       order: Object.assign({}, payload, {
         order_number: orderNumber,
+        payment_method: paymentMethod,
+        payment_provider: paymentProvider,
+        payment_reference: paymentReference,
+        payment_details: paymentDetails,
         items: items,
         item: items[0] || payload.item || null,
       }),
@@ -649,7 +675,7 @@
 
   async function createOrder(payload) {
     if (!isConfigured()) return devOrderFallback(payload);
-    return invokeFunction("create-order", { method: "POST", body: payload });
+    return invokeFunction("create-order", { method: "POST", body: payload, skipUserSession: true });
   }
 
   async function getCatalog(options) {
@@ -672,13 +698,14 @@
 
   async function getCart() {
     if (!isConfigured()) return { cart_id: getCartId(), items: [] };
-    return invokeFunction("cart", { method: "GET", query: "cart_id=" + encodeURIComponent(getCartId()) });
+    return invokeFunction("cart", { method: "GET", query: "cart_id=" + encodeURIComponent(getCartId()), skipUserSession: true });
   }
 
   async function saveCart(items) {
     if (!isConfigured()) return { cart_id: getCartId(), items: Array.isArray(items) ? items : [] };
     return invokeFunction("cart", {
       method: "POST",
+      skipUserSession: true,
       body: {
         cart_id: getCartId(),
         items: Array.isArray(items) ? items : [],
@@ -690,11 +717,13 @@
     if (!isConfigured()) return { cart_id: getCartId(), items: [] };
     return invokeFunction("cart", {
       method: "DELETE",
+      skipUserSession: true,
       body: { cart_id: getCartId() },
     });
   }
 
   async function getCustomerOrders() {
+    throw customerAccountsDisabled();
     return invokeFunction("customer-orders", { method: "GET" });
   }
 

@@ -18,6 +18,44 @@ body > .min-h-screen {
   background: #fff;
 }
 
+body.hip-shell-pending {
+  overflow: hidden;
+  background: #fff;
+}
+
+body.hip-shell-pending > * {
+  visibility: hidden;
+}
+
+body.hip-shell-pending::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  background: #fff;
+}
+
+body.hip-shell-pending::after {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 2147483647;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border: 2px solid #d7d7d7;
+  border-top-color: #111;
+  border-radius: 50%;
+  animation: hip-shell-spin 0.8s linear infinite;
+}
+
+@keyframes hip-shell-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .fixed,
 .sticky.top-0 {
   max-width: min(var(--hip-shell-width), 100vw);

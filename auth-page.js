@@ -16,6 +16,17 @@
       : "";
   }
 
+  function revealShell() {
+    if (typeof window.HipStoreRevealShell === "function") {
+      window.HipStoreRevealShell();
+      return;
+    }
+    if (document.body) {
+      document.body.classList.remove("hip-shell-pending");
+      document.body.removeAttribute("aria-busy");
+    }
+  }
+
   var COUNTRY_OPTIONS = [
     ["United Kingdom (excluding Channel Islands)", "gb"],
     ["Afghanistan", "af"],
@@ -106,12 +117,56 @@
     var root = document.querySelector("[data-auth-root]");
     if (!root) return;
     root.innerHTML = '<section class="py-10 lg:py-16"><div class="container mx-auto px-4 lg:px-8">' + content + '</div></section>';
+    revealShell();
   }
 
   function renderRaw(content) {
     var root = document.querySelector("[data-auth-root]");
     if (!root) return;
     root.innerHTML = content;
+    revealShell();
+  }
+
+  function renderGuestOnlyPage(basePath) {
+    document.title = "Guest Checkout | The Hip Store";
+    ensureClassicAccountStyles();
+    renderRaw(`
+      <div id="accountPage" class="accountLogin">
+        <div id="accountPageContent">
+          <div class="maxWidth">
+            <div id="accountTitle">
+              <h1>Guest checkout</h1>
+            </div>
+            <div id="accountContent" style="display:block;max-width:720px">
+              <div class="fs-mod">
+                <div class="fs-mod-ttl">
+                  <h3>Account features are currently unavailable</h3>
+                </div>
+                <div class="fs-mod-cnt">
+                  <div class="fs-grp">
+                    <div class="fs-row inf">
+                      <p>You can still place an order as a guest. Add products to your bag, enter your delivery details, choose a payment method, and place the order without signing in.</p>
+                    </div>
+                  </div>
+                  <div class="fs-grp">
+                    <div class="fs-row but act hlb">
+                      <label></label>
+                      <span><a class="btn btn-level1 large" href="${basePath}shop.html">Continue shopping</a></span>
+                    </div>
+                    <div class="fs-row lnk hlb">
+                      <label></label>
+                      <span><a href="${basePath}checkout/index.html" class="forgotPasswordLink">Go to checkout</a></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="legalRequirementMessage">
+                <p class="privacyNotice">We will use checkout information in accordance with our <a href="${basePath}privacy.html" class="privacy-statement" target="_blank">Privacy Policy</a>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`);
   }
 
   function ensureClassicAccountStyles() {
@@ -2101,6 +2156,10 @@
   async function init() {
     var page = document.body.getAttribute("data-auth-page");
     var basePath = getBasePath();
+    if (page === "login" || page === "register" || page === "forgot-password" || page === "account") {
+      renderGuestOnlyPage(basePath);
+      return;
+    }
     if (!window.AuctioAuth) return;
     if (page === "login") await bindLoginPage(basePath);
     if (page === "register") await bindRegisterPage(basePath);

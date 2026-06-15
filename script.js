@@ -23,7 +23,7 @@ function visible(selector) {
 function syncBodyLock() {
   body.classList.toggle(
     "is-locked",
-    visible("[data-drawer]") || visible("[data-account-panel]") || visible("[data-bag-panel]") || visible("[data-cookie-modal]")
+    visible("[data-drawer]") || visible("[data-bag-panel]") || visible("[data-cookie-modal]")
   );
 }
 
@@ -42,7 +42,6 @@ function closeLayer(selector) {
 }
 
 function closeUtilityPanels() {
-  closeLayer("[data-account-panel]");
   closeLayer("[data-bag-panel]");
 }
 
@@ -54,17 +53,8 @@ qsa("[data-menu-close]").forEach((button) => {
   button.addEventListener("click", () => closeLayer("[data-drawer]"));
 });
 
-qsa("[data-account-open]").forEach((button) => {
-  button.addEventListener("click", () => {
-    closeLayer("[data-drawer]");
-    closeLayer("[data-bag-panel]");
-    openLayer("[data-account-panel]");
-  });
-});
-
 qsa("[data-bag-open]").forEach((button) => {
   button.addEventListener("click", () => {
-    closeLayer("[data-account-panel]");
     openLayer("[data-bag-panel]");
   });
 });
@@ -343,11 +333,6 @@ qsa("[data-pagination]").forEach((pagination) => {
   updateDots();
 });
 
-qs("[data-account-form]")?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  window.location.href = "login.html";
-});
-
 const cookieKey = "pars_storefront_cookie_choice";
 
 function storeCookieChoice(choice) {
@@ -419,7 +404,6 @@ document.addEventListener("keydown", (event) => {
 
   closeLayer("[data-drawer]");
   closeLayer("[data-search-panel]");
-  closeLayer("[data-account-panel]");
   closeLayer("[data-bag-panel]");
   closeLayer("[data-cookie-modal]");
   if (!hasCookieChoice()) openLayer("[data-cookie-banner]");

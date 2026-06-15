@@ -18,6 +18,70 @@
     HIP_ASSET_ORIGIN + "/skins/default/public/img/cart/payment-method-logos/klarna.png",
     HIP_ASSET_ORIGIN + "/skins/default/public/img/cart/payment-method-logos/clearpay.png"
   ];
+  var PAYMENT_OPTIONS = [
+    { value: "card", label: "Credit / Debit Card", icons: [PAYMENT_ICONS_PRIMARY[0], PAYMENT_ICONS_PRIMARY[2], PAYMENT_ICONS_PRIMARY[4]] },
+    { value: "paypal", label: "PayPal", icons: [HIP_ASSET_ORIGIN + "/skins/default/public/img/cart/logo-payment-pay-pal.svg"] },
+    { value: "apple_pay", label: "Apple Pay", icons: [HIP_ASSET_ORIGIN + "/skins/default/public/img/cart/apple-pay-mark.svg"] },
+    { value: "klarna", label: "Klarna", icons: [HIP_ASSET_ORIGIN + "/skins/default/public/img/cart/klarna-pink.svg"] },
+    { value: "future_method", label: "Other payment method", note: "More payment methods coming later.", future: true }
+  ];
+  var COUNTRY_OPTIONS = [
+    { name: "United Kingdom", iso: "gb", dial: "+44" },
+    { name: "United States", iso: "us", dial: "+1" },
+    { name: "Canada", iso: "ca", dial: "+1" },
+    { name: "Ireland", iso: "ie", dial: "+353" },
+    { name: "France", iso: "fr", dial: "+33" },
+    { name: "Germany", iso: "de", dial: "+49" },
+    { name: "Spain", iso: "es", dial: "+34" },
+    { name: "Italy", iso: "it", dial: "+39" },
+    { name: "Netherlands", iso: "nl", dial: "+31" },
+    { name: "Belgium", iso: "be", dial: "+32" },
+    { name: "Denmark", iso: "dk", dial: "+45" },
+    { name: "Sweden", iso: "se", dial: "+46" },
+    { name: "Norway", iso: "no", dial: "+47" },
+    { name: "Finland", iso: "fi", dial: "+358" },
+    { name: "Poland", iso: "pl", dial: "+48" },
+    { name: "Portugal", iso: "pt", dial: "+351" },
+    { name: "Switzerland", iso: "ch", dial: "+41" },
+    { name: "Austria", iso: "at", dial: "+43" },
+    { name: "Australia", iso: "au", dial: "+61" },
+    { name: "New Zealand", iso: "nz", dial: "+64" },
+    { name: "United Arab Emirates", iso: "ae", dial: "+971" },
+    { name: "Turkey", iso: "tr", dial: "+90" },
+    { name: "India", iso: "in", dial: "+91" },
+    { name: "China", iso: "cn", dial: "+86" },
+    { name: "Hong Kong", iso: "hk", dial: "+852" },
+    { name: "Singapore", iso: "sg", dial: "+65" },
+    { name: "Japan", iso: "jp", dial: "+81" },
+    { name: "Korea, Republic of", iso: "kr", dial: "+82" },
+    { name: "Mexico", iso: "mx", dial: "+52" },
+    { name: "Brazil", iso: "br", dial: "+55" },
+    { name: "Argentina", iso: "ar", dial: "+54" },
+    { name: "South Africa", iso: "za", dial: "+27" },
+    { name: "Russia", iso: "ru", dial: "+7" },
+    { name: "Ukraine", iso: "ua", dial: "+380" },
+    { name: "Estonia", iso: "ee", dial: "+372" },
+    { name: "Latvia", iso: "lv", dial: "+371" },
+    { name: "Lithuania", iso: "lt", dial: "+370" },
+    { name: "Czech Republic", iso: "cz", dial: "+420" },
+    { name: "Greece", iso: "gr", dial: "+30" },
+    { name: "Romania", iso: "ro", dial: "+40" },
+    { name: "Bulgaria", iso: "bg", dial: "+359" },
+    { name: "Croatia", iso: "hr", dial: "+385" },
+    { name: "Hungary", iso: "hu", dial: "+36" }
+  ];
+
+  function revealShell() {
+    if (typeof window.HipStoreRevealShell === "function") {
+      window.HipStoreRevealShell();
+      return;
+    }
+    if (document.body) {
+      document.body.classList.remove("hip-shell-pending");
+      document.body.removeAttribute("aria-busy");
+    }
+  }
+
   function loadJson(path) {
     return fetch(path, { cache: "no-store" }).then(function (response) {
       if (!response.ok) throw new Error("Failed to load " + path);
@@ -43,6 +107,132 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  function normalizeText(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function cleanInput(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function hasLetter(value) {
+    return /[A-Za-z]/.test(value) || /[^\W\d_]/u.test(value);
+  }
+
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanInput(value));
+  }
+
+  function isValidName(value) {
+    var text = cleanInput(value);
+    return text.length >= 2 && hasLetter(text) && !/\d/.test(text);
+  }
+
+  function isValidPhone(value) {
+    var text = cleanInput(value);
+    var digits = text.replace(/\D/g, "");
+    return /^[+\d\s().-]+$/.test(text) && digits.length >= 7 && digits.length <= 20;
+  }
+
+  function isValidAddressLine(value) {
+    var text = cleanInput(value);
+    return text.length >= 5 && hasLetter(text);
+  }
+
+  function isValidOptionalAddressLine(value) {
+    var text = cleanInput(value);
+    return !text || (text.length >= 2 && (hasLetter(text) || /\d/.test(text)));
+  }
+
+  function isValidTown(value) {
+    var text = cleanInput(value);
+    return text.length >= 2 && hasLetter(text);
+  }
+
+  function isValidPostcode(value) {
+    var text = cleanInput(value);
+    return text.length >= 3 && text.length <= 12 && /[A-Za-z0-9]/.test(text) && /^[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]$/.test(text);
+  }
+
+  function isValidCountry(value) {
+    var text = cleanInput(value);
+    return text.length >= 2 && hasLetter(text);
+  }
+
+  function defaultCountry() {
+    return COUNTRY_OPTIONS[0];
+  }
+
+  function findCountryByIso(iso) {
+    var normalized = normalizeText(iso);
+    return COUNTRY_OPTIONS.find(function (country) {
+      return country.iso === normalized;
+    }) || null;
+  }
+
+  function countryByName(name) {
+    var normalized = normalizeText(name);
+    return COUNTRY_OPTIONS.find(function (country) {
+      return normalizeText(country.name) === normalized;
+    }) || defaultCountry();
+  }
+
+  function countryOptionsHtml(selectedName) {
+    var selected = countryByName(selectedName).name;
+    return COUNTRY_OPTIONS.map(function (country) {
+      return '<option value="' + escapeHtml(country.name) + '"' + (country.name === selected ? ' selected' : '') + '>' + escapeHtml(country.name) + '</option>';
+    }).join("");
+  }
+
+  function countryByIso(iso) {
+    return findCountryByIso(iso) || defaultCountry();
+  }
+
+  function countryFlagEmoji(iso) {
+    var code = String(iso || "").toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) return "";
+    return String.fromCodePoint(code.charCodeAt(0) + 127397, code.charCodeAt(1) + 127397);
+  }
+
+  function phoneCountryOptionsHtml(selectedName) {
+    var selected = countryByName(selectedName).iso;
+    return COUNTRY_OPTIONS.map(function (country) {
+      var label = countryFlagEmoji(country.iso) + " " + country.dial + " " + country.iso.toUpperCase();
+      return '<option value="' + escapeHtml(country.iso) + '"' + (country.iso === selected ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+    }).join("");
+  }
+
+  function phonePrefixCandidate(value) {
+    var raw = String(value || "").trim();
+    if (!raw) return "";
+    if (raw.indexOf("+") === 0) return raw.replace(/\D/g, "");
+    if (raw.indexOf("00") === 0) return raw.slice(2).replace(/\D/g, "");
+    return raw.replace(/\D/g, "");
+  }
+
+  function countryFromPhone(value) {
+    var digits = phonePrefixCandidate(value);
+    if (!digits) return null;
+    var international = /^\s*(\+|00)/.test(String(value || ""));
+    var sorted = COUNTRY_OPTIONS.slice().sort(function (a, b) {
+      return b.dial.replace(/\D/g, "").length - a.dial.replace(/\D/g, "").length;
+    });
+    var countryByDial = sorted.find(function (country) {
+      var dialDigits = country.dial.replace(/\D/g, "");
+      if (!international && dialDigits.length < 2) return false;
+      return digits.indexOf(dialDigits) === 0;
+    });
+    if (countryByDial) return countryByDial;
+    if (international) return null;
+    return countryFromNationalPhone(digits);
+  }
+
+  function countryFromNationalPhone(digits) {
+    if (/^(79|89)/.test(digits)) return findCountryByIso("ru");
+    if (/^1[2-9]/.test(digits)) return findCountryByIso("us");
+    return null;
   }
 
   function getQueryParam(name) {
@@ -367,6 +557,10 @@
       '</div>';
   }
 
+  function paymentOptionByValue(value) {
+    return PAYMENT_OPTIONS.find(function (option) { return option.value === value; }) || PAYMENT_OPTIONS[0];
+  }
+
   function renderBasketRow(item) {
     var lineTotal = money(Number(item.price || 0) * Math.max(1, Number(item.quantity || 1)));
     var productCode = item.productCode || item.sku || item.id || "";
@@ -411,6 +605,7 @@
         '</div>' +
       '</div>';
     window.scrollTo(0, 0);
+    revealShell();
   }
 
   function renderCartPage(main, items, products, sourceMode) {
@@ -447,7 +642,6 @@
                   '</div>' +
                   renderPaymentMethodsBlock() +
                   '<div class="basketContinue"><a href="#!" class="btn btn-level1 large wArro" title="Checkout securely" data-cart-proceed' + (items.length ? "" : ' disabled="disabled"') + '>Checkout securely</a></div>' +
-                  renderExpressPayments() +
                 '</div>' +
                 '<div class="giftCardsOption myOption inactive hidden" style="margin-bottom: 16px"><span>Add Gift Card<img class="cardDownIcon" src="' + PROMO_DOWN_ICON + '" alt=""><img class="cardUpIcon" src="' + PROMO_UP_ICON + '" alt=""></span></div>' +
                 '<div id="giftCardsForm" class="hidden"><input type="number" name="discountCode" id="giftCardId" placeholder="Gift Card Number" title="Enter discount code" autocomplete="off"><p class="codeWarningBox center hidden"></p><div class="PINbox"><input type="text" class="input inputPin" name="discountPin" placeholder="4-Digit PIN" autocomplete="off"><img class="debitCardIcon" src="' + HIP_ASSET_ORIGIN + '/skins/default/public/img/giftcards/Icon-CVV.svg" alt=""><button class="redeemButton btn btn-level3" type="button" id="applyGiftCardButton" title="Submit code" value="Apply" data-giftcard-submit>Apply</button></div><p class="warningBox center hidden"></p></div>' +
@@ -458,6 +652,7 @@
         '</div>' +
       '</div>';
     window.scrollTo(0, 0);
+    revealShell();
 
     main.onclick = function onCartClick(event) {
       var proceed = event.target.closest("[data-cart-proceed]");
@@ -626,53 +821,269 @@
       '</div>';
   }
 
-  function renderCheckoutField(field, id, label, required, autocomplete) {
+  function renderCheckoutField(field, id, label, required, autocomplete, value, type) {
     return '' +
       '<div class="hipCheckoutField">' +
         '<label for="' + id + '">' + (required ? '<span>*</span>' : '') + escapeHtml(label) + '</label>' +
         '<div class="hipCheckoutInputWrap">' +
-          '<input id="' + id + '" name="' + escapeHtml(field) + '" autocomplete="' + escapeHtml(autocomplete || "off") + '" data-testid="validatedInput" data-customer-field="' + escapeHtml(field) + '" value="">' +
+          '<input id="' + id + '" name="' + escapeHtml(field) + '" type="' + escapeHtml(type || "text") + '" autocomplete="' + escapeHtml(autocomplete || "off") + '" data-testid="validatedInput" data-customer-field="' + escapeHtml(field) + '" value="' + escapeHtml(value || "") + '">' +
+          '<span class="hipCheckoutValidationIcon" aria-label="Information"></span>' +
         '</div>' +
+        '<p class="hipCheckoutFieldError" data-field-error="' + escapeHtml(field) + '" hidden></p>' +
       '</div>';
   }
 
-  function renderCheckoutPhoneField() {
+  function renderCheckoutPhoneField(value, selectedCountry) {
+    var country = countryFromPhone(value) || countryByName(selectedCountry || "United Kingdom");
     return '' +
       '<div class="hipCheckoutField hipCheckoutPhoneField">' +
         '<label for="phone-id"><span>*</span>Contact Number</label>' +
-        '<p>8 - 14 characters and should only contain numbers or a + symbol</p>' +
+        '<p>We will use this for delivery updates.</p>' +
         '<div class="hipCheckoutInputWrap hipPhoneInput">' +
-          '<span class="hipPhoneFlag" aria-hidden="true"></span>' +
-          '<input id="phone-id" name="phone" type="tel" autocomplete="tel" data-testid="validatedInput" data-customer-field="phone" value="+44">' +
+          '<select class="hipPhoneCountrySelect" aria-label="Phone country" data-phone-country>' + phoneCountryOptionsHtml(country.name) + '</select>' +
+          '<input id="phone-id" name="phone" type="tel" autocomplete="tel" data-testid="validatedInput" data-customer-field="phone" value="' + escapeHtml(value || "") + '">' +
+          '<span class="hipCheckoutValidationIcon" aria-label="Information"></span>' +
         '</div>' +
+        '<p class="hipCheckoutFieldError" data-field-error="phone" hidden></p>' +
       '</div>';
   }
 
-  function renderCheckoutCountryField() {
+  function renderCheckoutCountryField(value) {
+    var country = countryByName(value);
     return '' +
       '<div class="hipCheckoutField hipCheckoutCountryField">' +
         '<label for="country-id">Country</label>' +
-        '<button class="hipCheckoutSelect" aria-label="Open Drop" type="button">' +
-          '<input id="country-id" autocomplete="off" data-testid="countrySelect" tabindex="-1" type="text" readonly data-customer-field="country" value="United Kingdom">' +
+        '<div class="hipCheckoutSelect">' +
+          '<select id="country-id" name="country" autocomplete="country-name" data-testid="countrySelect" data-customer-field="country" data-country-select>' + countryOptionsHtml(country.name) + '</select>' +
+          '<span class="hipCheckoutValidationIcon" aria-label="Information"></span>' +
           '<svg aria-label="FormDown" viewBox="0 0 24 24" aria-hidden="true"><polyline fill="none" stroke="#000" stroke-width="2" points="18 9 12 15 6 9"></polyline></svg>' +
-        '</button>' +
+        '</div>' +
+        '<p class="hipCheckoutFieldError" data-field-error="country" hidden></p>' +
       '</div>';
   }
 
-  function renderCheckoutRadio(value, label, checked) {
+  function checkoutField(main, name) {
+    return main && main.querySelector('[data-customer-field="' + name + '"]');
+  }
+
+  function checkoutFieldErrorMessage(name, value) {
+    value = cleanInput(value);
+    if (!value) {
+      if (name === "email") return "Please enter your email address.";
+      if (name === "firstName") return "Please enter your first name.";
+      if (name === "lastName") return "Please enter your last name.";
+      if (name === "phone") return "Please enter your contact number.";
+      if (name === "address") return "Please enter address line 1.";
+      if (name === "city") return "Please enter your town or city.";
+      if (name === "postcode") return "Please enter your postcode.";
+      if (name === "country") return "Please select your country.";
+      return "Please complete this field.";
+    }
+    if (name === "email") return "Please enter a valid email address.";
+    if (name === "firstName") return "First name must use letters and be at least 2 characters.";
+    if (name === "lastName") return "Last name must use letters and be at least 2 characters.";
+    if (name === "phone") return "Please enter a valid contact number.";
+    if (name === "address") return "Address line 1 must include letters and be at least 5 characters.";
+    if (name === "address2") return "Address line 2 must be at least 2 characters, or leave it empty.";
+    if (name === "city") return "Town or city must use letters and be at least 2 characters.";
+    if (name === "postcode") return "Please enter a valid postcode.";
+    if (name === "country") return "Please select a valid country.";
+    return "Please check this field.";
+  }
+
+  function setCheckoutFieldState(main, name, state, showError, message) {
+    var field = checkoutField(main, name);
+    var row = field && field.closest(".hipCheckoutField");
+    var icon = row && row.querySelector(".hipCheckoutValidationIcon");
+    var errorNode = row && row.querySelector('[data-field-error="' + name + '"]');
+    if (icon) {
+      icon.classList.toggle("is-valid", state === "valid");
+      icon.classList.toggle("is-invalid", state === "invalid");
+      icon.setAttribute("aria-label", state === "valid" ? "Valid" : state === "invalid" ? "Invalid" : "Information");
+    }
+    if (field) field.setAttribute("aria-invalid", state === "invalid" ? "true" : "false");
+    if (errorNode) {
+      if (state === "invalid") {
+        errorNode.textContent = message || checkoutFieldErrorMessage(name, field && field.value);
+        errorNode.hidden = false;
+      } else {
+        errorNode.textContent = "";
+        errorNode.hidden = true;
+      }
+    }
+    if (row) row.classList.toggle("has-error", Boolean(showError));
+  }
+
+  function validateCheckoutField(main, name, force) {
+    var field = checkoutField(main, name);
+    if (!field) return true;
+    var value = cleanInput(field.value);
+    var hasValue = value.length > 0;
+    var optional = name === "address2";
+    var valid = true;
+    if (name === "email") valid = isValidEmail(value);
+    else if (name === "firstName" || name === "lastName") valid = isValidName(value);
+    else if (name === "phone") valid = isValidPhone(value);
+    else if (name === "address") valid = isValidAddressLine(value);
+    else if (name === "address2") valid = isValidOptionalAddressLine(value);
+    else if (name === "city") valid = isValidTown(value);
+    else if (name === "postcode") valid = isValidPostcode(value);
+    else if (name === "country") valid = isValidCountry(value);
+
+    if (optional && !hasValue) {
+      setCheckoutFieldState(main, name, "info", false);
+      return true;
+    }
+    if (!hasValue && !force) {
+      setCheckoutFieldState(main, name, "info", false);
+      return false;
+    }
+    setCheckoutFieldState(main, name, valid ? "valid" : "invalid", !valid && force, valid ? "" : checkoutFieldErrorMessage(name, value));
+    return valid;
+  }
+
+  function validateCheckoutForm(main, force) {
+    return ["email", "firstName", "lastName", "phone", "country", "address", "address2", "city", "postcode"].reduce(function (valid, name) {
+      return validateCheckoutField(main, name, force) && valid;
+    }, true);
+  }
+
+  function bindCheckoutValidation(main) {
+    ["email", "firstName", "lastName", "phone", "country", "address", "address2", "city", "postcode"].forEach(function (name) {
+      var field = checkoutField(main, name);
+      if (!field) return;
+      field.addEventListener("input", function () {
+        validateCheckoutField(main, name, false);
+      });
+      field.addEventListener("change", function () {
+        validateCheckoutField(main, name, false);
+      });
+      field.addEventListener("blur", function () {
+        validateCheckoutField(main, name, true);
+      });
+    });
+    validateCheckoutForm(main, false);
+  }
+
+  function bindCountryControls(main) {
+    var countrySelect = main.querySelector("[data-country-select]");
+    var phoneCountrySelect = main.querySelector("[data-phone-country]");
+    var phoneInput = main.querySelector('[data-customer-field="phone"]');
+    if (!countrySelect || !phoneInput) return;
+
+    function syncCountry(country) {
+      if (!country) return;
+      countrySelect.value = country.name;
+      if (phoneCountrySelect) phoneCountrySelect.value = country.iso;
+      validateCheckoutField(main, "country", false);
+      validateCheckoutField(main, "phone", false);
+    }
+
+    countrySelect.addEventListener("change", function () {
+      syncCountry(countryByName(countrySelect.value || "United Kingdom"));
+    });
+
+    if (phoneCountrySelect) {
+      phoneCountrySelect.addEventListener("change", function () {
+        syncCountry(countryByIso(phoneCountrySelect.value));
+      });
+    }
+
+    phoneInput.addEventListener("input", function () {
+      var detected = countryFromPhone(phoneInput.value);
+      if (detected) syncCountry(detected);
+      validateCheckoutField(main, "phone", false);
+    });
+
+    syncCountry(countryFromPhone(phoneInput.value) || countryByName(countrySelect.value || "United Kingdom"));
+    validateCheckoutField(main, "country", false);
+  }
+
+  function renderPaymentIcon(option) {
+    option = option || {};
+    if (option.future) {
+      return '<span class="hipPaymentFutureIcon" aria-hidden="true"><span></span><span></span><span></span></span>';
+    }
+    var icons = Array.isArray(option.icons) ? option.icons.filter(Boolean) : [];
+    return '<span class="' + (icons.length > 1 ? 'hipPaymentIconGroup' : 'hipPaymentLogo') + '" aria-hidden="true">' +
+      icons.map(function (icon) {
+        return '<img src="' + escapeHtml(icon) + '" alt="">';
+      }).join("") +
+    '</span>';
+  }
+
+  function renderSelectedPaymentSummary(paymentMethod) {
+    var option = paymentOptionByValue(paymentMethod);
     return '' +
-      '<label class="hipCheckoutRadio">' +
-        '<input type="radio" name="deliveryOption" value="' + escapeHtml(value) + '"' + (checked ? ' checked' : '') + '>' +
+      '<div class="hipSelectedPayment">' +
+        '<span class="hipPaymentOptionIcon">' + renderPaymentIcon(option) + '</span>' +
+        '<span class="hipSelectedPaymentCopy">' +
+          '<strong>' + escapeHtml(option.label) + '</strong>' +
+          (option.note ? '<em>' + escapeHtml(option.note) + '</em>' : '') +
+        '</span>' +
+      '</div>';
+  }
+
+  function paymentProviderForMethod(method) {
+    var option = paymentOptionByValue(method);
+    var providers = {
+      manual_payment: "manual",
+      card: "card",
+      paypal: "paypal",
+      apple_pay: "apple_pay",
+      klarna: "klarna",
+      future_method: "future_method",
+    };
+    return providers[option.value] || option.value || "manual";
+  }
+
+  function buildPaymentDetails(paymentMethod, customer) {
+    var option = paymentOptionByValue(paymentMethod);
+    customer = customer || {};
+    return {
+      provider: paymentProviderForMethod(option.value),
+      integrationStatus: "placeholder",
+      providerStatus: "not_configured",
+      reference: "",
+      methodLabel: option.label,
+      note: "Payment provider integration is not configured yet. Replace this object with provider-safe payment details.",
+      billingName: [customer.firstName, customer.lastName].filter(Boolean).join(" "),
+      billingPostcode: customer.postcode || "",
+    };
+  }
+
+  function renderPaymentOption(option, checked) {
+    return '' +
+      '<label class="hipPaymentOption">' +
+        '<input type="radio" name="paymentMethod" value="' + escapeHtml(option.value) + '"' + (checked ? ' checked' : '') + '>' +
         '<span class="hipRadioBox" aria-hidden="true"></span>' +
-        '<span>' + escapeHtml(label) + '</span>' +
+        '<span class="hipPaymentOptionIcon">' + renderPaymentIcon(option) + '</span>' +
+        '<span class="hipPaymentOptionCopy">' +
+          '<span class="hipPaymentOptionText">' + escapeHtml(option.label) + '</span>' +
+          (option.note ? '<span class="hipPaymentOptionNote">' + escapeHtml(option.note) + '</span>' : '') +
+        '</span>' +
       '</label>';
   }
 
-  function renderCheckoutForm(main, items, products, sourceMode) {
+  function renderCustomerSummary(customer) {
+    customer = customer || {};
+    var name = [customer.firstName, customer.lastName].filter(Boolean).join(" ");
+    var address = [customer.address, customer.address2, customer.city, customer.postcode, customer.country].filter(Boolean).join(", ");
+    return '' +
+      '<div class="hipCustomerSummary">' +
+        '<p><strong>' + escapeHtml(name || "Guest customer") + '</strong></p>' +
+        '<p>' + escapeHtml(customer.email || "") + (customer.phone ? '<br>' + escapeHtml(customer.phone) : "") + '</p>' +
+        '<p>' + escapeHtml(address || "") + '</p>' +
+      '</div>';
+  }
+
+  function renderCheckoutForm(main, items, products, sourceMode, initialCustomer) {
     var subtotal = getSubtotal(items);
     var total = getTotal(items);
     var discountSavings = getCheckoutDiscountSavings(items);
     var currency = items[0] && items[0].currency || "GBP";
+    var customer = initialCustomer || {};
+    var selectedCountry = (countryFromPhone(customer.phone) || countryByName(customer.country || "United Kingdom")).name;
     main.onclick = null;
     document.title = "Checkout | The Hip Store";
     main.innerHTML = '' +
@@ -691,19 +1102,14 @@
               '<p class="hipCheckoutPrivacy">We will use your information in accordance with our <a target="_blank" rel="noreferrer" href="../privacy.html">privacy notice</a>.</p>' +
             '</aside>' +
             '<section class="hipCheckoutMainColumn">' +
-              renderCheckoutCard("Delivery Options", "", '' +
-                '<div class="hipCheckoutDeliveryOptions">' +
-                  renderCheckoutRadio("home", "Home Delivery", true) +
-                  renderCheckoutRadio("clickAndCollect", "Click & Collect", false) +
-                '</div>', "") +
-              '<form data-checkout-form>' +
-                '<input type="hidden" data-customer-field="email" value="guest@thehipstore.local">' +
+              '<form data-checkout-form novalidate>' +
                 renderCheckoutCard("Contact Details", "", '' +
                   '<p data-form-error class="checkoutNotice hidden"></p>' +
                   '<div class="hipCheckoutFields">' +
-                    renderCheckoutField("firstName", "firstName-id", "First Name", true, "given-name") +
-                    renderCheckoutField("lastName", "lastName-id", "Last Name", true, "family-name") +
-                    renderCheckoutPhoneField() +
+                    renderCheckoutField("email", "email-id", "Email Address", true, "email", customer.email || "", "email") +
+                    renderCheckoutField("firstName", "firstName-id", "First Name", true, "given-name", customer.firstName || "") +
+                    renderCheckoutField("lastName", "lastName-id", "Last Name", true, "family-name", customer.lastName || "") +
+                    renderCheckoutPhoneField(customer.phone || "", selectedCountry) +
                   '</div>' +
                   '<div class="hipCheckoutInfo">' +
                     '<svg aria-label="CircleInformation" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="#000" stroke-width="2" d="M12,22 C17.5228475,22 22,17.5228475 22,12 C22,6.4771525 17.5228475,2 12,2 C6.4771525,2 2,6.4771525 2,12 C2,17.5228475 6.4771525,22 12,22 Z M12,10 L12,18 M12,6 L12,8"></path></svg>' +
@@ -717,13 +1123,11 @@
                 '<div class="hipCheckoutSectionGap"></div>' +
                 renderCheckoutCard("Delivery Address", "", '' +
                   '<div class="hipCheckoutAddressFields">' +
-                    renderCheckoutCountryField() +
-                    renderCheckoutField("address", "address1-id", "Address line 1", true, "address-line1") +
-                    renderCheckoutField("address2", "address2-id", "Address line 2 (optional)", false, "address-line2") +
-                    renderCheckoutField("city", "town-id", "Town/City", true, "address-level2") +
-                    renderCheckoutField("county", "county-id", "County (optional)", false, "address-level1") +
-                    renderCheckoutField("postcode", "postcode-id", "Postcode", true, "postal-code") +
-                    '<div class="hipCheckoutAddressFinder"><button data-testid="addressFinderBtn" type="button">Find a Different Address</button></div>' +
+                    renderCheckoutCountryField(selectedCountry) +
+                    renderCheckoutField("address", "address1-id", "Address line 1", true, "address-line1", customer.address || "") +
+                    renderCheckoutField("address2", "address2-id", "Address line 2 (optional)", false, "address-line2", customer.address2 || "") +
+                    renderCheckoutField("city", "town-id", "Town/City", true, "address-level2", customer.city || "") +
+                    renderCheckoutField("postcode", "postcode-id", "Postcode", true, "postal-code", customer.postcode || "") +
                   '</div>', "") +
                 '<div class="hipCheckoutSubmitRow"><button type="submit" class="hipCheckoutSubmit" data-place-order>Save and Continue</button></div>' +
               '</form>' +
@@ -732,6 +1136,9 @@
         '</div></div>' +
       '</div>';
     window.scrollTo(0, 0);
+    revealShell();
+    bindCountryControls(main);
+    bindCheckoutValidation(main);
 
     main.querySelector("[data-back-to-basket]")?.addEventListener("click", function (event) {
       event.preventDefault();
@@ -741,7 +1148,139 @@
 
     main.querySelector("[data-checkout-form]")?.addEventListener("submit", function (event) {
       event.preventDefault();
-      submitOrder(main, items, products, sourceMode);
+      var customer = collectCustomer(main);
+      var errorNode = main.querySelector("[data-form-error]");
+      if (!validateCheckoutForm(main, true)) {
+        if (errorNode) {
+          errorNode.textContent = "Please check the fields marked in red.";
+          errorNode.classList.remove("hidden");
+        }
+        return;
+      }
+      if (errorNode) errorNode.classList.add("hidden");
+      renderPaymentMethodPage(main, items, products, sourceMode, customer);
+    });
+  }
+
+  function renderPaymentMethodPage(main, items, products, sourceMode, customer) {
+    var subtotal = getSubtotal(items);
+    var total = getTotal(items);
+    var discountSavings = getCheckoutDiscountSavings(items);
+    var currency = items[0] && items[0].currency || "GBP";
+    main.onclick = null;
+    document.title = "Payment | The Hip Store";
+    main.innerHTML = '' +
+      '<div id="checkoutPage">' +
+        '<div id="basketPageContent"><div class="maxWidth">' +
+          '<div class="hipCheckoutGrid">' +
+            '<aside class="hipCheckoutSummaryColumn">' +
+              renderCheckoutCard("Summary (" + getQuantity(items) + ")", renderCheckoutEditIcon(), items.map(renderCheckoutSummaryItem).join(""), "") +
+              renderCheckoutCard("Total Summary", "", '' +
+                '<div class="hipCheckoutTotals">' +
+                  renderCheckoutTotalRow("Subtotal", formatCheckoutCurrency(subtotal, currency), "", "") +
+                  renderCheckoutTotalRow("Discount & Savings", (discountSavings ? "-" : "") + formatCheckoutCurrency(discountSavings, currency), "saving", "") +
+                  renderCheckoutTotalRow("Total", formatCheckoutCurrency(total, currency), "grand", "(excluding delivery)") +
+                '</div>', "") +
+            '</aside>' +
+            '<section class="hipCheckoutMainColumn">' +
+              renderCheckoutCard("Delivery Details", '<a href="#!" class="hipCheckoutSmallAction" data-edit-details>Edit</a>', renderCustomerSummary(customer), "") +
+              '<form data-payment-form>' +
+                renderCheckoutCard("Payment Method", "", '' +
+                  '<p data-payment-error class="checkoutNotice hidden"></p>' +
+                  '<div class="hipPaymentOptions">' + PAYMENT_OPTIONS.map(function (option, index) { return renderPaymentOption(option, index === 0); }).join("") + '</div>', "") +
+                '<div class="hipCheckoutSubmitRow"><button type="submit" class="hipCheckoutSubmit" data-place-order>Continue to Payment</button></div>' +
+              '</form>' +
+            '</section>' +
+          '</div>' +
+        '</div></div>' +
+      '</div>';
+    window.scrollTo(0, 0);
+    revealShell();
+
+    main.querySelector("[data-back-to-basket]")?.addEventListener("click", function (event) {
+      event.preventDefault();
+      var nextItems = sourceMode === "single" ? items : getCartItems(products);
+      renderCartPage(main, nextItems, products, sourceMode);
+    });
+
+    main.querySelector("[data-edit-details]")?.addEventListener("click", function (event) {
+      event.preventDefault();
+      renderCheckoutForm(main, items, products, sourceMode, customer);
+    });
+
+    main.querySelector("[data-payment-form]")?.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var checked = main.querySelector('input[name="paymentMethod"]:checked');
+      var errorNode = main.querySelector("[data-payment-error]");
+      if (!checked) {
+        if (errorNode) {
+          errorNode.textContent = "Please choose a payment method.";
+          errorNode.classList.remove("hidden");
+        }
+        return;
+      }
+      if (errorNode) errorNode.classList.add("hidden");
+      renderPaymentScreenPage(main, items, products, sourceMode, customer, checked.value);
+    });
+  }
+
+  function renderPaymentScreenPage(main, items, products, sourceMode, customer, paymentMethod) {
+    var subtotal = getSubtotal(items);
+    var total = getTotal(items);
+    var discountSavings = getCheckoutDiscountSavings(items);
+    var currency = items[0] && items[0].currency || "GBP";
+    main.onclick = null;
+    document.title = "Payment | The Hip Store";
+    main.innerHTML = '' +
+      '<div id="checkoutPage">' +
+        '<div id="basketPageContent"><div class="maxWidth">' +
+          '<div class="hipCheckoutGrid">' +
+            '<aside class="hipCheckoutSummaryColumn">' +
+              renderCheckoutCard("Summary (" + getQuantity(items) + ")", renderCheckoutEditIcon(), items.map(renderCheckoutSummaryItem).join(""), "") +
+              renderCheckoutCard("Total Summary", "", '' +
+                '<div class="hipCheckoutTotals">' +
+                  renderCheckoutTotalRow("Subtotal", formatCheckoutCurrency(subtotal, currency), "", "") +
+                  renderCheckoutTotalRow("Discount & Savings", (discountSavings ? "-" : "") + formatCheckoutCurrency(discountSavings, currency), "saving", "") +
+                  renderCheckoutTotalRow("Total", formatCheckoutCurrency(total, currency), "grand", "(excluding delivery)") +
+                '</div>', "") +
+            '</aside>' +
+            '<section class="hipCheckoutMainColumn">' +
+              renderCheckoutCard("Delivery Details", '<a href="#!" class="hipCheckoutSmallAction" data-edit-details>Edit</a>', renderCustomerSummary(customer), "") +
+              renderCheckoutCard("Payment Method", '<a href="#!" class="hipCheckoutSmallAction" data-edit-payment>Change</a>', renderSelectedPaymentSummary(paymentMethod), "") +
+              renderCheckoutCard("Payment", "", '' +
+                '<div class="hipPaymentUnavailable">' +
+                  '<div class="hipPaymentSkeletonCard" aria-hidden="true">' +
+                    '<span class="hipSkeletonLine wide"></span>' +
+                    '<span class="hipSkeletonLine"></span>' +
+                    '<span class="hipSkeletonInput"></span>' +
+                    '<span class="hipSkeletonLine short"></span>' +
+                    '<div class="hipSkeletonSplit"><span class="hipSkeletonInput"></span><span class="hipSkeletonInput"></span></div>' +
+                  '</div>' +
+                  '<p class="checkoutNotice hipPaymentNotice">Payment screen is not ready yet.</p>' +
+                  '<p class="hipPaymentDevNote">This is a placeholder for the future payment provider integration.</p>' +
+                '</div>', "") +
+              '<div class="hipCheckoutSubmitRow"><button type="button" class="hipCheckoutSubmit" disabled>Payment Not Ready</button></div>' +
+            '</section>' +
+          '</div>' +
+        '</div></div>' +
+      '</div>';
+    window.scrollTo(0, 0);
+    revealShell();
+
+    main.querySelector("[data-back-to-basket]")?.addEventListener("click", function (event) {
+      event.preventDefault();
+      var nextItems = sourceMode === "single" ? items : getCartItems(products);
+      renderCartPage(main, nextItems, products, sourceMode);
+    });
+
+    main.querySelector("[data-edit-details]")?.addEventListener("click", function (event) {
+      event.preventDefault();
+      renderCheckoutForm(main, items, products, sourceMode, customer);
+    });
+
+    main.querySelector("[data-edit-payment]")?.addEventListener("click", function (event) {
+      event.preventDefault();
+      renderPaymentMethodPage(main, items, products, sourceMode, customer);
     });
   }
 
@@ -754,12 +1293,21 @@
   }
 
   function validateCustomer(customer) {
-    var required = ["email", "firstName", "lastName", "phone", "address", "city", "postcode", "country"];
-    return required.every(function (key) { return customer[key]; }) && /.+@.+\..+/.test(customer.email || "");
+    customer = customer || {};
+    return isValidEmail(customer.email) &&
+      isValidName(customer.firstName) &&
+      isValidName(customer.lastName) &&
+      isValidPhone(customer.phone) &&
+      isValidCountry(customer.country) &&
+      isValidAddressLine(customer.address) &&
+      isValidOptionalAddressLine(customer.address2) &&
+      isValidTown(customer.city) &&
+      isValidPostcode(customer.postcode);
   }
 
-  function normalizeOrder(response, customer, items) {
+  function normalizeOrder(response, customer, items, paymentMethod) {
     var order = response && response.order ? response.order : {};
+    var selectedPayment = paymentOptionByValue(paymentMethod);
     var responseItems = Array.isArray(order.items) && order.items.length
       ? order.items
       : (order.item ? [order.item] : (Array.isArray(order.order_items) ? order.order_items : []));
@@ -780,9 +1328,13 @@
     });
     return {
       orderId: response.order_number || order.order_number || order.orderId || "",
-      paymentMessage: response.message || "Order received. Payment is not configured yet.",
+      paymentMessage: "Order received.",
       paymentStatus: response.payment_status || order.payment_status || "payment_not_configured",
-      paymentMethod: response.payment_method || order.payment_method || "manual_payment",
+      paymentMethod: selectedPayment.label,
+      paymentMethodValue: selectedPayment.value,
+      paymentProvider: response.payment_provider || order.payment_provider || paymentProviderForMethod(selectedPayment.value),
+      paymentReference: response.payment_reference || order.payment_reference || "",
+      paymentDetails: response.payment_details || order.payment_details || buildPaymentDetails(selectedPayment.value, customer),
       status: response.status || order.status || "payment_pending",
       isDevFallback: Boolean(response.is_dev_fallback),
       customer: customer,
@@ -794,9 +1346,9 @@
     };
   }
 
-  function submitOrder(main, items, products, sourceMode) {
-    var customer = collectCustomer(main);
-    var errorNode = main.querySelector("[data-form-error]");
+  function submitOrder(main, items, products, sourceMode, customer, paymentMethod, paymentDetails) {
+    customer = customer || collectCustomer(main);
+    var errorNode = main.querySelector("[data-payment-error]") || main.querySelector("[data-form-error]");
     var button = main.querySelector("[data-place-order]");
     if (!validateCustomer(customer)) {
       if (errorNode) {
@@ -827,10 +1379,14 @@
         lastName: customer.lastName,
         phone: customer.phone,
         address: customer.address,
+        address2: customer.address2,
         city: customer.city,
+        state: "",
         postcode: customer.postcode,
         country: customer.country,
       },
+      paymentMethod: paymentMethod,
+      paymentDetails: paymentDetails || buildPaymentDetails(paymentMethod, customer),
       items: items.map(function (item) {
         return {
           productId: item.id,
@@ -857,7 +1413,7 @@
           return !ordered.has(cartIdentity(item));
         }));
       }
-      renderConfirmation(main, normalizeOrder(response, customer, items));
+      renderConfirmation(main, normalizeOrder(response, customer, items, paymentMethod));
     }).catch(function (error) {
       if (errorNode) {
         errorNode.textContent = error.message || "Unable to create the order.";
@@ -865,7 +1421,7 @@
       }
       if (button) {
         button.disabled = false;
-        button.textContent = "Save and Continue";
+        button.textContent = "Place Order";
       }
     });
   }
@@ -878,6 +1434,10 @@
       '</div>';
   }
 
+  function renderConfirmationTotalRow(label, value, className) {
+    return '<div class="confirmationTotalRow' + (className ? ' ' + className : '') + '"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+  }
+
   function renderConfirmation(main, order) {
     main.onclick = null;
     document.title = "Order received | " + (order.orderId || "The Hip Store");
@@ -888,18 +1448,20 @@
           '<div class="checkoutPanel">' +
             '<h2>Order number: ' + escapeHtml(order.orderId || "Pending") + '</h2>' +
             '<p class="privacyNotice">' + escapeHtml(order.paymentMessage || "Order received.") + '</p>' +
+            '<p class="confirmationPaymentMethod">Payment method: <strong>' + escapeHtml(order.paymentMethod || "Selected at checkout") + '</strong></p>' +
             (order.isDevFallback ? '<p class="checkoutNotice">Development fallback only. Configure Supabase before accepting production orders.</p>' : '') +
             '<div class="confirmationList">' + order.items.map(function (item) { return renderConfirmationRow(item, order.currency); }).join("") + '</div>' +
-            '<div class="totals-wrapper">' +
-              '<div class="subtotalGrand">Subtotal<strong>' + formatCurrency(order.subtotal, order.currency) + '</strong></div>' +
-              '<div class="totalGrand">Shipping<strong>' + formatCurrency(order.shipping, order.currency) + '</strong></div>' +
-              '<div class="totalGrand">Total<strong>' + formatCurrency(order.total, order.currency) + '</strong></div>' +
+            '<div class="confirmationTotals">' +
+              renderConfirmationTotalRow("Subtotal", formatCurrency(order.subtotal, order.currency), "") +
+              renderConfirmationTotalRow("Shipping", formatCurrency(order.shipping, order.currency), "") +
+              renderConfirmationTotalRow("Total", formatCurrency(order.total, order.currency), "grand") +
             '</div>' +
-            '<div class="confirmationActions"><a class="checkoutPageSecondary" href="' + BASE_PATH + 'shop.html">Continue shopping</a><a class="checkoutPageCta" href="' + BASE_PATH + 'account.html?tab=orders">View account orders</a></div>' +
+            '<div class="confirmationActions"><a class="checkoutPageSecondary" href="' + BASE_PATH + 'shop.html">Continue shopping</a><a class="checkoutPageCta" href="' + BASE_PATH + 'contact.html">Contact Us</a></div>' +
           '</div>' +
         '</div></div>' +
       '</div>';
     window.scrollTo(0, 0);
+    revealShell();
   }
 
   function init() {

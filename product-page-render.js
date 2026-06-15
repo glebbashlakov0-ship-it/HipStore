@@ -289,13 +289,6 @@
   ];
   var MOBILE_SERVICE_ITEMS = [
     {
-      label: "My Account",
-      children: [
-        { label: "Log in", href: "login.html" },
-        { label: "Wishlist", href: "account.html" },
-      ],
-    },
-    {
       label: "Customer Service",
       children: [
         { label: "FAQs", href: "faq.html" },
@@ -806,14 +799,6 @@
   function renderMenuFooter() {
     return '' +
       '<div id="navFooterContainer">' +
-        '<a class="ga-ip innerCloseNav" id="myAccountLinkToModal" rel="nofollow" data-e2e="homePage-userMenu-myAccount" href="' + BASE_PATH + 'account.html">' +
-          'Sign into my account' +
-          '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
-        '</a>' +
-        '<a class="ga-ip innerCloseNav" id="loggedInMenuLink" rel="nofollow" href="' + BASE_PATH + 'account.html" style="display: none;" hidden>' +
-          'My Account' +
-          '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
-        '</a>' +
         '<a class="ga-ip" data-ip-position="header-help" href="' + BASE_PATH + 'faq.html">' +
           'Help' +
           '<img src="' + LONG_ARROW_ICON_URL + '" alt="">' +
@@ -853,9 +838,6 @@
           '<div id="headRight">' +
             '<a class="srch" href="#!" data-search-trigger data-search-toggle data-e2e="header-search-toggle" aria-label="Search">' +
               headerSearchIconSvg() + headerCloseIconSvg() +
-            '</a>' +
-            '<a class="ga-ip" rel="nofollow" data-e2e="homePage-userMenu-myAccount" data-ip-position="header-sign in" href="' + BASE_PATH + 'account.html">' +
-              headerAccountIconSvg() +
             '</a>' +
             '<a class="bskt" href="' + CHECKOUT_PAGE_PATH + '" data-e2e="basket-go-to" title="">' +
               '<div id="cartSummaryOverlay" class="eq1"><img src="' + ASSET_ORIGIN + '/skins/default/public/img/icons/preload-white.gif" alt=""></div>' +
@@ -1171,7 +1153,7 @@
         renderAccordion("Details &amp; Care", material + (material && colour ? "<br><br>" : "") + colour + '<span class="product-code">Product Code: ' + escapeHtml(product.productCode || product.sku || product.id) + '</span>', true) +
         renderAccordion("Reviews", '<div id="pr-reviewdisplay" data-e2e="power-reviews-wrapper"></div><p>No reviews yet.</p>', false, '<div class="review-tab-title"><div class="tab-title">Reviews</div><div id="pr-reviewsnippet" data-e2e="power-reviews-wrapper"></div></div>') +
         renderAccordion("Delivery", 'Standard Delivery<br>&pound;5.99 or FREE on orders over &pound;100.<br>Delivered within 3 working days.<br>Excludes Bank Holidays.<br><br>Express Delivery<br>&pound;6.99<br>Order by Midnight to get it delivered within 2 days.<br><br>Next Day Delivery<br>&pound;7.99<br>Order before 8pm to receive the following day.<br><br>International Standard from &pound;7.99.', false) +
-        renderAccordion("Returns", 'UK Returns<br><br>You can return your items at any time via EVRi for FREE or via Royal Mail from &pound;2.<br><br>Please allow up to 14 days for your return to be processed once we receive it back in our warehouse. Once refunded it will show in your account within 3-5 days.<br><br>International Returns:<br><br>Customers are responsible for return postage, and items remain your responsibility until received by us.', false) +
+        renderAccordion("Returns", 'UK Returns<br><br>You can return your items at any time via EVRi for FREE or via Royal Mail from &pound;2.<br><br>Please allow up to 14 days for your return to be processed once we receive it back in our warehouse. Once refunded, funds usually appear on the original payment method within 3-5 days.<br><br>International Returns:<br><br>Customers are responsible for return postage, and items remain your responsibility until received by us.', false) +
       '</ul>' +
       renderRelatedCategories(product) +
       '</div>';

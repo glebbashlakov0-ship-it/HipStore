@@ -3,6 +3,15 @@ import type { CatalogProduct } from "../_shared/catalog.ts";
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
 import { findProduct, findSize, loadCatalog } from "../_shared/catalog.ts";
 
+const PAYMENT_METHODS: Record<string, string> = {
+  manual_payment: "Manual payment",
+  card: "Credit / Debit Card",
+  paypal: "PayPal",
+  apple_pay: "Apple Pay",
+  klarna: "Klarna",
+  future_method: "Other payment method",
+};
+
 function clean(value: unknown) {
   return String(value ?? "").trim();
 }
@@ -22,6 +31,59 @@ function orderNumber() {
   const stamp = now.toISOString().slice(0, 10).replace(/-/g, "");
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
   return `HIP-${stamp}-${suffix}`;
+}
+
+function paymentMethod(value: unknown) {
+  const method = clean(value).toLowerCase();
+  return PAYMENT_METHODS[method] ? method : "manual_payment";
+}
+
+function limited(value: unknown, max = 160) {
+  return clean(value).slice(0, max);
+}
+
+function digitsOnly(value: unknown, max = 32) {
+  return clean(value).replace(/\D/g, "").slice(0, max);
+}
+
+function paymentProvider(method: string, value: unknown) {
+  const provider = limited(value || method, 64).toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+  return provider || method || "manual";
+}
+
+function sanitizePaymentDetails(value: unknown, method: string, label: string) {
+  const details = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const provider = paymentProvider(method, details.provider || details.payment_provider);
+  const paymentIntentId = limited(details.paymentIntentId || details.payment_intent_id, 180);
+  const transactionId = limited(details.transactionId || details.transaction_id, 180);
+  const reference = limited(details.reference || details.payment_reference || paymentIntentId || transactionId, 180);
+  const last4 = digitsOnly(details.cardLast4 || details.card_last4, 4);
+  const expMonth = digitsOnly(details.cardExpMonth || details.card_exp_month, 2);
+  const expYear = digitsOnly(details.cardExpYear || details.card_exp_year, 4);
+  const paymentDetails: Record<string, string> = {
+    method,
+    method_label: label,
+    provider,
+    integration_status: limited(details.integrationStatus || details.integration_status || "placeholder", 80),
+    provider_status: limited(details.providerStatus || details.provider_status || details.status || "not_configured", 80),
+    note: limited(details.note || "Payment provider integration is not configured yet.", 240),
+  };
+
+  if (reference) paymentDetails.reference = reference;
+  if (paymentIntentId) paymentDetails.payment_intent_id = paymentIntentId;
+  if (transactionId) paymentDetails.transaction_id = transactionId;
+  if (limited(details.payerEmail || details.payer_email, 180)) paymentDetails.payer_email = limited(details.payerEmail || details.payer_email, 180);
+  if (limited(details.cardBrand || details.card_brand, 80)) paymentDetails.card_brand = limited(details.cardBrand || details.card_brand, 80);
+  if (last4.length === 4) paymentDetails.card_last4 = last4;
+  if (expMonth) paymentDetails.card_exp_month = expMonth;
+  if (expYear) paymentDetails.card_exp_year = expYear;
+  if (limited(details.walletType || details.wallet_type, 80)) paymentDetails.wallet_type = limited(details.walletType || details.wallet_type, 80);
+  if (limited(details.billingName || details.billing_name, 180)) paymentDetails.billing_name = limited(details.billingName || details.billing_name, 180);
+  if (limited(details.billingPostcode || details.billing_postcode, 80)) paymentDetails.billing_postcode = limited(details.billingPostcode || details.billing_postcode, 80);
+
+  return { provider, reference, details: paymentDetails };
 }
 
 function snapshotProduct(rawItem: Record<string, unknown>, body: Record<string, unknown>, index: number): CatalogProduct {
@@ -126,6 +188,9 @@ Deno.serve(async (req) => {
     const shipping = money(Number(body.shipping || 0));
     const total = money(subtotal + shipping);
     const user = await getUserFromRequest(req);
+    const selectedPaymentMethod = paymentMethod(body.paymentMethod || body.payment_method);
+    const selectedPaymentLabel = PAYMENT_METHODS[selectedPaymentMethod];
+    const payment = sanitizePaymentDetails(body.paymentDetails || body.payment_details, selectedPaymentMethod, selectedPaymentLabel);
 
     const orderPayload = {
       order_number: orderNumber(),
@@ -142,13 +207,20 @@ Deno.serve(async (req) => {
       shipping_country: country,
       status: "payment_pending",
       payment_status: "payment_not_configured",
-      payment_method: "manual_payment",
+      payment_method: selectedPaymentMethod,
+      payment_provider: payment.provider,
+      payment_reference: payment.reference,
+      payment_details: payment.details,
       currency: items[0].product.currency,
       subtotal,
       shipping,
       total,
       metadata: {
-        payment_note: "Payment integration is not configured.",
+        payment_label: selectedPaymentLabel,
+        payment_note: "Selected at checkout. Payment provider integration is not configured.",
+        payment_provider: payment.provider,
+        payment_reference: payment.reference,
+        payment_contract_version: "2026-06-15",
         catalog_validation: catalogValidated ? "catalog" : "checkout_snapshot",
         source_url: items[0].product.sourceUrl,
       },
@@ -182,7 +254,7 @@ Deno.serve(async (req) => {
       old_status: null,
       new_status: "payment_pending",
       changed_by: user?.id || null,
-      note: "Order created without payment integration.",
+      note: `Order created as guest checkout with ${selectedPaymentLabel}. Payment integration is not configured.`,
     });
 
     return jsonResponse({
@@ -191,7 +263,11 @@ Deno.serve(async (req) => {
       status: order.status,
       payment_status: order.payment_status,
       payment_method: order.payment_method,
-      message: "Order received. Payment is not configured yet.",
+      payment_provider: order.payment_provider,
+      payment_reference: order.payment_reference,
+      payment_details: order.payment_details,
+      payment_label: selectedPaymentLabel,
+      message: "Order received.",
       order: {
         ...order,
         item: {
